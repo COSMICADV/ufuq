@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build, boot
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # `verify` starts the built API and web applications, so the build has to
+      # come first. It needs no infrastructure: nothing in Phase 1 opens a
+      # database, a queue, or a bucket.
+      - name: Build
+        run: pnpm build
+
+      - name: Verify foundation and application boot
+        run: pnpm verify
+
+  mobile-bundle:
+    name: Mobile bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The mobile application has no `build` task — a native binary is produced
+      # by the release pipeline in Phase 18, not on every pull request. What can
+      # be proven on every commit is that Metro resolves the workspace packages
+      # and bundles the app. Hermes bytecode is a release concern and is skipped
+      # here, so the check runs on any CPU architecture.
+      - name: Bundle the Expo application
+        run: pnpm --filter @ufuq/mobile run bundle:check
+
+  # Phase 17 adds the security, tenancy, permission, responsive, RTL and
+  # accessibility suites required by DOCUMENT 26. They are not stubbed here:
+  # a job that always passes is worse than a job that does not yet exist.

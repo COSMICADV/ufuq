@@ -1,0 +1,724 @@
+// أُفق — Phase 3 database schema (DOCUMENT 06, DOCUMENT 09, DOCUMENT 21).
+//
+// Only the entities Phase 3 owns exist here: companies (the tenant root),
+// the authentication identity tables, and audit_logs. Every later phase adds
+// its own tables in its own migration — this file is not a preview of the
+// full DOCUMENT 06 catalogue.
+//
+// `directUrl` is used only by the Prisma CLI (migrate, introspect) and points
+// at the database-owner role that may create roles, functions and RLS
+// policies. `url` is what PrismaClient connects with at runtime, and points
+// at `ufuq_app` — a role with no privileges RLS does not already constrain
+// (AD-03, DOCUMENT 20 §3). See migration.sql for why the two must differ.
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_MIGRATION_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum CompanyStatus {
+  active
+  suspended
+  cancelled
+
+  @@map("company_status")
+}
+
+enum UserStatus {
+  invited
+  active
+  deactivated
+
+  @@map("user_status")
+}
+
+/// DOCUMENT 02 §3.
+enum PermissionScope {
+  self
+  team
+  company
+  platform
+
+  @@map("permission_scope")
+}
+
+/// OD-02 — one `sessions` table serves both the cookie-based web client and
+/// the token-based mobile client; this tells a row apart.
+enum SessionClientType {
+  web
+  mobile
+
+  @@map("session_client_type")
+}
+
+/// DOCUMENT 06 §3.4. Two values only — `inactive` is a lifecycle state an
+/// admin chooses, distinct from `deleted_at`, which is the soft-delete
+/// tombstone. No third value exists until a product decision adds one.
+enum DepartmentStatus {
+  active
+  inactive
+
+  @@map("department_status")
+}
+
+/// DOCUMENT 06 §3.7, DOCUMENT 12 business rule 6. What the schedule does with
+/// minutes worked beyond the scheduled day; the calculation itself is Phase 6.
+enum OvertimePolicy {
+  none
+  paid
+  banked
+
+  @@map("overtime_policy")
+}
+
+/// DOCUMENT 06 §3.6. `inactive` is a reversible administrative state (the
+/// `POST /employees/{id}/deactivate` and `/activate` pair); `terminated` is the
+/// end of employment and carries `termination_date`. No Phase 5 endpoint
+/// reaches `terminated` — see docs/PHASE-5-STATUS.md.
+enum EmployeeStatus {
+  active
+  inactive
+  terminated
+
+  @@map("employee_status")
+}
+
+/// DOCUMENT 06 §3.10, DOCUMENT 12. A *mode*, not a status: a record is
+/// `present` with mode `wfh`. Storing "WFH" as a status would make "how many
+/// present days were remote?" unanswerable.
+enum WorkMode {
+  office
+  wfh
+
+  @@map("work_mode")
+}
+
+/// DOCUMENT 06 §3.10, DOCUMENT 12 "Status values". All eight; every one is
+/// reachable in Phase 6 (DOCUMENT 25 Phase 6 exit criterion).
+enum AttendanceStatus {
+  present
+  absent
+  late
+  on_leave
+  half_day
+  holiday
+  weekend
+  pending
+
+  @@map("attendance_status")
+}
+
+/// DOCUMENT 12 "Source values" — what wrote the row. `system` covers the
+/// nightly absence job and the weekend/holiday generation.
+enum AttendanceSource {
+  self
+  admin
+  correction
+  system
+
+  @@map("attendance_source")
+}
+
+/// DOCUMENT 06 §3.11.
+enum CorrectionStatus {
+  pending
+  approved
+  rejected
+  cancelled
+
+  @@map("correction_status")
+}
+
+/// DOCUMENT 21 — only the "Authentication & access" action group ships in
+/// Phase 3. Every later phase adds its own values to this type in its own
+/// migration; this is not a preview of the full DOCUMENT 21 catalogue.
+enum AuditAction {
+  LOGIN_SUCCESS                   @map("login.success")
+  LOGIN_FAILED                    @map("login.failed")
+  LOGIN_LOCKED                    @map("login.locked")
+  LOGOUT                          @map("logout")
+  PASSWORD_CHANGED                @map("password.changed")
+  PASSWORD_RESET_REQUESTED        @map("password.reset_requested")
+  PASSWORD_RESET_COMPLETED        @map("password.reset_completed")
+  INVITATION_SENT                 @map("invitation.sent")
+  INVITATION_ACCEPTED             @map("invitation.accepted")
+  SESSION_REVOKED                 @map("session.revoked")
+  PERMISSION_DENIED               @map("permission.denied")
+  TENANCY_VIOLATION_ATTEMPT       @map("tenancy.violation_attempt")
+  SETTINGS_COMPANY_UPDATED        @map("settings.company_updated")
+  SETTINGS_SCHEDULE_CHANGED       @map("settings.schedule_changed")
+  EMPLOYEE_CREATED                @map("employee.created")
+  EMPLOYEE_UPDATED                @map("employee.updated")
+  EMPLOYEE_DEACTIVATED            @map("employee.deactivated")
+  EMPLOYEE_ACTIVATED              @map("employee.activated")
+  EMPLOYEE_MANAGER_CHANGED        @map("employee.manager_changed")
+  EMPLOYEE_DEPARTMENT_CHANGED     @map("employee.department_changed")
+  EMPLOYEE_ROLE_CHANGED           @map("employee.role_changed")
+  ATTENDANCE_CHECKED_IN           @map("attendance.checked_in")
+  ATTENDANCE_CHECKED_OUT          @map("attendance.checked_out")
+  ATTENDANCE_ADJUSTED_BY_ADMIN    @map("attendance.adjusted_by_admin")
+  ATTENDANCE_CORRECTION_REQUESTED @map("attendance.correction_requested")
+  ATTENDANCE_CORRECTION_APPROVED  @map("attendance.correction_approved")
+  ATTENDANCE_CORRECTION_REJECTED  @map("attendance.correction_rejected")
+  ATTENDANCE_GENERATED_BY_SYSTEM  @map("attendance.generated_by_system")
+
+  @@map("audit_action")
+}
+
+// ---------------------------------------------------------------------------
+// Tenant root
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.1. The tenant root — every other table in the system
+/// eventually carries `company_id`, directly or through a chain of FKs.
+model Company {
+  id                   String        @id @db.Uuid
+  name                 String        @db.VarChar(200)
+  slug                 String        @unique @db.VarChar(100)
+  logoPath             String?       @map("logo_path") @db.VarChar(500)
+  timezone             String        @db.VarChar(64)
+  currency             String        @default("EGP") @db.Char(3)
+  defaultLocale        String        @default("ar") @map("default_locale") @db.Char(5)
+  fiscalMonthStartDay  Int           @default(1) @map("fiscal_month_start_day") @db.SmallInt
+  /// DOCUMENT 12 rule 13 — "corrections have a window, default 7 days,
+  /// configurable per company". The default here is DOCUMENT 12's own number;
+  /// a CHECK requires at least 1 and sets no maximum (see the Phase 6
+  /// critical-fix migration).
+  correctionWindowDays Int           @default(7) @map("correction_window_days") @db.SmallInt
+  status               CompanyStatus @default(active)
+  /// Nullable: Phase 3 has no registration flow yet (DOCUMENT 25 Phase 16).
+  createdBy            String?       @map("created_by") @db.Uuid
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt            DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  users         User[]
+  roles         Role[]
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  departments   Department[]
+  positions     Position[]
+  workSchedules WorkSchedule[]
+  holidays      Holiday[]
+  employees     Employee[]
+
+  attendanceRecords  AttendanceRecord[]
+  correctionRequests AttendanceCorrectionRequest[]
+
+  @@index([status])
+  @@map("companies")
+}
+
+// ---------------------------------------------------------------------------
+// Company structure — Phase 4 (DOCUMENT 06 §3.4–3.9, DOCUMENT 12)
+//
+// `departments.manager_employee_id` (DOCUMENT 06 §3.4) arrived with Phase 5,
+// as an enforced reference to `employees` (approved Phase 4 decision) rather
+// than an unenforced UUID added ahead of the table it points at.
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.4. `parentId` makes the tree possible; nothing in V1 builds
+/// a nested department UI, but the column is specified and the service
+/// prevents cycles, so a tree cannot become invalid data later.
+model Department {
+  id                String           @id @db.Uuid
+  companyId         String           @map("company_id") @db.Uuid
+  nameAr            String           @map("name_ar") @db.VarChar(200)
+  nameEn            String           @map("name_en") @db.VarChar(200)
+  parentId          String?          @map("parent_id") @db.Uuid
+  /// Phase 5. Same-company is enforced by a trigger as well as by the service
+  /// (see the Phase 5 migration for why a foreign key alone is not enough).
+  managerEmployeeId String?          @map("manager_employee_id") @db.Uuid
+  status            DepartmentStatus @default(active)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// DOCUMENT 06 §6 — reference data is soft-deleted; historical records keep
+  /// pointing at it.
+  deletedAt         DateTime?        @map("deleted_at") @db.Timestamptz(3)
+
+  company   Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  parent    Department?  @relation("department_tree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Department[] @relation("department_tree")
+  positions Position[]
+  manager   Employee?    @relation("department_manager", fields: [managerEmployeeId], references: [id], onDelete: SetNull)
+  employees Employee[]   @relation("employee_department")
+
+  // DOCUMENT 06 §3.4 states this unique constraint without a soft-delete
+  // predicate, so it is written exactly as specified: a soft-deleted
+  // department continues to hold its Arabic name.
+  @@unique([companyId, nameAr])
+  @@index([companyId, status])
+  @@map("departments")
+}
+
+/// DOCUMENT 06 §3.5.
+model Position {
+  id           String    @id @db.Uuid
+  companyId    String    @map("company_id") @db.Uuid
+  titleAr      String    @map("title_ar") @db.VarChar(200)
+  titleEn      String    @map("title_en") @db.VarChar(200)
+  departmentId String?   @map("department_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  employees  Employee[]
+
+  @@index([companyId, departmentId])
+  @@map("positions")
+}
+
+/// DOCUMENT 06 §3.7, DOCUMENT 12. The whole point of this table is DOCUMENT 27
+/// RULE 12: there is no `WORKING_DAYS` constant anywhere in this codebase, and
+/// no schedule value has a code-level default beyond the column defaults
+/// DOCUMENT 06 itself specifies.
+model WorkSchedule {
+  id                    String         @id @db.Uuid
+  companyId             String         @map("company_id") @db.Uuid
+  name                  String         @db.VarChar(200)
+  isDefault             Boolean        @default(false) @map("is_default")
+  /// The schedule's own IANA zone (DOCUMENT 06 §3.7) — attendance is evaluated
+  /// against it, never against the browser's zone (DOCUMENT 12, timezone).
+  timezone              String         @db.VarChar(64)
+  gracePeriodMinutes    Int            @default(0) @map("grace_period_minutes")
+  /// DECIMAL rather than an integer: a 4.5-hour half-day threshold is ordinary,
+  /// and DOCUMENT 06 §3.8 names the column without fixing a type. Rounding a
+  /// company's configuration to whole hours would be exactly the code-level
+  /// constraint on configuration DOCUMENT 27 RULE 12 forbids.
+  halfDayThresholdHours Decimal        @map("half_day_threshold_hours") @db.Decimal(4, 2)
+  overtimePolicy        OvertimePolicy @default(none) @map("overtime_policy")
+  breakMinutes          Int            @default(0) @map("break_minutes")
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  days      WorkScheduleDay[]
+  employees Employee[]
+
+  @@index([companyId, isDefault])
+  @@map("work_schedules")
+}
+
+/// DOCUMENT 06 §3.8. Seven rows per schedule, one per weekday — a missing row
+/// would mean "this day is undefined", and an undefined day is precisely what
+/// tempts a later phase to fall back to a hardcoded default.
+///
+/// No `company_id`: tenancy comes through `workScheduleId`, and the row-level
+/// security policy in migration.sql enforces it through that parent rather
+/// than through a duplicated column that could drift.
+model WorkScheduleDay {
+  id             String    @id @db.Uuid
+  workScheduleId String    @map("work_schedule_id") @db.Uuid
+  /// 0 = Sunday … 6 = Saturday, matching PostgreSQL's `EXTRACT(DOW)`.
+  dayOfWeek      Int       @map("day_of_week") @db.SmallInt
+  isWorkingDay   Boolean   @map("is_working_day")
+  /// Null exactly when `isWorkingDay` is false — enforced by a CHECK constraint.
+  startTime      DateTime? @map("start_time") @db.Time(0)
+  endTime        DateTime? @map("end_time") @db.Time(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workSchedule WorkSchedule @relation(fields: [workScheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([workScheduleId, dayOfWeek])
+  @@map("work_schedule_days")
+}
+
+/// DOCUMENT 06 §3.9, DOCUMENT 12. Company-level dates excluded from working
+/// days. DOCUMENT 06 §3.9 specifies no `deleted_at`, so a holiday is removed
+/// outright rather than soft-deleted — and DOCUMENT 08 §4.2 defines no delete
+/// endpoint, so nothing in Phase 4 removes one (see docs/PHASE-4-STATUS.md).
+model Holiday {
+  id          String   @id @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  date        DateTime @db.Date
+  nameAr      String   @map("name_ar") @db.VarChar(200)
+  nameEn      String   @map("name_en") @db.VarChar(200)
+  isRecurring Boolean  @default(false) @map("is_recurring")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, date])
+  @@index([companyId, date])
+  @@map("holidays")
+}
+
+// ---------------------------------------------------------------------------
+// Employees — Phase 5 (DOCUMENT 06 §3.6)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.6. The employment record, separate from `users` because
+/// employment data outlives and differs from login identity.
+///
+/// Salary is not a column here and never will be — DOCUMENT 06 §3.21 keeps it
+/// as history in `employee_salaries` (Phase 11). Leave allowances live in
+/// `leave_balances` (Phase 10).
+///
+/// Every reference (`user_id`, `department_id`, `position_id`, `manager_id`,
+/// `work_schedule_id`) must belong to the same company. The service checks
+/// that first; a trigger in the Phase 5 migration refuses the write if it
+/// ever does not, because a foreign key alone is checked without row-level
+/// security and would accept another tenant's id.
+model Employee {
+  id              String         @id @db.Uuid
+  companyId       String         @map("company_id") @db.Uuid
+  /// Nullable — "an employee may exist before an account" (DOCUMENT 06 §3.6).
+  /// Phase 5 always creates one (approved decision, FLOW 02).
+  userId          String?        @unique @map("user_id") @db.Uuid
+  employeeCode    String         @map("employee_code") @db.VarChar(50)
+  firstName       String         @map("first_name") @db.VarChar(100)
+  lastName        String         @map("last_name") @db.VarChar(100)
+  photoPath       String?        @map("photo_path") @db.VarChar(500)
+  email           String?        @db.VarChar(255)
+  phone           String?        @db.VarChar(32)
+  departmentId    String?        @map("department_id") @db.Uuid
+  positionId      String?        @map("position_id") @db.Uuid
+  managerId       String?        @map("manager_id") @db.Uuid
+  workScheduleId  String         @map("work_schedule_id") @db.Uuid
+  joiningDate     DateTime       @map("joining_date") @db.Date
+  status          EmployeeStatus @default(active)
+  terminationDate DateTime?      @map("termination_date") @db.Date
+  createdBy       String?        @map("created_by") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  company            Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  user               User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  department         Department?  @relation("employee_department", fields: [departmentId], references: [id], onDelete: Restrict)
+  position           Position?    @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  manager            Employee?    @relation("employee_manager", fields: [managerId], references: [id], onDelete: SetNull)
+  reports            Employee[]   @relation("employee_manager")
+  workSchedule       WorkSchedule @relation(fields: [workScheduleId], references: [id], onDelete: Restrict)
+  managedDepartments Department[] @relation("department_manager")
+
+  attendanceRecords  AttendanceRecord[]
+  correctionRequests AttendanceCorrectionRequest[]
+
+  @@unique([companyId, employeeCode])
+  @@unique([companyId, email])
+  @@index([companyId, status])
+  @@index([companyId, departmentId])
+  @@index([managerId])
+  @@map("employees")
+}
+
+// ---------------------------------------------------------------------------
+// Roles & permissions — DOCUMENT 02, DOCUMENT 06 §3.3
+// ---------------------------------------------------------------------------
+
+/// `companyId = null` is a system role, shared by every company (DOCUMENT 06
+/// §3.3). V1 seeds the four DOCUMENT 02 §2 roles as system roles and builds
+/// no UI to create a company-specific one — the column exists so adding that
+/// later is additive, per the OD-01-style "schema ready, feature deferred"
+/// pattern this package follows throughout.
+model Role {
+  id        String   @id @db.Uuid
+  companyId String?  @map("company_id") @db.Uuid
+  key       String   @db.VarChar(50)
+  nameEn    String   @map("name_en") @db.VarChar(100)
+  nameAr    String   @map("name_ar") @db.VarChar(100)
+  isSystem  Boolean  @default(false) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  // Cascade, not the nullable-column default of SET NULL: if a company that
+  // owns a custom role is ever hard-deleted, that role must not survive and
+  // silently become a shared system role for every other company.
+  company         Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users           User[]
+  rolePermissions RolePermission[]
+
+  // A per-company unique (company_id, key) is expressed here; the additional
+  // "at most one system role per key" rule needs a filtered index Prisma's
+  // DSL cannot express and is added by hand in migration.sql.
+  @@unique([companyId, key])
+  @@map("roles")
+}
+
+/// DOCUMENT 06 §3.3. Platform-wide reference data — not company-scoped, so it
+/// carries no `company_id` and no RLS policy (there is nothing to isolate).
+model Permission {
+  id            String   @id @db.Uuid
+  key           String   @unique @db.VarChar(100)
+  module        String   @db.VarChar(50)
+  descriptionEn String   @map("description_en") @db.VarChar(255)
+  descriptionAr String   @map("description_ar") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+/// DOCUMENT 06 §3.3. Composite PK, no surrogate id — the pair *is* the
+/// identity, exactly as documented.
+model RolePermission {
+  roleId       String          @map("role_id") @db.Uuid
+  permissionId String          @map("permission_id") @db.Uuid
+  scope        PermissionScope
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ---------------------------------------------------------------------------
+// Authentication identity — DOCUMENT 06 §3.2, DOCUMENT 09
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String     @id @db.Uuid
+  companyId         String     @map("company_id") @db.Uuid
+  email             String     @db.VarChar(255)
+  /// Null until the invitation is accepted (DOCUMENT 09 §6).
+  passwordHash      String?    @map("password_hash") @db.VarChar(255)
+  roleId            String     @map("role_id") @db.Uuid
+  /// Overrides `company.defaultLocale` when set (DOCUMENT 06 §3.2).
+  locale            String?    @db.Char(5)
+  status            UserStatus @default(invited)
+  /// DOCUMENT 21 "Record content" — the designated actor for system-generated
+  /// rows. It can never authenticate: `auth_lookup_login` does not return it,
+  /// it may hold no password hash, and there is at most one per company. See
+  /// the Phase 6 final-fix migration.
+  isSystem          Boolean    @default(false) @map("is_system")
+  lastLoginAt       DateTime?  @map("last_login_at") @db.Timestamptz(3)
+  failedLoginCount  Int        @default(0) @map("failed_login_count") @db.SmallInt
+  /// Not in DOCUMENT 06 §3.2's field list — added because the DOCUMENT 09 §1
+  /// lockout rule it exists to support ("5 failures within 15 minutes") is
+  /// not expressible from `failedLoginCount` alone: without a timestamp to
+  /// measure the window from, a count can only ever mean "since the last
+  /// success," a stricter and different rule than the one specified. See the
+  /// Phase 3 report.
+  lastFailedLoginAt DateTime?  @map("last_failed_login_at") @db.Timestamptz(3)
+  lockedUntil       DateTime?  @map("locked_until") @db.Timestamptz(3)
+  emailVerifiedAt   DateTime?  @map("email_verified_at") @db.Timestamptz(3)
+  /// The admin who invited this user. Null for the seed-created first admin.
+  createdBy         String?    @map("created_by") @db.Uuid
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?  @map("deleted_at") @db.Timestamptz(3)
+
+  company             Company                       @relation(fields: [companyId], references: [id])
+  role                Role                          @relation(fields: [roleId], references: [id])
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  invitation          Invitation?
+  auditLogs           AuditLog[]
+  employee            Employee?
+  attendanceCreated   AttendanceRecord[]            @relation("attendance_created_by")
+  correctionsReviewed AttendanceCorrectionRequest[] @relation("correction_reviewed_by")
+
+  // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
+  // exist in two companies later."
+  @@unique([companyId, email])
+  @@index([companyId, status])
+  @@map("users")
+}
+
+/// DOCUMENT 06 §3.37, DOCUMENT 09 §3. One row per authenticated session,
+/// whichever client created it (OD-02). `tokenHash` is what the cookie value
+/// (web) or the access token (mobile) hashes to; `refreshTokenHash` is set
+/// only for mobile rows.
+model Session {
+  id               String            @id @db.Uuid
+  companyId        String            @map("company_id") @db.Uuid
+  userId           String            @map("user_id") @db.Uuid
+  clientType       SessionClientType @map("client_type")
+  tokenHash        String            @unique @map("token_hash") @db.VarChar(64)
+  refreshTokenHash String?           @unique @map("refresh_token_hash") @db.VarChar(64)
+  /// Web only — extends the absolute timeout from 24h to 30 days (DOCUMENT 09 §3).
+  rememberMe       Boolean           @default(false) @map("remember_me")
+  ipAddress        String?           @map("ip_address") @db.VarChar(45)
+  userAgent        String?           @map("user_agent") @db.VarChar(500)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt       DateTime          @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  /// Absolute timeout — fixed at creation, never extended.
+  expiresAt        DateTime          @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime?         @map("revoked_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, userId])
+  @@index([userId, revokedAt])
+  @@map("sessions")
+}
+
+/// DOCUMENT 06 §3.37, DOCUMENT 09 §2. One row per reset request; a new
+/// request invalidates the previous unused one (service-layer rule, not a
+/// database constraint — DOCUMENT 06 keeps the history).
+model PasswordResetToken {
+  id        String    @id @db.Uuid
+  companyId String    @map("company_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+/// DOCUMENT 06 §3.37, DOCUMENT 09 §6. One row per user — a resend overwrites
+/// `tokenHash` and `expiresAt` in place, which is what "the old token is
+/// invalidated" means in a single-row model. `invitedBy` is who sent it.
+///
+/// Nothing in Phase 3 creates one over HTTP: an admin *sending* an invitation
+/// is part of employee creation (Phase 5, `POST /employees`). This table and
+/// `POST /auth/accept-invitation` exist now because DOCUMENT 25 Phase 3 scopes
+/// "invitation acceptance" here; see the Phase 3 report for how this is
+/// exercised before Phase 5 exists.
+model Invitation {
+  id         String    @id @db.Uuid
+  companyId  String    @map("company_id") @db.Uuid
+  userId     String    @unique @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(64)
+  invitedBy  String?   @map("invited_by") @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("invitations")
+}
+
+// ---------------------------------------------------------------------------
+// Audit — DOCUMENT 06 §3.35, DOCUMENT 21
+// ---------------------------------------------------------------------------
+
+/// Append-only. No update or delete path exists anywhere in this package —
+/// DOCUMENT 21 requires the database itself to refuse them (see
+/// migration.sql), not just application discipline.
+model AuditLog {
+  id         String      @id @db.Uuid
+  companyId  String      @map("company_id") @db.Uuid
+  /// The acting user. System actions record a designated system user,
+  /// never null (DOCUMENT 21 "Record content").
+  userId     String      @map("user_id") @db.Uuid
+  action     AuditAction
+  entityType String      @map("entity_type") @db.VarChar(50)
+  entityId   String      @map("entity_id") @db.Uuid
+  oldValues  Json?       @map("old_values")
+  newValues  Json?       @map("new_values")
+  ipAddress  String?     @map("ip_address") @db.VarChar(45)
+  userAgent  String?     @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@index([companyId, action, createdAt])
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Attendance — Phase 6 (DOCUMENT 06 §3.10–3.11, DOCUMENT 12)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.10, DOCUMENT 12. One row per employee per day — the unique
+/// constraint is what makes a double check-in a clean 409 rather than two
+/// records (DOCUMENT 12 edge case "two devices check in simultaneously").
+///
+/// The derived columns (`workingMinutes`, `overtimeMinutes`, `lateMinutes`)
+/// are stored, not computed on read: payroll and reporting read them for
+/// closed months, and a schedule edited later must not silently restate a
+/// past month (DOCUMENT 12 edge case "schedule changes mid-month"). They are
+/// null until there is something to derive them from.
+///
+/// `leave_request_id` (DOCUMENT 06 §3.10) is deliberately **not** here: it is
+/// a foreign key to `leave_requests`, which Phase 10 creates. An unenforced
+/// UUID column now is the shortcut that never gets fixed — the same reasoning
+/// that kept `departments.manager_employee_id` out of Phase 4. See
+/// docs/PHASE-6-STATUS.md.
+model AttendanceRecord {
+  id              String           @id @db.Uuid
+  companyId       String           @map("company_id") @db.Uuid
+  employeeId      String           @map("employee_id") @db.Uuid
+  date            DateTime         @db.Date
+  /// Null when the day was not worked — absent, on leave, a holiday or a
+  /// weekend (DOCUMENT 06 §3.10).
+  workMode        WorkMode?        @map("work_mode")
+  checkInAt       DateTime?        @map("check_in_at") @db.Timestamptz(3)
+  checkOutAt      DateTime?        @map("check_out_at") @db.Timestamptz(3)
+  workingMinutes  Int?             @map("working_minutes")
+  overtimeMinutes Int?             @map("overtime_minutes")
+  lateMinutes     Int?             @map("late_minutes")
+  status          AttendanceStatus
+  source          AttendanceSource
+  note            String?          @db.Text
+  /// Null for rows the system generated — there is no acting human to name
+  /// (DOCUMENT 12 "source values": `system`).
+  createdBy       String?          @map("created_by") @db.Uuid
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  createdByUser User?    @relation("attendance_created_by", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  corrections AttendanceCorrectionRequest[]
+
+  @@unique([employeeId, date])
+  @@index([companyId, date])
+  @@index([employeeId, date])
+  @@index([companyId, status, date])
+  @@map("attendance_records")
+}
+
+/// DOCUMENT 06 §3.11, DOCUMENT 12. `attendanceRecordId` is nullable because
+/// the day being corrected may have no record at all — the "employee forgot
+/// to check in" case DOCUMENT 12 validation sends here.
+///
+/// `attachment_id` (DOCUMENT 06 §3.11) is **not** here: attachments are
+/// DOCUMENT 08 §4.14 and no phase has built them. Same reasoning as
+/// `leave_request_id` above.
+model AttendanceCorrectionRequest {
+  id                 String           @id @db.Uuid
+  companyId          String           @map("company_id") @db.Uuid
+  employeeId         String           @map("employee_id") @db.Uuid
+  attendanceRecordId String?          @map("attendance_record_id") @db.Uuid
+  date               DateTime         @db.Date
+  requestedCheckIn   DateTime?        @map("requested_check_in") @db.Timestamptz(3)
+  requestedCheckOut  DateTime?        @map("requested_check_out") @db.Timestamptz(3)
+  requestedWorkMode  WorkMode?        @map("requested_work_mode")
+  reason             String           @db.Text
+  status             CorrectionStatus @default(pending)
+  reviewedBy         String?          @map("reviewed_by") @db.Uuid
+  reviewedAt         DateTime?        @map("reviewed_at") @db.Timestamptz(3)
+  reviewNote         String?          @map("review_note") @db.Text
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  attendanceRecord AttendanceRecord? @relation(fields: [attendanceRecordId], references: [id], onDelete: SetNull)
+  reviewer         User?             @relation("correction_reviewed_by", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status, date])
+  @@index([employeeId, date])
+  @@map("attendance_correction_requests")
+}

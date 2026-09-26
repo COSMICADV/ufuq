@@ -1,0 +1,36 @@
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+.expo/
+coverage/
+*.tsbuildinfo
+
+# Environment files — every variant except the documented example (DOCUMENT 20 §11)
+.env
+.env.*
+!.env.example
+
+# Keys and certificates — never in source control
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+*.mobileprovision
+
+.DS_Store
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+.docker-data/
+
+# Local-only tooling
+.claude/settings.local.json
+.idea/
+.vscode/
+*.swp
+.pnpm-store/

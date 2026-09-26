@@ -1,0 +1,45 @@
+{
+  "name": "@ufuq/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "prisma"
+  ],
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit --incremental false && tsc -p prisma/tsconfig.json --noEmit --incremental false",
+    "lint": "eslint src prisma/seed.ts test",
+    "test": "prisma generate && vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "uuidv7": "1.2.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-socket": "0.2.11",
+    "@types/node": "22.7.9",
+    "@ufuq/auth": "workspace:*",
+    "@ufuq/eslint-config": "workspace:*",
+    "@ufuq/tsconfig": "workspace:*",
+    "pg": "8.13.1",
+    "prisma": "6.19.3",
+    "tsx": "4.23.13",
+    "typescript": "5.6.3",
+    "vitest": "2.1.3"
+  }
+}

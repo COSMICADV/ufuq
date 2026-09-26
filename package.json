@@ -1,0 +1,36 @@
+{
+  "name": "ufuq",
+  "private": true,
+  "version": "0.1.0",
+  "description": "أُفق (Ufuq) ERP — monorepo root.",
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "node scripts/verify-foundation.mjs",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v",
+    "db:migrate": "pnpm --filter @ufuq/db run prisma:migrate:deploy",
+    "db:seed": "pnpm --filter @ufuq/db run prisma:seed",
+    "db:setup": "pnpm run db:migrate && pnpm run db:seed",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist apps/*/node_modules apps/*/dist apps/web/.next apps/mobile/.expo .turbo && find . -name \"*.tsbuildinfo\" -not -path \"./node_modules/*\" -delete"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.13.0",
+    "eslint": "9.13.0",
+    "prettier": "3.3.3",
+    "turbo": "2.2.3",
+    "typescript": "5.6.3",
+    "typescript-eslint": "8.11.0",
+    "vitest": "2.1.3"
+  }
+}

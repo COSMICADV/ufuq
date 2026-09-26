@@ -1,0 +1,10 @@
+{
+  "extends": "@ufuq/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["**/*.ts", "../src/**/*.ts"]
+}

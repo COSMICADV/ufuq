@@ -1,0 +1,1905 @@
+@import '@ufuq/design-tokens/tokens.css';
+
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--bg-page);
+}
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--font-body);
+  line-height: 1.6;
+}
+.language-switch {
+  display: flex;
+  justify-content: end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-block-end: 1px solid var(--border-subtle);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.showcase {
+  max-inline-size: 1440px;
+  margin-inline: auto;
+  padding: var(--space-10) var(--space-8);
+}
+.showcase__intro {
+  margin-block-end: var(--space-8);
+}
+.showcase h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  line-height: 1.3;
+}
+.showcase h2 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-h2);
+  line-height: 1.35;
+}
+.showcase p {
+  color: var(--text-secondary);
+}
+.showcase__section {
+  margin-block-start: var(--space-8);
+}
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+.button {
+  min-block-size: 40px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding-inline: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+.button:hover {
+  filter: brightness(0.92);
+}
+.button:active {
+  filter: brightness(0.86);
+}
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  filter: none;
+}
+.button--sm {
+  min-block-size: 32px;
+}
+.button--lg {
+  min-block-size: 48px;
+}
+.button--primary {
+  background: var(--green-primary-600);
+  color: var(--text-on-primary);
+}
+.button--secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.button--ghost {
+  background: transparent;
+  color: var(--green-primary-600);
+}
+.button--destructive {
+  background: var(--danger-text);
+  color: var(--text-on-primary);
+}
+.button--destructive-ghost {
+  background: transparent;
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.spinner {
+  inline-size: 1em;
+  block-size: 1em;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin 700ms linear infinite;
+}
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+.field__label {
+  font-weight: 600;
+}
+.field__required,
+.field__error {
+  color: var(--danger-text);
+}
+.field__helper {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.input {
+  inline-size: 100%;
+  min-block-size: 40px;
+  padding-inline: var(--space-3);
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+.input:focus {
+  border-color: var(--green-primary-600);
+}
+.input:disabled {
+  background: var(--bg-disabled);
+  color: var(--text-tertiary);
+}
+.textarea {
+  min-block-size: 96px;
+  padding-block: var(--space-2);
+  resize: vertical;
+}
+.search {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+.icon-button {
+  min-inline-size: 40px;
+  min-block-size: 40px;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+.toggle,
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+.toggle input {
+  position: absolute;
+  opacity: 0;
+}
+.toggle > span:first-of-type {
+  inline-size: 40px;
+  block-size: 24px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  position: relative;
+}
+.toggle > span:first-of-type::after {
+  content: '';
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 3px;
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  transition: transform 120ms ease-out;
+}
+.toggle input:checked + span {
+  background: var(--green-primary-600);
+}
+.toggle input:checked + span::after {
+  transform: translateX(calc(16px * var(--direction-multiplier, 1)));
+}
+.choice input {
+  accent-color: var(--green-primary-600);
+  inline-size: 18px;
+  block-size: 18px;
+}
+.file-upload {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  text-align: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+  cursor: pointer;
+}
+.file-upload input {
+  max-inline-size: 100%;
+}
+.file-upload small {
+  color: var(--text-secondary);
+}
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card__header {
+  min-block-size: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.card__header h3 {
+  margin: 0;
+  font-size: var(--font-h3);
+}
+.card__body {
+  padding: var(--space-5);
+}
+.kpi__label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  font-weight: 500;
+}
+.kpi__value {
+  display: block;
+  margin-block: var(--space-1);
+  font-size: var(--font-kpi);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.kpi__delta {
+  color: var(--green-primary-500);
+  font-size: var(--font-caption);
+}
+.badge {
+  display: inline-flex;
+  min-block-size: 24px;
+  align-items: center;
+  padding-inline: var(--space-2);
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-caption);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge--success {
+  color: var(--success-text);
+  background: var(--success-bg);
+  border-color: var(--success-border);
+}
+.badge--warning {
+  color: var(--warning-text);
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+}
+.badge--danger {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+}
+.badge--info {
+  color: var(--info-text);
+  background: var(--info-bg);
+  border-color: var(--info-border);
+}
+.badge--wfh {
+  color: var(--wfh-text);
+  background: var(--wfh-bg);
+  border-color: var(--wfh-border);
+}
+.badge--cancelled {
+  color: var(--text-secondary);
+  background: var(--cancelled-bg);
+  border-color: var(--border-default);
+}
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+table {
+  min-inline-size: 600px;
+  inline-size: 100%;
+  border-collapse: collapse;
+  background: var(--bg-surface);
+}
+th {
+  position: sticky;
+  inset-block-start: 0;
+  min-block-size: 44px;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  text-align: start;
+}
+th,
+td {
+  padding-inline: var(--space-4);
+  border-block-end: 1px solid var(--border-subtle);
+}
+td {
+  block-size: 52px;
+}
+tbody tr:hover {
+  background: var(--sage-100);
+}
+td:last-child,
+th:last-child {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+.progress > span {
+  block-size: 8px;
+  border-radius: var(--radius-full);
+  background: var(--sage-200);
+  overflow: hidden;
+}
+.progress > span::after {
+  content: '';
+  display: block;
+  block-size: 100%;
+  background: var(--green-primary-600);
+  border-radius: inherit;
+}
+.progress small {
+  font-variant-numeric: tabular-nums;
+}
+.alert {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-inline-start: 3px solid;
+  border-radius: var(--radius-md);
+}
+.alert--success {
+  background: var(--success-bg);
+  border-color: var(--success-text);
+}
+.alert--warning {
+  background: var(--warning-bg);
+  border-color: var(--warning-text);
+}
+.alert--danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-text);
+}
+.alert--info {
+  background: var(--info-bg);
+  border-color: var(--info-text);
+}
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-12);
+  text-align: center;
+}
+.empty-state > span {
+  color: var(--sage-300);
+  font-size: 96px;
+  line-height: 1;
+}
+.empty-state h4,
+.empty-state p {
+  margin: 0;
+}
+.skeleton {
+  display: grid;
+  gap: var(--space-2);
+}
+.skeleton span {
+  block-size: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--sage-100), var(--bg-surface-raised), var(--sage-100));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.skeleton span:nth-child(2) {
+  inline-size: 80%;
+}
+.skeleton span:nth-child(3) {
+  inline-size: 60%;
+}
+.modal-overlay {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgb(27 46 18 / 0.45);
+}
+.modal {
+  inline-size: min(100%, 560px);
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+}
+.modal header,
+.modal footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.modal h2 {
+  margin: 0;
+}
+.modal footer {
+  justify-content: end;
+  margin-block-start: var(--space-6);
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 360px;
+  inline-size: 248px;
+  padding: var(--space-5) var(--space-3);
+  background: var(--green-deep-800);
+  border-radius: var(--radius-lg);
+  color: var(--text-on-dark);
+}
+.sidebar nav {
+  display: grid;
+  gap: var(--space-2);
+  margin-block: var(--space-6);
+}
+.sidebar a {
+  min-block-size: 44px;
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-on-dark-muted);
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  text-decoration: none;
+}
+.sidebar a:hover {
+  background: var(--green-deep-700);
+  color: var(--text-on-dark);
+}
+.sidebar a.is-active {
+  background: var(--green-primary-600);
+  color: var(--text-on-primary);
+}
+.sidebar small {
+  margin-block-start: auto;
+  color: var(--text-on-dark-muted);
+}
+.app-header {
+  min-block-size: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-inline: var(--space-5);
+  background: var(--bg-surface);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.app-header .search {
+  max-inline-size: 320px;
+}
+:dir(rtl) {
+  --direction-multiplier: -1;
+}
+.ltr-value {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+@media (max-width: 639px) {
+  .showcase {
+    padding: var(--space-6) var(--space-4);
+  }
+  .showcase h1 {
+    font-size: 24px;
+  }
+  .showcase h2 {
+    font-size: 20px;
+  }
+  .card__body,
+  .card__header {
+    padding: var(--space-4);
+  }
+  .component-grid {
+    gap: var(--space-4);
+  }
+  .modal-overlay {
+    padding: 0;
+    place-items: end stretch;
+  }
+  .modal {
+    inline-size: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+  .sidebar {
+    inline-size: 100%;
+    min-block-size: auto;
+  }
+  .sidebar nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .app-header {
+    padding-inline: var(--space-4);
+  }
+  .app-header .search {
+    max-inline-size: 180px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Phase 4 — company structure settings screens.
+
+   Written entirely in logical properties (`inline-start`, `block-end`,
+   `padding-inline`), so the Arabic and English layouts are one layout read in
+   two directions rather than two stylesheets — DOCUMENT 10 §9.1 and
+   DOCUMENT 27 RULE 24. There is no `left`, `right`, `margin-left` or
+   `text-align: left` anywhere below.
+
+   Breakpoints follow DOCUMENT 22: mobile 320–639, tablet 640–1023, laptop
+   1024–1439, desktop 1440+. Settings is a desktop-primary module there, so
+   the wide layout is the one described first and the narrow ones adapt.
+--------------------------------------------------------------------------- */
+
+.settings {
+  max-inline-size: 1440px;
+  margin-inline: auto;
+  padding: var(--space-8);
+  display: grid;
+  gap: var(--space-6);
+}
+.settings__breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-tertiary);
+  font-size: var(--font-body-sm);
+}
+/* The separator is a slash, which is direction-neutral; the list order is what
+   carries the direction, and flexbox already reverses it under `dir="rtl"`. */
+.settings__breadcrumb li + li::before {
+  content: '/';
+  margin-inline-end: var(--space-2);
+  color: var(--border-strong);
+}
+.settings__breadcrumb li[aria-current] {
+  color: var(--text-secondary);
+}
+
+.settings__body {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+.settings__sections {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  position: sticky;
+  inset-block-start: var(--space-4);
+}
+.settings__sections a {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--font-body);
+}
+.settings__sections a:hover {
+  background: var(--sage-100);
+  color: var(--text-primary);
+}
+.settings__sections a.is-active {
+  background: var(--green-primary-600);
+  color: var(--text-on-primary);
+  font-weight: 600;
+}
+
+.settings__content {
+  display: grid;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+.settings__heading h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  line-height: 1.3;
+}
+.settings__heading p {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  max-inline-size: 70ch;
+}
+
+.state-block {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+/* Always in the DOM, empty until there is something to announce: a live region
+   added at the moment of the message is not reliably read out. */
+.state-live:empty {
+  display: none;
+}
+
+.settings-form {
+  display: grid;
+  /* DOCUMENT 11 §4: one column by default; two only for short, related pairs,
+     which at this width is what the grid produces for the short fields. */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+.settings-form__summary,
+.settings-form__full,
+.settings-form__readonly,
+.settings-form__actions {
+  grid-column: 1 / -1;
+}
+.settings-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.settings-form__readonly dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border-subtle);
+  font-size: var(--font-body-sm);
+}
+.settings-form__readonly dt {
+  color: var(--text-tertiary);
+}
+.settings-form__readonly dd {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* DOCUMENT 10 §9.7 — a Latin token inside Arabic text keeps its own direction
+   and is isolated so the surrounding paragraph cannot reorder it. */
+.ltr-value {
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+.row-actions {
+  display: inline-flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  font-size: var(--font-body-sm);
+  color: var(--text-secondary);
+}
+.pagination a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.pagination a.is-disabled {
+  color: var(--text-tertiary);
+  background: var(--bg-disabled);
+  pointer-events: none;
+}
+
+.week-editor {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: var(--space-4);
+}
+.week-editor legend {
+  padding-inline: var(--space-2);
+  font-size: var(--font-h4);
+  font-weight: 600;
+}
+.week-editor__day {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 160px) minmax(0, 160px);
+  gap: var(--space-3);
+  align-items: end;
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.week-editor__day:last-of-type {
+  border-block-end: none;
+  padding-block-end: 0;
+}
+.week-editor__day .field__error {
+  grid-column: 1 / -1;
+}
+.week-editor__time {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/* The column label each cell carries for card mode. Hidden here means absent
+   from the accessibility tree too, which is correct while the `<th>` is doing
+   the associating. */
+.cell-label {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /* DOCUMENT 22: below 1024px a data table becomes stacked cards. Each cell
+     shows its own label, which is why `.cell-label` becomes visible here —
+     the header row is no longer beside the value to explain it. */
+  .settings__content .table-scroll {
+    overflow-x: visible;
+    border: none;
+  }
+  .settings__content table {
+    min-inline-size: 0;
+    background: transparent;
+  }
+  .settings__content thead {
+    /* Visually and semantically removed: in card mode every value states its
+       own label, so a header row would be read twice. */
+    display: none;
+  }
+  .settings__content tr {
+    display: block;
+    margin-block-end: var(--space-3);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+  }
+  .settings__content tbody tr:hover {
+    background: var(--bg-surface);
+  }
+  .settings__content td {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: var(--space-3);
+    align-items: center;
+    block-size: auto;
+    min-block-size: 44px;
+    padding-inline: 0;
+    border-block-end: none;
+  }
+  .settings__content td:last-child {
+    text-align: start;
+  }
+  .cell-label {
+    display: block;
+    color: var(--text-tertiary);
+    font-size: var(--font-caption);
+  }
+}
+
+@media (max-width: 1023px) {
+  .settings__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+  .settings__sections {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+  }
+  .week-editor__day {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .week-editor__day > .toggle {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .settings {
+    padding: var(--space-4);
+  }
+  .settings-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-form__actions .button {
+    inline-size: 100%;
+  }
+  /* DOCUMENT 22, touch targets: 44px minimum, 8px apart. */
+  .row-actions .button {
+    min-block-size: 44px;
+  }
+  .week-editor__day {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pagination {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Modal sizing — DOCUMENT 22, "Modals".
+
+   Two additions to the shared modal, both required by DOCUMENT 22 and both
+   first exercised by Phase 4's forms (the week editor is seven days tall):
+
+     1. A height bound and its own scroll. Without it a form taller than the
+        viewport simply cannot be reached — the overlay is `position: fixed`,
+        so the page behind it does not scroll either.
+     2. On mobile, DOCUMENT 22 specifies a full-screen sheet rather than a
+        centred card.
+
+   Additive: nothing that fits on screen today renders differently.
+--------------------------------------------------------------------------- */
+.modal {
+  max-block-size: calc(100dvh - var(--space-12));
+  overflow-y: auto;
+  /* Scrolling to the end of a long form must not then scroll the page behind. */
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 639px) {
+  .modal-overlay {
+    padding: 0;
+    place-items: stretch;
+  }
+  .modal {
+    inline-size: 100%;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    border-radius: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch targets — DOCUMENT 22, "TOUCH TARGETS": "Minimum 44×44px on touch
+   devices."
+
+   The base control height is 40px, which is right for a pointer and two
+   pixels short for a thumb. `pointer: coarse` is the condition DOCUMENT 22
+   actually describes — a touch device — rather than a width, so a touchscreen
+   laptop gets the larger target and a narrow desktop window does not need to.
+--------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .button,
+  .icon-button,
+  .input {
+    min-block-size: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Phase 5 — employees screens and the invitation acceptance page.
+
+   Logical properties only (DOCUMENT 10 §9.1, DOCUMENT 27 RULE 24), tokens
+   only (RULES 22–23), DOCUMENT 22 breakpoints. Employee management is
+   desktop-primary and "usable" on mobile; the acceptance page is a single
+   narrow card at every width.
+--------------------------------------------------------------------------- */
+
+.employees {
+  max-inline-size: 1440px;
+  margin-inline: auto;
+  padding: var(--space-8);
+}
+.employees__content {
+  display: grid;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+a.button {
+  text-decoration: none;
+}
+
+.page-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-tertiary);
+  font-size: var(--font-body-sm);
+}
+.page-breadcrumb li + li::before {
+  content: '/';
+  margin-inline-end: var(--space-2);
+  color: var(--border-strong);
+}
+.page-breadcrumb a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.page-breadcrumb a:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+.page-breadcrumb li[aria-current] {
+  color: var(--text-secondary);
+}
+
+.page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.page-heading h1 {
+  margin: 0;
+  font-size: var(--font-h1);
+  line-height: 1.3;
+}
+.page-heading p {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  max-inline-size: 70ch;
+}
+
+/* DOCUMENT 22 "Filters": inline on desktop, wrapping on tablet, a sheet on
+   mobile behind a button that shows the active count. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.filter-bar__search {
+  flex: 1 1 260px;
+  min-inline-size: 0;
+}
+.filter-bar__inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+.filter-bar__inline .field {
+  min-inline-size: 160px;
+}
+.filter-bar__toggle {
+  display: none;
+}
+
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.person:hover span:last-child {
+  text-decoration: underline;
+}
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 36px;
+  block-size: 36px;
+  border-radius: var(--radius-full);
+  background: var(--sage-200);
+  color: var(--green-primary-700);
+  font-size: var(--font-caption);
+  font-weight: 700;
+}
+.avatar--lg {
+  inline-size: 64px;
+  block-size: 64px;
+  font-size: var(--font-h3);
+}
+
+.profile-header .card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: var(--space-6);
+  align-items: start;
+}
+.profile-header__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.profile-header__identity h1 {
+  margin: 0;
+  font-size: var(--font-h2);
+  line-height: 1.35;
+}
+.profile-header__code {
+  margin: 0 0 var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-body-sm);
+}
+.profile-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--space-2);
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+.detail-list dt {
+  color: var(--text-tertiary);
+  font-size: var(--font-caption);
+  font-weight: 500;
+}
+.detail-list dd {
+  margin: var(--space-1) 0 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.detail-list a {
+  color: var(--green-primary-600);
+}
+
+/* DOCUMENT 04 B4, mobile: "tabs become a horizontally scrollable segmented
+   control" — the same strip scrolls at every width, so nothing is hidden. */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  border-block-end: 1px solid var(--border-default);
+}
+.tabs a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  margin-block-end: -1px;
+  padding-inline: var(--space-4);
+  border-block-end: 2px solid transparent;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tabs a:hover {
+  color: var(--text-primary);
+}
+.tabs a.is-active {
+  border-block-end-color: var(--green-primary-600);
+  color: var(--green-primary-600);
+  font-weight: 600;
+}
+.tab-panel {
+  min-inline-size: 0;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+.profile-grid .card__body {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.employee-form {
+  display: grid;
+  gap: var(--space-6);
+}
+.form-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.form-section > summary {
+  min-block-size: 44px;
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--font-h4);
+  font-weight: 600;
+  cursor: pointer;
+}
+.form-section > .settings-form {
+  padding: 0 var(--space-5) var(--space-5);
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.auth-page {
+  min-block-size: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6) var(--space-4);
+}
+.auth-card {
+  inline-size: min(100%, 440px);
+}
+.auth-card .card__body {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+.auth-card__brand {
+  color: var(--green-deep-800);
+  font-size: var(--font-h3);
+}
+.auth-card__heading h1 {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-h2);
+  line-height: 1.35;
+}
+.auth-card__heading p {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+}
+.auth-form {
+  display: grid;
+  gap: var(--space-4);
+}
+.auth-form .button {
+  inline-size: 100%;
+}
+.auth-form__meter {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+
+/* DOCUMENT 04 A4 — the read-only company and employee name. A definition list
+   because that is what these are: a label and the value it names. Values are
+   isolated so an Arabic name in an English page, or the reverse, cannot drag
+   the punctuation around it. */
+.auth-identity {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+}
+.auth-identity div {
+  display: grid;
+  gap: var(--space-1);
+}
+.auth-identity dt {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.auth-identity dd {
+  margin: 0;
+  font-weight: 600;
+  unicode-bidi: isolate;
+}
+.auth-form__terms {
+  display: grid;
+  gap: var(--space-1);
+}
+.auth-form__terms-error {
+  margin: 0;
+  color: var(--danger-text);
+  font-size: var(--font-caption);
+}
+
+@media (max-width: 1023px) {
+  /* DOCUMENT 22: tables become cards below 1024px — with the fields that
+     matter for scanning, not every column. Cells marked secondary (employee
+     ID, manager) live on the profile instead. */
+  .employees-table .table-scroll {
+    overflow-x: visible;
+    border: none;
+  }
+  .employees-table table {
+    min-inline-size: 0;
+    background: transparent;
+  }
+  .employees-table thead {
+    display: none;
+  }
+  .employees-table tr {
+    display: block;
+    margin-block-end: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+  }
+  .employees-table tbody tr:hover {
+    background: var(--bg-surface);
+  }
+  .employees-table td {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: var(--space-3);
+    align-items: center;
+    block-size: auto;
+    min-block-size: 44px;
+    padding-inline: 0;
+    border-block-end: none;
+  }
+  .employees-table td:last-child {
+    text-align: start;
+  }
+  .employees-table td:has([data-card='secondary']) {
+    display: none;
+  }
+  .profile-header .card__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .profile-header__actions {
+    justify-content: start;
+  }
+}
+
+@media (max-width: 639px) {
+  .employees {
+    padding: var(--space-4);
+  }
+  .filter-bar__inline {
+    display: none;
+  }
+  .filter-bar__toggle {
+    display: block;
+  }
+  .page-heading > .button,
+  .profile-header__actions .button {
+    flex: 1 1 auto;
+  }
+  /* DOCUMENT 04 B3, mobile: "sticky save bar at the bottom". */
+  .form-actions {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 5;
+    margin-inline: calc(-1 * var(--space-4));
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-surface-raised);
+    border-block-start: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md);
+  }
+  .form-actions .button {
+    flex: 1 1 auto;
+  }
+}
+
+/* ===========================================================================
+   Phase 6 — attendance (DOCUMENT 04 B5–B7 and C1–C4, DOCUMENT 12, DOCUMENT 22)
+   Appended; nothing above is changed.
+
+   Logical properties throughout, so the same rules lay out right-to-left and
+   left-to-right without a mirrored stylesheet (DOCUMENT 27 RULE 24). Every
+   colour is a design token — the status tones below are built from the six
+   semantic pairs the design system already defines rather than new hues
+   (DOCUMENT 27 RULE 22).
+   =========================================================================== */
+
+.attendance-page {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+.attendance-page__content {
+  display: grid;
+  gap: var(--space-5);
+}
+.attendance-tabs ul {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+.attendance-tabs a {
+  display: inline-block;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.attendance-tabs a.is-active {
+  background: var(--bg-surface-raised);
+  color: var(--green-deep-800);
+  font-weight: 600;
+}
+
+/* --- status tones ------------------------------------------------------- */
+.attendance-chip,
+.attendance-mode {
+  display: inline-block;
+  padding-block: 2px;
+  padding-inline: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  white-space: nowrap;
+}
+.attendance-chip--present,
+.attendance-chip--approved {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+.attendance-chip--late,
+.attendance-chip--half-day,
+.attendance-chip--pending {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+.attendance-chip--absent,
+.attendance-chip--rejected {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.attendance-chip--leave,
+.attendance-chip--holiday,
+.attendance-chip--weekend,
+.attendance-chip--cancelled {
+  background: var(--info-bg);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+.attendance-mode--office {
+  background: var(--info-bg);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+.attendance-mode--wfh {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+.attendance-muted {
+  color: var(--text-secondary);
+}
+
+.attendance-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attendance-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* --- the check-in card (DOCUMENT 04 C1, DOCUMENT 12 mobile) ------------- */
+.attendance-card .card__body {
+  display: grid;
+  gap: var(--space-4);
+}
+.attendance-card__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.attendance-card__header h2 {
+  margin: 0;
+  font-size: var(--font-h3);
+}
+.attendance-card__header p {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.attendance-card__times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: 0;
+}
+.attendance-card__times dt {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.attendance-card__times dd {
+  margin: 0;
+  font-size: var(--font-h3);
+  unicode-bidi: isolate;
+}
+/* DOCUMENT 12 "MOBILE BEHAVIOUR": two large buttons, side by side, at least
+   56px tall — the primary action of the most-used screen in the product. */
+.attendance-card__modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.attendance-card__modes .button,
+.attendance-card__out {
+  min-block-size: 56px;
+  inline-size: 100%;
+}
+
+/* --- month stepper and tables ------------------------------------------ */
+.attendance-month__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.attendance-month__header h2 {
+  margin: 0;
+  font-size: var(--font-h3);
+}
+.attendance-month__stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.attendance-month .card__body,
+.attendance-history .card__body,
+.attendance-matrix .card__body,
+.attendance-board .card__body,
+.attendance-corrections .card__body,
+.attendance-correction .card__body {
+  display: grid;
+  gap: var(--space-4);
+}
+.attendance-table small {
+  display: block;
+  color: var(--text-secondary);
+  unicode-bidi: isolate;
+}
+.attendance-table td[dir='ltr'] {
+  unicode-bidi: isolate;
+}
+
+.attendance-board__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+.attendance-board__filters label {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+
+/* --- the monthly matrix (DOCUMENT 04 B6) -------------------------------- */
+.attendance-matrix__scroll table {
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+/* The frozen employee column B6 asks for. `inset-inline-start` rather than
+   `left`, so the column freezes on the correct side in both directions. */
+.attendance-matrix__name {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--bg-surface);
+  text-align: start;
+  white-space: nowrap;
+  padding-inline-end: var(--space-3);
+}
+.attendance-matrix__cell {
+  inline-size: 18px;
+  block-size: 24px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-disabled);
+}
+.attendance-matrix__cell--present {
+  background: var(--success-border);
+}
+.attendance-matrix__cell--late,
+.attendance-matrix__cell--half-day,
+.attendance-matrix__cell--pending {
+  background: var(--warning-border);
+}
+.attendance-matrix__cell--absent {
+  background: var(--danger-border);
+}
+.attendance-matrix__cell--leave,
+.attendance-matrix__cell--holiday,
+.attendance-matrix__cell--weekend {
+  background: var(--info-border);
+}
+.attendance-matrix__single {
+  display: none;
+}
+.attendance-matrix__days {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attendance-matrix__days li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.attendance-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+.attendance-legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attendance-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.attendance-swatch {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 3px;
+  background: var(--bg-disabled);
+}
+.attendance-swatch--present {
+  background: var(--success-border);
+}
+.attendance-swatch--late,
+.attendance-swatch--half-day,
+.attendance-swatch--pending {
+  background: var(--warning-border);
+}
+.attendance-swatch--absent {
+  background: var(--danger-border);
+}
+.attendance-swatch--leave,
+.attendance-swatch--holiday,
+.attendance-swatch--weekend {
+  background: var(--info-border);
+}
+
+/* --- the month calendar (DOCUMENT 04 C3) -------------------------------- */
+.attendance-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
+}
+.attendance-calendar__head {
+  padding-block: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  text-align: center;
+}
+.attendance-calendar__pad {
+  min-block-size: 44px;
+}
+.attendance-calendar__day {
+  min-block-size: 44px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-disabled);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.attendance-calendar__day.is-selected {
+  outline: 2px solid var(--green-primary-600);
+  outline-offset: 1px;
+}
+.attendance-calendar__day--present {
+  background: var(--success-bg);
+}
+.attendance-calendar__day--late,
+.attendance-calendar__day--half-day,
+.attendance-calendar__day--pending {
+  background: var(--warning-bg);
+}
+.attendance-calendar__day--absent {
+  background: var(--danger-bg);
+}
+.attendance-calendar__day--leave,
+.attendance-calendar__day--holiday,
+.attendance-calendar__day--weekend {
+  background: var(--info-bg);
+}
+.attendance-calendar__detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+}
+
+/* --- correction comparison (DOCUMENT 04 B7, C4) ------------------------- */
+.attendance-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+.attendance-compare h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-body);
+}
+.attendance-details {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+.attendance-detail dt {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.attendance-detail dd {
+  margin: 0;
+  unicode-bidi: isolate;
+}
+.attendance-correction__current {
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+}
+.attendance-correction__current h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-body);
+}
+.attendance-correction__form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* ---------------------------------------------------------------------------
+   DOCUMENT 22 — below 1024px the wide tables become cards, and the matrix is
+   replaced rather than shrunk (DOCUMENT 04 B6 says so in as many words).
+   --------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .attendance-table .table-scroll,
+  .attendance-table {
+    overflow-x: visible;
+    border: none;
+  }
+  .attendance-table table {
+    min-inline-size: 0;
+    background: transparent;
+  }
+  .attendance-table thead {
+    display: none;
+  }
+  .attendance-table tr {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-end: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+  }
+  .attendance-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    border: none;
+  }
+  .attendance-table td::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: var(--font-caption);
+  }
+  .attendance-table td:empty {
+    display: none;
+  }
+
+  .attendance-matrix__scroll {
+    display: none;
+  }
+  .attendance-matrix__single {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .attendance-compare {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .attendance-page {
+    padding: var(--space-4);
+  }
+  .attendance-board__filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .attendance-card__times {
+    gap: var(--space-4);
+  }
+}
+
+/* ===========================================================================
+   Audit log — DOCUMENT 21 "UI", /admin/settings/audit-log
+   Appended; nothing above is changed. Logical properties only, so the same
+   rules lay out right-to-left and left-to-right (DOCUMENT 27 RULE 24); design
+   tokens only (DOCUMENT 27 RULE 22).
+   =========================================================================== */
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+.audit-filters__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.audit-filters__active {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.audit-log {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.audit-entry {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.audit-entry:last-child {
+  border-block-end: 0;
+}
+.audit-entry__sentence {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.audit-entry__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+.audit-entry__details summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.audit-entry__details[open] summary {
+  margin-block-end: var(--space-2);
+}
+.audit-entry__details th[scope='row'] {
+  text-align: start;
+  font-weight: 500;
+}
+.audit-entry__technical {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin-block: var(--space-3) 0;
+  font-size: var(--font-caption);
+}
+.audit-entry__technical dt {
+  color: var(--text-secondary);
+}
+.audit-entry__technical dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.audit-value--empty {
+  color: var(--text-secondary);
+}
+
+/* Employee history panel — DOCUMENT 21 "UI", on the profile overview. */
+.employee-history {
+  margin-block-start: var(--space-5);
+}
