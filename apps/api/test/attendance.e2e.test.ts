@@ -102,6 +102,7 @@ function testEnv(databaseUrl: string): Env {
       accessKeyId: 'unused',
       secretAccessKey: 'unused',
       forcePathStyle: true,
+      maxUploadBytes: 10 * 1024 * 1024,
     },
     mail: {
       smtpHost: 'unused.invalid',

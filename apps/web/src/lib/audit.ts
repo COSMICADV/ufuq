@@ -59,6 +59,19 @@ export const AUDIT_ACTIONS = [
   'attendance.correction_approved',
   'attendance.correction_rejected',
   'attendance.generated_by_system',
+  'task.created',
+  'task.updated',
+  'task.reassigned',
+  'task.deadline_changed',
+  'task.status_changed',
+  'task.cancelled',
+  'task.deleted',
+  'task.reopened',
+  'checklist.item_added',
+  'checklist.item_deleted',
+  'attachment.uploaded',
+  'attachment.deleted',
+  'attachment.accessed',
 ] as const;
 
 /** The record kinds the product audits today — the entity-type filter's options. */
@@ -71,6 +84,8 @@ export const AUDIT_ENTITY_TYPES = [
   'employee',
   'attendance_record',
   'attendance_correction_request',
+  'task',
+  'attachment',
 ] as const;
 
 /** Translation key for an action — dots are the catalogue's path separator. */

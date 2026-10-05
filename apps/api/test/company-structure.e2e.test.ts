@@ -89,6 +89,7 @@ function testEnv(databaseUrl: string): Env {
       accessKeyId: 'unused',
       secretAccessKey: 'unused',
       forcePathStyle: true,
+      maxUploadBytes: 10 * 1024 * 1024,
     },
     // Nothing in this suite sends mail; the transport is never contacted.
     mail: {

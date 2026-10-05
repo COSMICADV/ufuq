@@ -195,6 +195,32 @@ export async function fetchMany<T>(
   return { items: parsed.data, meta: parsed.meta };
 }
 
+/**
+ * A multipart upload — `POST /attachments` (DOCUMENT 08 §4.14). Separate from
+ * `send` because the body is `FormData`: the browser must write the
+ * `Content-Type` itself (it carries the multipart boundary), so the JSON
+ * header `buildHeaders` adds for a body is exactly what must be absent. The
+ * CSRF header is still sent, as on every mutating request (DOCUMENT 20 §6).
+ */
+export async function uploadForm<T>(
+  path: string,
+  form: FormData,
+  options: Pick<RequestOptions, 'locale' | 'signal'>,
+): Promise<T> {
+  const headers = buildHeaders('POST', options.locale, false, currentCsrfToken());
+  const response = await fetch(apiUrl(path), {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: form,
+    ...(options.signal ? { signal: options.signal } : {}),
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorBody(response));
+  }
+  return ((await response.json()) as { data: T }).data;
+}
+
 /** A request with no response body — the 204 on `DELETE /departments/{id}`. */
 export async function sendNoContent(path: string, options: RequestOptions): Promise<void> {
   const response = await send(path, options);
@@ -218,6 +244,9 @@ const KNOWN_ISSUES = new Set([
   'would_create_cycle',
   'incomplete_week',
   'end_before_start',
+  'not_active',
+  'too_large',
+  'unsupported_type',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

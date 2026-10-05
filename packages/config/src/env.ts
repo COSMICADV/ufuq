@@ -24,6 +24,11 @@ export interface Env {
     readonly accessKeyId: string;
     readonly secretAccessKey: string;
     readonly forcePathStyle: boolean;
+    /**
+     * Largest accepted upload, in bytes — DOCUMENT 20 §7: "10 MB per file,
+     * configurable". `STORAGE_MAX_UPLOAD_BYTES`, default 10 MiB.
+     */
+    readonly maxUploadBytes: number;
   };
   /**
    * SMTP for transactional authentication mail — the invitation email
@@ -124,6 +129,22 @@ function requirePort(raw: RawEnv, key: string, fallback: number, issues: string[
   return parsePort(value, key, issues) ?? fallback;
 }
 
+/** DOCUMENT 20 §7 — "10 MB per file, configurable". */
+export const DEFAULT_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** A whole number of at least 1, or the fallback when unset. */
+function requirePositiveInt(raw: RawEnv, key: string, fallback: number, issues: string[]): number {
+  const value = raw[key]?.trim();
+  if (!value) {
+    return fallback;
+  }
+  if (!/^\d+$/.test(value) || Number.parseInt(value, 10) < 1) {
+    issues.push(`${key} must be a whole number of at least 1`);
+    return fallback;
+  }
+  return Number.parseInt(value, 10);
+}
+
 /** A port with no sensible default — an SMTP relay's port is the operator's choice. */
 function requireExplicitPort(raw: RawEnv, key: string, issues: string[]): number {
   const value = raw[key]?.trim();
@@ -188,6 +209,12 @@ export function loadEnv(raw: RawEnv = process.env): Env {
       accessKeyId: requireString(raw, 'STORAGE_ACCESS_KEY_ID', issues),
       secretAccessKey: requireString(raw, 'STORAGE_SECRET_ACCESS_KEY', issues),
       forcePathStyle: (raw['STORAGE_FORCE_PATH_STYLE'] ?? 'true') === 'true',
+      maxUploadBytes: requirePositiveInt(
+        raw,
+        'STORAGE_MAX_UPLOAD_BYTES',
+        DEFAULT_MAX_UPLOAD_BYTES,
+        issues,
+      ),
     },
     mail: loadMail(raw, issues),
     apiPort: requirePort(raw, 'API_PORT', 4000, issues),

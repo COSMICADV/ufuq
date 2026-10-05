@@ -137,6 +137,29 @@ enum CorrectionStatus {
   @@map("correction_status")
 }
 
+/// DOCUMENT 06 §3.15, DOCUMENT 13 "Statuses". There is no `overdue`: it is
+/// derived from the deadline on read and can never be stored or set
+/// (DOCUMENT 13 rule 1).
+enum TaskStatus {
+  not_started
+  in_progress
+  completed
+  cancelled
+  on_hold
+
+  @@map("task_status")
+}
+
+/// DOCUMENT 06 §3.15, DOCUMENT 13 "Priorities".
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+
+  @@map("task_priority")
+}
+
 /// DOCUMENT 21 — only the "Authentication & access" action group ships in
 /// Phase 3. Every later phase adds its own values to this type in its own
 /// migration; this is not a preview of the full DOCUMENT 21 catalogue.
@@ -169,6 +192,19 @@ enum AuditAction {
   ATTENDANCE_CORRECTION_APPROVED  @map("attendance.correction_approved")
   ATTENDANCE_CORRECTION_REJECTED  @map("attendance.correction_rejected")
   ATTENDANCE_GENERATED_BY_SYSTEM  @map("attendance.generated_by_system")
+  TASK_CREATED                    @map("task.created")
+  TASK_UPDATED                    @map("task.updated")
+  TASK_REASSIGNED                 @map("task.reassigned")
+  TASK_DEADLINE_CHANGED           @map("task.deadline_changed")
+  TASK_STATUS_CHANGED             @map("task.status_changed")
+  TASK_CANCELLED                  @map("task.cancelled")
+  TASK_DELETED                    @map("task.deleted")
+  TASK_REOPENED                   @map("task.reopened")
+  CHECKLIST_ITEM_ADDED            @map("checklist.item_added")
+  CHECKLIST_ITEM_DELETED          @map("checklist.item_deleted")
+  ATTACHMENT_UPLOADED             @map("attachment.uploaded")
+  ATTACHMENT_DELETED              @map("attachment.deleted")
+  ATTACHMENT_ACCESSED             @map("attachment.accessed")
 
   @@map("audit_action")
 }
@@ -213,6 +249,10 @@ model Company {
   attendanceRecords  AttendanceRecord[]
   correctionRequests AttendanceCorrectionRequest[]
 
+  tasks Task[]
+
+  attachments Attachment[]
+
   @@index([status])
   @@map("companies")
 }
@@ -250,6 +290,7 @@ model Department {
   positions Position[]
   manager   Employee?    @relation("department_manager", fields: [managerEmployeeId], references: [id], onDelete: SetNull)
   employees Employee[]   @relation("employee_department")
+  tasks     Task[]
 
   // DOCUMENT 06 §3.4 states this unique constraint without a soft-delete
   // predicate, so it is written exactly as specified: a soft-deleted
@@ -408,6 +449,9 @@ model Employee {
   attendanceRecords  AttendanceRecord[]
   correctionRequests AttendanceCorrectionRequest[]
 
+  assignedTasks   Task[]
+  progressUpdates TaskProgressUpdate[]
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -524,6 +568,10 @@ model User {
   employee            Employee?
   attendanceCreated   AttendanceRecord[]            @relation("attendance_created_by")
   correctionsReviewed AttendanceCorrectionRequest[] @relation("correction_reviewed_by")
+  tasksCreated        Task[]                        @relation("task_created_by")
+  checklistCompleted  TaskChecklistItem[]           @relation("checklist_completed_by")
+  progressUpdates     TaskProgressUpdate[]          @relation("progress_update_created_by")
+  attachmentsUploaded Attachment[]                  @relation("attachment_uploaded_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -721,4 +769,130 @@ model AttendanceCorrectionRequest {
   @@index([companyId, status, date])
   @@index([employeeId, date])
   @@map("attendance_correction_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Tasks — Phase 7 (DOCUMENT 06 §3.15–3.17, DOCUMENT 13)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.15, DOCUMENT 13.
+///
+/// `progressPercent` is derived, never free-typed (DOCUMENT 06 §1.3): the
+/// service recomputes it from the checklist, or from the status when there is
+/// no checklist (OD-10, approved default — see docs/PHASE-7-STATUS.md).
+///
+/// `goal_id` (DOCUMENT 06 §3.15) is deliberately **not** here: it is a foreign
+/// key to `goals`, which Phase 8 creates. An unenforced UUID column now is the
+/// shortcut that never gets fixed — the reasoning that kept
+/// `attendance_records.leave_request_id` out of Phase 6.
+model Task {
+  id                 String       @id @db.Uuid
+  companyId          String       @map("company_id") @db.Uuid
+  title              String       @db.VarChar(255)
+  description        String?      @db.Text
+  assigneeEmployeeId String       @map("assignee_employee_id") @db.Uuid
+  departmentId       String?      @map("department_id") @db.Uuid
+  priority           TaskPriority
+  status             TaskStatus   @default(not_started)
+  startDate          DateTime?    @map("start_date") @db.Date
+  deadline           DateTime?    @db.Date
+  completedAt        DateTime?    @map("completed_at") @db.Timestamptz(3)
+  progressPercent    Decimal      @default(0) @map("progress_percent") @db.Decimal(5, 2)
+  createdBy          String       @map("created_by") @db.Uuid
+  cancelledReason    String?      @map("cancelled_reason") @db.Text
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// DOCUMENT 06 §6 — tasks are soft-deleted for reporting integrity.
+  deletedAt          DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  assignee      Employee    @relation(fields: [assigneeEmployeeId], references: [id], onDelete: Restrict)
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  createdByUser User        @relation("task_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  checklistItems  TaskChecklistItem[]
+  progressUpdates TaskProgressUpdate[]
+
+  @@index([companyId, status])
+  @@index([assigneeEmployeeId, status])
+  @@index([companyId, deadline])
+  @@map("tasks")
+}
+
+/// DOCUMENT 06 §3.16. No `company_id`: DOCUMENT 06 does not define one, and
+/// tenancy is reached through the parent task — the `work_schedule_days`
+/// pattern from Phase 4.
+model TaskChecklistItem {
+  id          String    @id @db.Uuid
+  taskId      String    @map("task_id") @db.Uuid
+  title       String    @db.VarChar(255)
+  isCompleted Boolean   @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+  /// The user who ticked it. Null while the item is open.
+  completedBy String?   @map("completed_by") @db.Uuid
+  position    Int
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  task            Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  completedByUser User? @relation("checklist_completed_by", fields: [completedBy], references: [id], onDelete: SetNull)
+
+  @@index([taskId, position])
+  @@map("task_checklist_items")
+}
+
+/// DOCUMENT 06 §3.17. Append-only (DOCUMENT 13 rule 9): the application role
+/// holds neither UPDATE nor DELETE on this table.
+///
+/// `employeeId` is the author's employee record and is nullable because an
+/// administrator account need not have one; `createdBy` (DOCUMENT 06 §1.6) is
+/// the acting user and is always present.
+model TaskProgressUpdate {
+  id                    String   @id @db.Uuid
+  taskId                String   @map("task_id") @db.Uuid
+  employeeId            String?  @map("employee_id") @db.Uuid
+  note                  String   @db.Text
+  progressPercentAtTime Decimal  @map("progress_percent_at_time") @db.Decimal(5, 2)
+  createdBy             String   @map("created_by") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  task          Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  createdByUser User      @relation("progress_update_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@map("task_progress_updates")
+}
+
+// ---------------------------------------------------------------------------
+// Attachments — Phase 7 addendum (DOCUMENT 06 §3.36, DOCUMENT 08 §4.14,
+// DOCUMENT 20 §7, AD-02)
+// ---------------------------------------------------------------------------
+
+/// One stored file. The bytes live in private S3-compatible storage under
+/// `stored_path` — a generated, company-namespaced, non-guessable key — and are
+/// only ever served through the authorization-checked `GET /attachments/{id}`.
+/// `original_name` is metadata, never a path (DOCUMENT 20 §4). `related_type` /
+/// `related_id` name the record the file belongs to, and that record's own
+/// scope rules decide who may see it; only `task` exists in Phase 7.
+model Attachment {
+  id           String    @id @db.Uuid
+  companyId    String    @map("company_id") @db.Uuid
+  uploadedBy   String    @map("uploaded_by") @db.Uuid
+  originalName String    @map("original_name") @db.VarChar(255)
+  storedPath   String    @unique @map("stored_path") @db.VarChar(255)
+  mimeType     String    @map("mime_type") @db.VarChar(127)
+  sizeBytes    Int       @map("size_bytes")
+  /// SHA-256 of the stored bytes, lowercase hex.
+  checksum     String    @db.Char(64)
+  relatedType  String    @map("related_type") @db.VarChar(50)
+  relatedId    String    @map("related_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  company  Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  uploader User    @relation("attachment_uploaded_by", fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([companyId, relatedType, relatedId])
+  @@map("attachments")
 }

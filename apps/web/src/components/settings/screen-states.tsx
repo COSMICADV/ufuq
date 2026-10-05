@@ -230,6 +230,11 @@ export function describeError(error: unknown, t: Translator): string {
       return t('error.last_active_admin');
     case 'MAIL_DELIVERY_FAILED':
       return t('error.mail_delivery_failed');
+    // Phase 7 — tasks (DOCUMENT 13 "Error states").
+    case 'INVALID_STATUS_TRANSITION':
+      return t('error.invalid_status_transition');
+    case 'TASK_HAS_OPEN_ITEMS':
+      return t('error.task_has_open_items');
     default:
       return t('state.error');
   }

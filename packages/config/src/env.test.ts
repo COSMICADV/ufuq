@@ -38,6 +38,19 @@ describe('loadEnv', () => {
     expect(env.webPort).toBe(3000);
   });
 
+  it('defaults the upload limit to 10 MB and accepts an override — DOCUMENT 20 §7', () => {
+    expect(loadEnv(valid).storage.maxUploadBytes).toBe(10 * 1024 * 1024);
+    expect(loadEnv({ ...valid, STORAGE_MAX_UPLOAD_BYTES: '5242880' }).storage.maxUploadBytes).toBe(
+      5_242_880,
+    );
+  });
+
+  it.each(['0', '-1', '10MB', '1.5'])('rejects STORAGE_MAX_UPLOAD_BYTES=%s', (value) => {
+    expect(issuesFor({ ...valid, STORAGE_MAX_UPLOAD_BYTES: value }).join(' ')).toMatch(
+      /STORAGE_MAX_UPLOAD_BYTES/,
+    );
+  });
+
   it('reports every missing variable at once', () => {
     try {
       loadEnv({ NODE_ENV: 'development' });

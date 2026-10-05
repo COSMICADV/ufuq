@@ -1903,3 +1903,571 @@ a.button {
 .employee-history {
   margin-block-start: var(--space-5);
 }
+
+/* ===========================================================================
+   Tasks — DOCUMENT 04 B8–B10 / C5–C6, DOCUMENT 13 "Mobile behaviour"
+   Appended; nothing above is changed. Logical properties only, so the same
+   rules lay out right-to-left and left-to-right (DOCUMENT 27 RULE 24); design
+   tokens only (DOCUMENT 27 RULE 22). Status and priority colours are the
+   existing `.badge` tones.
+   =========================================================================== */
+
+.tasks-page {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+.tasks-page__content {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+.tasks-back {
+  color: var(--green-deep-700);
+  font-weight: 600;
+}
+.tasks-muted {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+
+.tasks-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.tasks-view-toggle {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+.tasks-filters .toggle {
+  align-self: center;
+}
+
+.tasks-title-link {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.tasks-deadline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tasks-deadline--overdue .ltr-value {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+/* Progress — the bar for table rows, the ring for cards and the header. */
+.tasks-bar {
+  display: inline-grid;
+  grid-template-columns: minmax(64px, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 120px;
+}
+.tasks-bar__track {
+  display: block;
+  block-size: 8px;
+  border-radius: var(--radius-full);
+  background: var(--sage-200);
+  overflow: hidden;
+}
+.tasks-bar__fill {
+  display: block;
+  block-size: 100%;
+  background: var(--green-primary-600);
+  border-radius: inherit;
+}
+.tasks-bar small {
+  font-variant-numeric: tabular-nums;
+}
+.tasks-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 48px;
+  block-size: 48px;
+}
+.tasks-ring--lg {
+  inline-size: 88px;
+  block-size: 88px;
+}
+.tasks-ring svg {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  /* Start the arc at twelve o'clock. */
+  transform: rotate(-90deg);
+}
+.tasks-ring__track,
+.tasks-ring__value {
+  fill: none;
+  stroke-width: 4;
+}
+.tasks-ring__track {
+  stroke: var(--sage-200);
+}
+.tasks-ring__value {
+  stroke: var(--green-primary-600);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 200ms ease;
+}
+.tasks-ring__figure {
+  font-size: var(--font-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tasks-ring--lg .tasks-ring__figure {
+  font-size: var(--font-body);
+}
+
+/* Cards — the board and the employee's list. Full width, tappable. */
+.tasks-cards {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tasks-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: 72px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.tasks-card:hover {
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+.tasks-card:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.tasks-card__main {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.tasks-card__title {
+  overflow-wrap: anywhere;
+}
+.tasks-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tasks-count {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 28px;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The board — DOCUMENT 04 B8, columns = statuses. */
+.tasks-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-block-end: var(--space-2);
+}
+.tasks-board__column {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--bg-page);
+  border: 1px solid var(--border-subtle);
+}
+.tasks-board__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.tasks-board__header h2 {
+  margin: 0;
+  font-size: var(--font-h4);
+}
+
+/* The employee's grouped list — DOCUMENT 04 C5. */
+.tasks-groups {
+  display: grid;
+  gap: var(--space-6);
+}
+.tasks-group {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Detail — DOCUMENT 04 B9 / C6. */
+.tasks-detail {
+  display: grid;
+  gap: var(--space-5);
+}
+.tasks-detail__header .card__body {
+  display: grid;
+  gap: var(--space-4);
+}
+.tasks-detail__summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.tasks-detail__heading {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+.tasks-detail__heading h2 {
+  margin: 0;
+  font-size: var(--font-h2);
+  overflow-wrap: anywhere;
+}
+.tasks-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.tasks-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+.tasks-facts dt {
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.tasks-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.tasks-description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tasks-checklist {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tasks-checklist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.tasks-checklist li:last-child {
+  border-block-end: 0;
+}
+/* DOCUMENT 13: "large tap targets" — the whole row is the label. */
+.tasks-checklist__tick {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 48px;
+  cursor: pointer;
+}
+.tasks-checklist__tick input {
+  inline-size: 22px;
+  block-size: 22px;
+  flex: none;
+  accent-color: var(--green-primary-600);
+}
+.tasks-checklist li.is-done .tasks-checklist__tick span {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.tasks-builder {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.tasks-builder legend {
+  padding-inline: var(--space-2);
+  font-weight: 600;
+}
+.tasks-builder__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+.tasks-builder__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.tasks-builder__controls {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-1);
+}
+.tasks-builder__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+}
+.tasks-builder__add .field {
+  flex: 1 1 16rem;
+}
+
+.tasks-form__grid {
+  display: grid;
+  gap: var(--space-4);
+}
+.tasks-form__dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+}
+.tasks-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.tasks-sheet {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+.tasks-timeline {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tasks-timeline li {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--sage-300);
+}
+.tasks-timeline__note {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tasks-timeline__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+
+/* DOCUMENT 22: below 1024px the table becomes stacked cards. */
+@media (max-width: 1023px) {
+  .tasks-table .table-scroll {
+    overflow-x: visible;
+    border: none;
+  }
+  .tasks-table table {
+    min-inline-size: 0;
+    background: transparent;
+  }
+  .tasks-table thead {
+    display: none;
+  }
+  .tasks-table tr {
+    display: block;
+    margin-block-end: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+  }
+  .tasks-table tbody tr:hover {
+    background: var(--bg-surface);
+  }
+  .tasks-table td {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: var(--space-3);
+    align-items: center;
+    block-size: auto;
+    min-block-size: 44px;
+    padding-inline: 0;
+    border-block-end: none;
+  }
+  .tasks-table td:last-child {
+    text-align: start;
+  }
+  .tasks-table .cell-label {
+    display: block;
+    color: var(--text-tertiary);
+    font-size: var(--font-caption);
+  }
+}
+
+@media (max-width: 639px) {
+  .tasks-page {
+    padding: var(--space-4);
+  }
+  .tasks-toolbar > .button {
+    flex: 1 1 auto;
+  }
+  /* DOCUMENT 13: "the admin board view becomes one swipeable column at a
+     time — it is never shrunk to fit." Each column is the full width of the
+     screen and snaps into place. */
+  .tasks-board {
+    grid-auto-columns: 100%;
+    scroll-snap-type: inline mandatory;
+    overscroll-behavior-inline: contain;
+  }
+  .tasks-board__column {
+    scroll-snap-align: start;
+  }
+  .tasks-detail__summary {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .tasks-detail__actions .button {
+    flex: 1 1 auto;
+  }
+  /* DOCUMENT 13: "the progress-note composer is a bottom sheet". */
+  .tasks-sheet {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 40;
+    margin: 0;
+    padding: var(--space-5) var(--space-4);
+    border-start-start-radius: var(--radius-xl);
+    border-start-end-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tasks-ring__value {
+    transition: none;
+  }
+}
+
+/* Task filters — inline from 640px up; on a phone, a panel behind a button
+   that shows the active count (DOCUMENT 22 "Filters"). */
+.tasks-filters {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+.tasks-filters .field {
+  min-inline-size: 160px;
+}
+.tasks-filters__toggle {
+  display: none;
+}
+@media (max-width: 639px) {
+  .tasks-filters__toggle {
+    display: inline-flex;
+  }
+  .tasks-filters {
+    display: none;
+    flex-basis: 100%;
+  }
+  .tasks-filters.is-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Admin dashboard — DOCUMENT 04 B1. One column of independent widgets. */
+.dashboard-widgets {
+  display: grid;
+  gap: var(--space-5);
+}
+.tasks-reassignment .card__body {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* ===========================================================================
+   Task attachments — Phase 7 addendum (DOCUMENT 13, DOCUMENT 08 §4.14).
+   Appended; nothing above is changed. Logical properties and design tokens
+   only, so the list lays out right-to-left and left-to-right alike.
+   =========================================================================== */
+.task-attachments__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.task-attachments__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.task-attachments__item:last-child {
+  border-block-end: 0;
+}
+.task-attachments__file {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.task-attachments__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.task-attachments__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--font-caption);
+  color: var(--text-secondary);
+}
+.task-attachments__actions {
+  display: flex;
+  gap: var(--space-2);
+}

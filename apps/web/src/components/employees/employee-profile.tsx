@@ -29,6 +29,8 @@ import {
   SuccessNotice,
 } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
+import { EmployeeTasks } from '../tasks/employee-tasks';
+import { newTaskPath } from '../../lib/tasks';
 
 import { EmployeeHistory } from './employee-history';
 import { EmployeesBreadcrumb } from './employees-shell';
@@ -40,10 +42,13 @@ import type { SessionView } from './use-session';
  *
  * Header: avatar, name, ID, department, position, manager, status, joining
  * date, and the quick actions this phase can perform — edit, deactivate or
- * activate, and resend the invitation. "Assign task" and "assign goal" belong
- * to Phases 7 and 8 and are not rendered.
+ * activate, resend the invitation, and — from Phase 7 — "Assign task" for a
+ * caller holding `task.create` while the employee is active (the API refuses
+ * an inactive assignee and one outside the caller's scope again). "Assign
+ * goal" belongs to Phase 8 and is not rendered.
  *
- * Tabs: all seven. DOCUMENT 25 Phase 5 allows the later-phase tabs to be
+ * Tabs: all seven. The Tasks tab lists this employee's tasks (Phase 7,
+ * `employee-tasks.tsx`). DOCUMENT 25 Phase 5 allows the later-phase tabs to be
  * empty; each one shows the honest empty state for data that does not exist
  * yet, never sample data (DOCUMENT 27 RULE 26). Tab visibility follows
  * permissions, and a tab the caller may not see is refused here as well as by
@@ -147,6 +152,14 @@ function ProfileBody({
   const searchParams = useSearchParams();
   const name = fullName(employee);
   const permissions = session.permissions;
+  // DOCUMENT 04 B4 quick action. An inactive employee cannot be assigned work
+  // (DOCUMENT 13 validation), so the action is not offered for one.
+  const assignTask =
+    permissions.has('task.create') && employee.status === 'active' ? (
+      <Link className="button button--secondary button--md" href={newTaskPath(locale, employee.id)}>
+        {t('employees.assign_task')}
+      </Link>
+    ) : null;
   const tabs = visibleTabs(permissions);
 
   // A notice carried from the create/edit form (DOCUMENT 11 §2, success:
@@ -320,6 +333,7 @@ function ProfileBody({
         </dl>
 
         <div className="profile-header__actions">
+          {assignTask}
           {permissions.has('employee.update') ? (
             <Link
               className="button button--secondary button--md"
@@ -394,6 +408,14 @@ function ProfileBody({
               />
             ) : null}
           </>
+        ) : tab === 'tasks' ? (
+          <EmployeeTasks
+            locale={locale}
+            t={t}
+            employeeId={employee.id}
+            timeZone={session.timeZone}
+            assignAction={assignTask}
+          />
         ) : (
           <EmptyState
             title={t(`employees.${tab}_empty_title`)}

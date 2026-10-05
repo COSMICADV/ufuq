@@ -14,6 +14,7 @@ const env = {
     accessKeyId: 'key',
     secretAccessKey: 'secret',
     forcePathStyle: true,
+    maxUploadBytes: 10 * 1024 * 1024,
   },
   mail: {
     smtpHost: 'localhost',

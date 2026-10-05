@@ -39,7 +39,12 @@ export type FieldIssue =
   | 'not_found'
   | 'would_create_cycle'
   | 'incomplete_week'
-  | 'end_before_start';
+  | 'end_before_start'
+  // Phase 7 — DOCUMENT 13: "Assignee must be an active employee".
+  | 'not_active'
+  // Phase 7 attachments — DOCUMENT 20 §7: size and type allowlist.
+  | 'too_large'
+  | 'unsupported_type';
 
 @Injectable()
 export abstract class TenantScopedService {

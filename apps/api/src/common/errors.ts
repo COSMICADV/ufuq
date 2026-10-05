@@ -61,6 +61,12 @@ export const ERROR_CODES = {
   CORRECTION_NOT_PENDING: 'CORRECTION_NOT_PENDING',
   CORRECTION_ALREADY_PENDING: 'CORRECTION_ALREADY_PENDING',
   ATTENDANCE_DATE_IN_FUTURE: 'ATTENDANCE_DATE_IN_FUTURE',
+  // Phase 7 — tasks. DOCUMENT 13 "ERROR STATES": an invalid transition is a
+  // 422 that explains the allowed transitions (they travel in `fields`), and
+  // completing with open checklist items needs a confirmation naming the
+  // count (DOCUMENT 13 rule 6) — a 409 the client answers by confirming.
+  INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
+  TASK_HAS_OPEN_ITEMS: 'TASK_HAS_OPEN_ITEMS',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -82,6 +88,8 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   CORRECTION_NOT_PENDING: 'error.correction_not_pending',
   CORRECTION_ALREADY_PENDING: 'error.correction_already_pending',
   ATTENDANCE_DATE_IN_FUTURE: 'error.attendance_date_in_future',
+  INVALID_STATUS_TRANSITION: 'error.invalid_status_transition',
+  TASK_HAS_OPEN_ITEMS: 'error.task_has_open_items',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',

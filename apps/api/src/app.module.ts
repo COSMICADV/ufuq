@@ -6,6 +6,7 @@ import type { Env } from '@ufuq/config';
 import { APP_ENV, APP_INFO } from './app.tokens.js';
 import type { AppInfo } from './app.tokens.js';
 import { AttendanceModule } from './attendance/attendance.module.js';
+import { AttachmentsModule } from './attachments/attachments.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CompanyStructureModule } from './company-structure/company-structure.module.js';
@@ -17,6 +18,7 @@ import { RedisModule } from './common/redis.module.js';
 import { EmployeesModule } from './employees/employees.module.js';
 import { HealthModule } from './health/health.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { TasksModule } from './tasks/tasks.module.js';
 
 /**
  * The application root.
@@ -26,8 +28,11 @@ import { MailModule } from './mail/mail.module.js';
  * connections it needs (`DbModule`, `RedisModule`); Phase 4 adds company
  * structure; Phase 5 adds employees and the SMTP connection its invitation
  * email needs (`MailModule`); Phase 6 adds attendance and, with it, the first
- * background worker (`AttendanceModule`, BullMQ on the existing Redis). The
- * remaining business modules arrive one phase at a time (DOCUMENT 25).
+ * background worker (`AttendanceModule`, BullMQ on the existing Redis); Phase 7
+ * adds tasks (`TasksModule`) and, as an approved addendum, the generic
+ * attachment store over private S3-compatible storage (`AttachmentsModule`,
+ * AD-02). The remaining business modules arrive one phase
+ * at a time (DOCUMENT 25).
  *
  * The three global guards run in this order for every request:
  *  1. `SessionAuthGuard` — DOCUMENT 09 §4 check 1, and binds tenant scope.
@@ -67,6 +72,8 @@ export class AppModule {
         EmployeesModule,
         AttendanceModule.register({ scheduler: options.backgroundJobs }),
         AuditModule,
+        AttachmentsModule.register(env),
+        TasksModule,
       ],
       providers: [
         { provide: APP_ENV, useValue: env },
