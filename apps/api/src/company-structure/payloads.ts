@@ -168,6 +168,24 @@ export interface HolidayPayload {
   readonly is_recurring: boolean;
 }
 
+/**
+ * `POST /holidays` only — DOCUMENT 16 "Holiday declared inside approved
+ * leave: day count is not silently recalculated. The admin is shown the
+ * affected requests and confirms explicitly." The new holiday is returned
+ * with every approved leave request that already has an `on_leave` day on it;
+ * nothing about that leave changes. The ADMIN corrects a balance explicitly
+ * with a reason (`PATCH /leave-balances/{id}`), audited.
+ */
+export interface CreatedHolidayPayload extends HolidayPayload {
+  readonly affected_leave_requests: readonly {
+    readonly id: string;
+    readonly employee_id: string;
+    readonly employee_name: string;
+    readonly start_date: string;
+    readonly end_date: string;
+  }[];
+}
+
 export function holidayPayload(row: Holiday): HolidayPayload {
   return {
     id: row.id,

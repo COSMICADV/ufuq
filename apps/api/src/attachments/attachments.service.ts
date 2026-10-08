@@ -64,6 +64,14 @@ export const UPLOAD_RATE_LIMIT_MAX = 30;
 export const UPLOAD_RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
 
 /** The parts of a multipart file the service reads (multer's in-memory file). */
+/** A file that has passed DOCUMENT 20 §7's checks, ready to store. */
+export interface CheckedUpload {
+  readonly buffer: Buffer;
+  readonly mime: string;
+  readonly name: string;
+  readonly checksum: string;
+}
+
 export interface UploadedFile {
   readonly originalname: string;
   readonly mimetype: string;
@@ -102,6 +110,21 @@ export class AttachmentsService extends TenantScopedService {
     dto: UploadAttachmentDto,
     origin: RequestOrigin,
   ): Promise<AttachmentPayload> {
+    const checked = await this.prepareUpload(ctx, file);
+    const policy = this.policyFor(dto.related_type);
+
+    return this.tenant(ctx, async (tx) => {
+      await this.authorize(tx, ctx, policy, dto.related_id, 'upload');
+      return this.storeChecked(tx, ctx, checked, dto.related_type, dto.related_id, origin);
+    });
+  }
+
+  /**
+   * Everything that can be said about an upload before a transaction opens:
+   * the caller's upload allowance (rate limit) and DOCUMENT 20 §7's checks on
+   * the bytes — size, declared type against magic bytes, file name.
+   */
+  async prepareUpload(ctx: AuthContext, file: UploadedFile | undefined): Promise<CheckedUpload> {
     const limit = await this.rateLimit.consume(
       `attachments:upload:user:${ctx.userId}`,
       UPLOAD_RATE_LIMIT_MAX,
@@ -112,51 +135,64 @@ export class AttachmentsService extends TenantScopedService {
         retryAfterSeconds: limit.retryAfterSeconds,
       });
     }
+    return this.checkFile(file);
+  }
 
-    const checked = this.checkFile(file);
-    const policy = this.policyFor(dto.related_type);
-
-    return this.tenant(ctx, async (tx) => {
-      await this.authorize(tx, ctx, policy, dto.related_id, 'upload');
-
-      const id = generateId();
-      // 256 random bits under the company's own prefix — DOCUMENT 06 §3.36
-      // "non-guessable key", DOCUMENT 20 §3 "company-namespaced paths". Nothing
-      // the client sent takes part in it.
-      const storedPath = `${ctx.companyId}/${randomBytes(32).toString('hex')}`;
-      const row = await tx.attachment.create({
-        data: {
-          id,
-          companyId: ctx.companyId,
-          uploadedBy: ctx.userId,
-          originalName: checked.name,
-          storedPath,
-          mimeType: checked.mime,
-          sizeBytes: checked.buffer.length,
-          checksum: checked.checksum,
-          relatedType: dto.related_type,
-          relatedId: dto.related_id,
-        },
-        include: ATTACHMENT_INCLUDE,
-      });
-      await this.audit.record(tx, {
+  /**
+   * Store a checked file against a record, inside the caller's transaction:
+   * the row, its `attachment.uploaded` audit, then the private object.
+   *
+   * `upload` uses it after asking the record's policy. A consumer that
+   * creates the record and its file together (a leave request whose type
+   * requires an attachment — DOCUMENT 16 rule 9) calls it directly, having
+   * authorized the creation itself, so the record and its file commit or roll
+   * back as one.
+   */
+  async storeChecked(
+    tx: TenantClient,
+    ctx: AuthContext,
+    checked: CheckedUpload,
+    relatedType: RelatedType,
+    relatedId: string,
+    origin: RequestOrigin,
+  ): Promise<AttachmentPayload> {
+    const id = generateId();
+    // 256 random bits under the company's own prefix — DOCUMENT 06 §3.36
+    // "non-guessable key", DOCUMENT 20 §3 "company-namespaced paths". Nothing
+    // the client sent takes part in it.
+    const storedPath = `${ctx.companyId}/${randomBytes(32).toString('hex')}`;
+    const row = await tx.attachment.create({
+      data: {
+        id,
         companyId: ctx.companyId,
-        userId: ctx.userId,
-        action: 'ATTACHMENT_UPLOADED',
-        entityType: 'attachment',
-        entityId: id,
-        newValues: attachmentAuditSnapshot(row),
-        ipAddress: origin.ipAddress,
-        userAgent: origin.userAgent,
-      });
-      await this.storage.put({
-        key: storedPath,
-        body: checked.buffer,
-        contentType: checked.mime,
+        uploadedBy: ctx.userId,
+        originalName: checked.name,
+        storedPath,
+        mimeType: checked.mime,
+        sizeBytes: checked.buffer.length,
         checksum: checked.checksum,
-      });
-      return attachmentPayload(row);
+        relatedType,
+        relatedId,
+      },
+      include: ATTACHMENT_INCLUDE,
     });
+    await this.audit.record(tx, {
+      companyId: ctx.companyId,
+      userId: ctx.userId,
+      action: 'ATTACHMENT_UPLOADED',
+      entityType: 'attachment',
+      entityId: id,
+      newValues: attachmentAuditSnapshot(row),
+      ipAddress: origin.ipAddress,
+      userAgent: origin.userAgent,
+    });
+    await this.storage.put({
+      key: storedPath,
+      body: checked.buffer,
+      contentType: checked.mime,
+      checksum: checked.checksum,
+    });
+    return attachmentPayload(row);
   }
 
   /**
@@ -294,12 +330,7 @@ export class AttachmentsService extends TenantScopedService {
   }
 
   /** DOCUMENT 20 §7 — everything that can be said about the bytes before the database is touched. */
-  private checkFile(file: UploadedFile | undefined): {
-    readonly buffer: Buffer;
-    readonly mime: string;
-    readonly name: string;
-    readonly checksum: string;
-  } {
+  private checkFile(file: UploadedFile | undefined): CheckedUpload {
     if (file === undefined || file.buffer.length === 0) {
       throw fieldError({ file: ['required'] });
     }

@@ -24,6 +24,7 @@ import type { Env } from '@ufuq/config';
 
 import { AuthModule } from '../auth/auth.module.js';
 import { RateLimitService } from '../auth/rate-limit.service.js';
+import { LeaveAttachmentPolicy } from '../leave/leave-attachment-policy.js';
 import { RequestAttachmentPolicy } from '../requests/request-attachment-policy.js';
 import { TaskAttachmentPolicy } from '../tasks/task-attachment-policy.js';
 
@@ -32,6 +33,7 @@ import { AttachmentsController } from './attachments.controller.js';
 import { AttachmentsService } from './attachments.service.js';
 import { ATTACHMENT_LIMITS, OBJECT_STORAGE } from './object-storage.js';
 import { createS3Client, S3ObjectStorage } from './s3-object-storage.js';
+import { uploadMulterOptions } from './upload-limits.js';
 
 @Module({})
 export class AttachmentsModule {
@@ -45,22 +47,7 @@ export class AttachmentsModule {
         // written to the API host's disk, let alone a web root. The limits are
         // the first gate (one file, the configured size, tiny text fields);
         // the service re-checks every one of them.
-        MulterModule.register({
-          limits: {
-            // Busboy treats *reaching* `fileSize` as exceeding it, so the limit is
-            // one byte past the largest accepted file: exactly the configured
-            // size is accepted, one byte more is refused.
-            fileSize: env.storage.maxUploadBytes + 1,
-            files: 1,
-            fields: 4,
-            parts: 6,
-            fieldSize: 1024,
-          },
-          // A browser sends a non-Latin file name as raw UTF-8 bytes; busboy
-          // would otherwise read them as Latin-1 and an Arabic name would
-          // arrive garbled.
-          defParamCharset: 'utf8',
-        }),
+        MulterModule.register(uploadMulterOptions(env)),
       ],
       controllers: [AttachmentsController],
       providers: [
@@ -68,13 +55,15 @@ export class AttachmentsModule {
         RateLimitService,
         TaskAttachmentPolicy,
         RequestAttachmentPolicy,
+        LeaveAttachmentPolicy,
         {
           provide: ATTACHMENT_POLICIES,
-          useFactory: (tasks: TaskAttachmentPolicy, requests: RequestAttachmentPolicy) => [
-            tasks,
-            requests,
-          ],
-          inject: [TaskAttachmentPolicy, RequestAttachmentPolicy],
+          useFactory: (
+            tasks: TaskAttachmentPolicy,
+            requests: RequestAttachmentPolicy,
+            leave: LeaveAttachmentPolicy,
+          ) => [tasks, requests, leave],
+          inject: [TaskAttachmentPolicy, RequestAttachmentPolicy, LeaveAttachmentPolicy],
         },
         {
           provide: OBJECT_STORAGE,

@@ -63,6 +63,7 @@ import { HolidaysService } from './holidays.service.js';
 import type {
   CompanyPayload,
   DepartmentPayload,
+  CreatedHolidayPayload,
   HolidayPayload,
   PositionPayload,
   WorkSchedulePayload,
@@ -238,7 +239,7 @@ export class CompanyStructureController {
     @Body() dto: CreateHolidayDto,
     @RequestContext() origin: RequestOrigin,
     @RequestLocale() locale: Locale,
-  ): Promise<SingleResponse<HolidayPayload>> {
+  ): Promise<SingleResponse<CreatedHolidayPayload>> {
     return single(await this.holidays.create(ctx, dto, origin), { locale });
   }
 }

@@ -20,6 +20,7 @@ import { GoalsModule } from './goals/goals.module.js';
 import { HealthModule } from './health/health.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { PerformanceModule } from './performance/performance.module.js';
+import { LeaveModule } from './leave/leave.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 
@@ -36,7 +37,8 @@ import { TasksModule } from './tasks/tasks.module.js';
  * attachment store over private S3-compatible storage (`AttachmentsModule`,
  * AD-02); Phase 8 adds goals (`GoalsModule`, with its period-end job) and the
  * configurable performance model (`PerformanceModule`); Phase 9 adds the
- * unified Requests Centre (`RequestsModule`). The remaining business
+ * unified Requests Centre (`RequestsModule`); Phase 10 adds leave
+ * (`LeaveModule`, with its carry-over job). The remaining business
  * modules arrive one phase at a time (DOCUMENT 25).
  *
  * The three global guards run in this order for every request:
@@ -82,6 +84,7 @@ export class AppModule {
         GoalsModule.register({ scheduler: options.backgroundJobs }),
         PerformanceModule,
         RequestsModule,
+        LeaveModule.register(env, { scheduler: options.backgroundJobs }),
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

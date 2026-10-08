@@ -50,7 +50,14 @@ export type FieldIssue =
   // assignee when it is employee-scoped.
   | 'must_sum_to_one'
   | 'not_same_employee'
-  | 'cancelled';
+  | 'cancelled'
+  // Phase 10 — DOCUMENT 16 "Validation": leave starts on or after joining,
+  // ends by any termination, needs a complete schedule, and an adjustment
+  // cannot drop an entitlement below the days already used or held.
+  | 'before_joining'
+  | 'after_termination'
+  | 'schedule_incomplete'
+  | 'below_committed';
 
 @Injectable()
 export abstract class TenantScopedService {

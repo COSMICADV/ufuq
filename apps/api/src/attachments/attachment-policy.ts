@@ -21,7 +21,7 @@ import type { AuthContext } from '../auth/auth-context.js';
  * The record kinds an attachment may belong to. Mirrors the database CHECK
  * `attachments_related_type_known`; a consumer added later extends both.
  */
-export const RELATED_TYPES = ['task', 'request'] as const;
+export const RELATED_TYPES = ['task', 'request', 'leave_request'] as const;
 export type RelatedType = (typeof RELATED_TYPES)[number];
 
 export interface AttachmentPolicy {

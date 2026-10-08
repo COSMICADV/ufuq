@@ -250,6 +250,10 @@ const KNOWN_ISSUES = new Set([
   'must_sum_to_one',
   'not_same_employee',
   'cancelled',
+  'before_joining',
+  'after_termination',
+  'schedule_incomplete',
+  'below_committed',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

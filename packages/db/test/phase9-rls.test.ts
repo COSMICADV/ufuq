@@ -336,7 +336,10 @@ describe('with every migration applied', () => {
       expect(message).toMatch(/requests_category_shape/);
     });
 
-    it('a leave row cannot be written until Phase 10 creates leave_requests', async () => {
+    // Phase 9 refused every leave row until `leave_requests` existed; Phase 10
+    // replaced that with the real rule — a leave row must point at this
+    // employee's own leave request (see phase10-rls.test.ts).
+    it('a leave row must point at a real leave request, never a generic one', async () => {
       const message = await expectRejection(() =>
         asOwner(
           COMPANY_A,
@@ -348,7 +351,7 @@ describe('with every migration applied', () => {
           }),
         ),
       );
-      expect(message).toMatch(/Phase 10/);
+      expect(message).toMatch(/leave request in the same company/);
       const generic = await expectRejection(() =>
         asOwner(
           COMPANY_A,

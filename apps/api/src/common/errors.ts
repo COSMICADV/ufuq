@@ -79,6 +79,16 @@ export const ERROR_CODES = {
   REQUEST_NOT_PENDING: 'REQUEST_NOT_PENDING',
   REQUEST_SELF_REVIEW: 'REQUEST_SELF_REVIEW',
   REQUEST_CATEGORY_SPECIALISED: 'REQUEST_CATEGORY_SPECIALISED',
+  // Phase 10 — leave (DOCUMENT 16 "Error states"). Conflicts that the request
+  // cannot resolve by being sent again are 409; a range with nothing to take
+  // or a balance that will not cover it is 422.
+  LEAVE_NO_WORKING_DAYS: 'LEAVE_NO_WORKING_DAYS',
+  LEAVE_INSUFFICIENT_BALANCE: 'LEAVE_INSUFFICIENT_BALANCE',
+  LEAVE_OVERLAP: 'LEAVE_OVERLAP',
+  LEAVE_ATTENDANCE_CONFLICT: 'LEAVE_ATTENDANCE_CONFLICT',
+  LEAVE_NOT_PENDING: 'LEAVE_NOT_PENDING',
+  LEAVE_RANGE_CHANGED: 'LEAVE_RANGE_CHANGED',
+  LEAVE_PERIOD_FINALIZED: 'LEAVE_PERIOD_FINALIZED',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -107,6 +117,13 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   REQUEST_NOT_PENDING: 'error.request_not_pending',
   REQUEST_SELF_REVIEW: 'error.request_self_review',
   REQUEST_CATEGORY_SPECIALISED: 'error.request_category_specialised',
+  LEAVE_NO_WORKING_DAYS: 'error.leave_no_working_days',
+  LEAVE_INSUFFICIENT_BALANCE: 'error.leave_insufficient_balance',
+  LEAVE_OVERLAP: 'error.leave_overlap',
+  LEAVE_ATTENDANCE_CONFLICT: 'error.leave_attendance_conflict',
+  LEAVE_NOT_PENDING: 'error.leave_not_pending',
+  LEAVE_RANGE_CHANGED: 'error.leave_range_changed',
+  LEAVE_PERIOD_FINALIZED: 'error.leave_period_finalized',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',

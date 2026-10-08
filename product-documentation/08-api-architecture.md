@@ -90,7 +90,8 @@ Legend: 🔓 public · 🔒 authenticated · `perm:` required permission.
 | GET/POST | `/work-schedules` | settings.view / settings.work_schedule |
 | PATCH | `/work-schedules/{id}` | settings.work_schedule |
 | GET/POST | `/holidays` | settings.view / settings.update |
-| GET/POST | `/leave-types` | settings.view / leave.configure_types |
+| GET/POST | `/leave-types` | settings.view (a `leave.request` holder reads active types) / leave.configure_types |
+| PATCH/DELETE | `/leave-types/{id}` | leave.configure_types · DELETE is a soft delete (Phase 10) |
 | GET/PATCH | `/salary-policies` | settings.view / settings.salary_policy |
 | GET/PATCH | `/performance-config` | settings.view / settings.performance_weights |
 | GET | `/roles` | settings.view |
@@ -160,7 +161,7 @@ Validation: names required · email unique per company · `employee_code` unique
 | GET | `/leave-requests/{id}` | scope-checked |
 | POST | `/leave-requests/{id}/approve` | leave.approve |
 | POST | `/leave-requests/{id}/reject` | leave.approve · reason required |
-| POST | `/leave-requests/{id}/cancel` | own, pending only |
+| POST | `/leave-requests/{id}/cancel` | own, pending only; or an ADMIN (`leave.approve` at company scope, never their own) cancelling **approved** leave, reason required — DOCUMENT 16 rule 15 (amended in Phase 10) |
 | GET | `/leave-requests/calculate` | leave.request · returns day count for a date range |
 
 ### 4.7 Tasks

@@ -21,7 +21,6 @@
 
 import {
   Body,
-  Catch,
   Controller,
   Delete,
   Get,
@@ -29,7 +28,6 @@ import {
   Inject,
   Param,
   ParseUUIDPipe,
-  PayloadTooLargeException,
   Post,
   Res,
   StreamableFile,
@@ -37,7 +35,6 @@ import {
   UseFilters,
   UseInterceptors,
 } from '@nestjs/common';
-import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Locale } from '@ufuq/i18n';
 import type { Response } from 'express';
@@ -46,7 +43,6 @@ import type { AuthContext } from '../auth/auth-context.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { single } from '../common/envelope.js';
 import type { SingleResponse } from '../common/envelope.js';
-import { ERROR_CODES, errorBody } from '../common/errors.js';
 import { RequestContext } from '../common/request-context.js';
 import type { RequestOrigin } from '../common/request-context.js';
 import { RequestLocale } from '../common/request-locale.js';
@@ -55,26 +51,10 @@ import { RequestLocale } from '../common/request-locale.js';
 import { UploadAttachmentDto } from './dto/attachment.dto.js';
 import type { AttachmentPayload } from './attachment-payload.js';
 import { AttachmentsService } from './attachments.service.js';
+import { UploadTooLargeFilter } from './upload-too-large.filter.js';
 import type { UploadedFile as UploadedFileShape } from './attachments.service.js';
 
 const uuidParam = new ParseUUIDPipe();
-
-/**
- * Multer refuses a file over the configured limit before the handler runs,
- * and Nest reports that as a 413. DOCUMENT 08 §2 reports a bad field as a 422
- * naming the field, so the same refusal reads the same way whichever layer
- * catches it first.
- */
-@Catch(PayloadTooLargeException)
-class UploadTooLargeFilter implements ExceptionFilter {
-  catch(_exception: PayloadTooLargeException, host: ArgumentsHost): void {
-    host
-      .switchToHttp()
-      .getResponse<Response>()
-      .status(422)
-      .json({ error: errorBody(ERROR_CODES.VALIDATION_FAILED, { file: ['too_large'] }) });
-  }
-}
 
 @Controller('attachments')
 export class AttachmentsController {

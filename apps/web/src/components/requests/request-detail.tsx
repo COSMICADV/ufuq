@@ -23,6 +23,7 @@ import {
 } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { TaskAttachments } from '../tasks/task-attachments';
+import { LeaveContext } from '../leave/leave-context';
 
 import {
   RequestAge,
@@ -160,6 +161,24 @@ export function RequestDetailScreen({
         </Card>
       )}
 
+      {request.leave === null ? null : (
+        <LeaveContext
+          leave={request.leave}
+          locale={locale}
+          t={t}
+          timeZone={zone}
+          onCancelled={() => {
+            fetchOne<RequestDetail>(`/requests/${request.id}`, { locale })
+              .then((next) => {
+                changed(next, t('leave.cancelled_approved_notice'));
+              })
+              .catch(() => {
+                resource.reload();
+              });
+          }}
+        />
+      )}
+
       <DecisionCard
         request={request}
         surface={surface}
@@ -188,8 +207,14 @@ export function RequestDetailScreen({
           key={`history-${String(version)}`}
           locale={locale}
           t={t}
-          entityType={request.attendance === null ? 'request' : 'attendance_correction_request'}
-          entityId={request.attendance === null ? request.id : request.attendance.id}
+          entityType={
+            request.attendance !== null
+              ? 'attendance_correction_request'
+              : request.leave !== null
+                ? 'leave_request'
+                : 'request'
+          }
+          entityId={request.attendance?.id ?? request.leave?.id ?? request.id}
           timeZone={zone}
           title={t('requests.history_title')}
           fullLogLabel={t('employees.history_full_log')}

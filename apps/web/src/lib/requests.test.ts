@@ -94,6 +94,11 @@ describe('B13 — summary and age', () => {
     ).toEqual({ kind: 'attendance', date: '2026-03-09' });
   });
 
+  it('a leave row is summarised by its leave', () => {
+    const leave = { id: 'l1', start_date: '2026-03-15' } as never;
+    expect(summaryOf({ subject: null, attendance: null, leave })).toEqual({ kind: 'leave', leave });
+  });
+
   it('counts whole days in the company’s calendar, not the browser’s', () => {
     const now = new Date('2026-03-10T08:00:00Z'); // 10:00 in Cairo
     expect(ageInDays('2026-03-10T07:00:00Z', 'Africa/Cairo', now)).toBe(0);

@@ -31,6 +31,7 @@ import {
 import { useResource } from '../settings/use-resource';
 import { EmployeeGoals } from '../goals/employee-goals';
 import { EmployeeRequests } from '../requests/employee-requests';
+import { LeaveBalancesCard } from '../leave/leave-balances-card';
 import { EmployeeTasks } from '../tasks/employee-tasks';
 import { newGoalPath } from '../../lib/goals';
 import { newTaskPath } from '../../lib/tasks';
@@ -413,6 +414,10 @@ function ProfileBody({
             <Overview locale={locale} t={t} employee={employee} timeZone={session.timeZone} />
             {permissions.has('report.employee_monthly') ? (
               <PerformanceSnapshot locale={locale} t={t} employeeId={employee.id} />
+            ) : null}
+            {/* B4 Overview: "leave balance" (Phase 10). */}
+            {permissions.has('leave.view') ? (
+              <LeaveBalancesCard locale={locale} t={t} employeeId={employee.id} />
             ) : null}
             {/* DOCUMENT 21 "UI" — the record's audit trail inline, for a
                 caller who may read the audit log (ADMIN only in V1). */}

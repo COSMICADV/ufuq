@@ -9,6 +9,7 @@
 import type { PersonRef } from './tasks';
 import type { CorrectionRequest } from './attendance';
 import type { Attachment } from './attachments';
+import type { LeaveRequest } from './leave';
 
 export const REQUEST_CATEGORIES = ['attendance', 'leave', 'salary', 'task', 'general'] as const;
 export type RequestCategory = (typeof REQUEST_CATEGORIES)[number];
@@ -41,6 +42,8 @@ export interface RequestItem {
   readonly related_id: string | null;
   readonly task: { readonly id: string; readonly title: string; readonly status: string } | null;
   readonly attendance: CorrectionRequest | null;
+  /** Leave category: the leave request the row indexes (Phase 10, OD-09). */
+  readonly leave: LeaveRequest | null;
   readonly reviewed_by: PersonRef | null;
   readonly reviewed_at: string | null;
   readonly admin_response: string | null;
@@ -86,13 +89,17 @@ export function requesterName(item: Pick<RequestItem, 'employee'>): string {
  * summary is the day it corrects (the record it indexes has no subject).
  */
 export function summaryOf(
-  item: Pick<RequestItem, 'subject' | 'attendance'>,
+  item: Pick<RequestItem, 'subject' | 'attendance'> & { readonly leave?: LeaveRequest | null },
 ):
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'attendance'; readonly date: string }
+  | { readonly kind: 'leave'; readonly leave: LeaveRequest }
   | null {
   if (item.attendance !== null) {
     return { kind: 'attendance', date: item.attendance.date };
+  }
+  if (item.leave !== undefined && item.leave !== null) {
+    return { kind: 'leave', leave: item.leave };
   }
   return item.subject === null ? null : { kind: 'text', text: item.subject };
 }

@@ -84,6 +84,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Why it matters:** It affects the balance data type (already `DECIMAL(5,2)`, so the schema supports it), the duration calculation, and the attendance record shape.
 **Options:** A) Full days only in V1. B) Half days supported.
 **Recommended:** A, with the decimal balance already in place so B is additive.
+**Decision (approved, Phase 10):** A. Full days only in V1; the DECIMAL(5,2) balance and day count keep half days additive.
 
 ## OD-12 — Primary key type
 **Status:** Blocking — Phase 1
@@ -116,6 +117,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Unclear:** How annual leave allowance is calculated for an employee joining in, say, September.
 **Options:** A) Pro-rated by month worked. B) Full allowance regardless. C) Configurable.
 **Recommended:** A as the default, C as the eventual answer.
+**Decision (approved, Phase 10):** A. The joining month counts in full (joining any day of March gives 10 months), and `default_days_per_year × months ÷ 12` is rounded half away from zero to 2 decimal places (14 × 10 ÷ 12 = 11.67). No configurable pro-rating policy in V1.
 
 ## OD-17 — Company registration: self-service or invitation only?
 **Status:** Blocking — Phase 16
@@ -146,12 +148,12 @@ Every requirement below needs a decision before or during development. Nothing h
 | OD-08 | End-of-service settlement | ✅ | 11 |
 | OD-09 | Requests table design | — | 9 |
 | OD-10 | Checklist-free task progress | — | 7 |
-| OD-11 | Half-day leave | — | 10 |
+| OD-11 | Half-day leave (decided: A, Phase 10) | — | 10 |
 | OD-12 | Primary key type | ✅ | 1 |
 | OD-13 | Valuation method | ✅ | 14 |
 | OD-14 | Retention periods | ✅ | pre-launch |
 | OD-15 | Pricing model | ✅ | 16 |
-| OD-16 | Mid-year leave pro-rating | — | 10 |
+| OD-16 | Mid-year leave pro-rating (decided: A, Phase 10) | — | 10 |
 | OD-17 | Registration gating | ✅ | 16 |
 | OD-18 | Multi-approver notification | — | 15 |
 

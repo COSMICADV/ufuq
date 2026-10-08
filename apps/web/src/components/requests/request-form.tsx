@@ -23,6 +23,7 @@ import { Alert, Button, Card, Choice, Field, Input, Select, Textarea } from '../
 import { loadSession } from '../employees/use-session';
 import { describeError, ErrorState, LoadingState, optionalError } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
+import { LeaveRequestForm } from '../leave/leave-request-form';
 
 /**
  * `/{locale}/app/requests/new` — DOCUMENT 04 C9: a category selector, then
@@ -34,9 +35,9 @@ import { useResource } from '../settings/use-resource';
  * - **Attendance** is a correction (OD-09): the selector sends the employee to
  *   DOCUMENT 04 C4's form, which files the correction and, with it, its inbox
  *   row. There is no second correction form.
- * - **Leave** is not offered: it needs leave types and balances, which
- *   DOCUMENT 25 schedules for Phase 10 (DOCUMENT 25, as amended in Phase
- *   9). DOCUMENT 27 RULE 26: no placeholder for it.
+ * - **Leave** (Phase 10) is leave's own form (`LeaveRequestForm`): a leave
+ *   request is a specialised record (OD-09) with a server-counted duration
+ *   and a balance hold.
  *
  * Files are attached on the request's own page once it exists — the store
  * attaches to a record, and before submission there is none.
@@ -52,6 +53,7 @@ export function RequestFormScreen({ locale }: { readonly locale: Locale }): Reac
   const [issues, setIssues] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [leaveChosen, setLeaveChosen] = useState(false);
 
   const load = useCallback(
     async (signal: AbortSignal) => {
@@ -80,6 +82,8 @@ export function RequestFormScreen({ locale }: { readonly locale: Locale }): Reac
   }
   const { session, tasks } = resource.state.value;
   const canCorrect = session.permissions.has('attendance.request_correction');
+  // Leave is a specialised record (OD-09); its form is leave's own (Phase 10).
+  const canLeave = session.permissions.has('leave.request');
 
   const set = (patch: Partial<RequestForm>): void => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -113,94 +117,110 @@ export function RequestFormScreen({ locale }: { readonly locale: Locale }): Reac
 
   return (
     <Card className="tasks-form">
-      <form
-        className="tasks-form__grid"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          submit();
-        }}
-      >
-        <fieldset className="tasks-builder">
-          <legend>{t('requests.field_category')}</legend>
-          {NATIVE_CATEGORIES.map((category) => (
-            <Choice
-              key={category}
-              type="radio"
-              name="category"
-              label={t(categoryKey(category))}
-              checked={draft.category === category}
-              onChange={() => {
-                set({ category: category as NativeCategory });
+      <fieldset className="tasks-builder">
+        <legend>{t('requests.field_category')}</legend>
+        {canLeave ? (
+          <Choice
+            type="radio"
+            name="category"
+            label={t(categoryKey('leave'))}
+            checked={leaveChosen}
+            onChange={() => {
+              setLeaveChosen(true);
+            }}
+          />
+        ) : null}
+        {NATIVE_CATEGORIES.map((category) => (
+          <Choice
+            key={category}
+            type="radio"
+            name="category"
+            label={t(categoryKey(category))}
+            checked={!leaveChosen && draft.category === category}
+            onChange={() => {
+              setLeaveChosen(false);
+              set({ category: category as NativeCategory });
+            }}
+          />
+        ))}
+      </fieldset>
+      {canCorrect ? (
+        <p className="tasks-muted">
+          {t('requests.attendance_hint')}{' '}
+          <Link href={correctionFormPath(locale)}>{t('requests.attendance_link')}</Link>
+        </p>
+      ) : null}
+
+      {leaveChosen ? (
+        <LeaveRequestForm locale={locale} t={t} />
+      ) : (
+        <form
+          className="tasks-form__grid"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          {failure === null ? null : (
+            <Alert tone="danger" title={t('requests.submit_failed')}>
+              {failure}
+            </Alert>
+          )}
+
+          <Field label={t('requests.field_subject')} required {...optionalError(issue('subject'))}>
+            <Input
+              value={draft.subject}
+              maxLength={SUBJECT_MAX_LENGTH}
+              onChange={(event) => {
+                set({ subject: event.target.value });
               }}
             />
-          ))}
-        </fieldset>
-        {canCorrect ? (
-          <p className="tasks-muted">
-            {t('requests.attendance_hint')}{' '}
-            <Link href={correctionFormPath(locale)}>{t('requests.attendance_link')}</Link>
-          </p>
-        ) : null}
-
-        {failure === null ? null : (
-          <Alert tone="danger" title={t('requests.submit_failed')}>
-            {failure}
-          </Alert>
-        )}
-
-        <Field label={t('requests.field_subject')} required {...optionalError(issue('subject'))}>
-          <Input
-            value={draft.subject}
-            maxLength={SUBJECT_MAX_LENGTH}
-            onChange={(event) => {
-              set({ subject: event.target.value });
-            }}
-          />
-        </Field>
-        <Field
-          label={t('requests.field_description')}
-          required
-          {...optionalError(issue('description'))}
-        >
-          <Textarea
-            value={draft.description}
-            rows={5}
-            maxLength={DESCRIPTION_MAX_LENGTH}
-            onChange={(event) => {
-              set({ description: event.target.value });
-            }}
-          />
-        </Field>
-        {draft.category === 'task' ? (
-          <Field
-            label={t('requests.field_task')}
-            helper={t('requests.task_helper')}
-            {...optionalError(issue('task_id'))}
-          >
-            <Select
-              value={draft.task_id}
-              onChange={(event) => {
-                set({ task_id: event.target.value });
-              }}
-            >
-              <option value="">{t('requests.no_task')}</option>
-              {tasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.title}
-                </option>
-              ))}
-            </Select>
           </Field>
-        ) : null}
-        <p className="field__helper">{t('requests.attach_after')}</p>
+          <Field
+            label={t('requests.field_description')}
+            required
+            {...optionalError(issue('description'))}
+          >
+            <Textarea
+              value={draft.description}
+              rows={5}
+              maxLength={DESCRIPTION_MAX_LENGTH}
+              onChange={(event) => {
+                set({ description: event.target.value });
+              }}
+            />
+          </Field>
+          {draft.category === 'task' ? (
+            <Field
+              label={t('requests.field_task')}
+              helper={t('requests.task_helper')}
+              {...optionalError(issue('task_id'))}
+            >
+              <Select
+                value={draft.task_id}
+                onChange={(event) => {
+                  set({ task_id: event.target.value });
+                }}
+              >
+                <option value="">{t('requests.no_task')}</option>
+                {tasks.map((task) => (
+                  <option key={task.id} value={task.id}>
+                    {task.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
+          <p className="field__helper">{t('requests.attach_after')}</p>
 
-        <div className="tasks-form__actions">
-          <Button type="submit" loading={busy}>
-            {t('requests.submit')}
-          </Button>
-        </div>
-      </form>
+          <div className="tasks-form__actions">
+            <Button type="submit" loading={busy}>
+              {t('requests.submit')}
+            </Button>
+          </div>
+        </form>
+      )}
     </Card>
   );
 }

@@ -22,6 +22,8 @@ Make every material action in the system attributable, explicable, and reviewabl
 ### Leave
 `leave.requested` · `leave.approved` · `leave.rejected` · `leave.cancelled` · `leave.balance_adjusted` · `leave_type.created` · `leave_type.updated`
 
+The annual carry-over writes a year's `carried_over_days` and forfeits any excess over a cap; it is recorded as `leave.balance_adjusted` by the system actor, with the carried days, the forfeited days and the source year.
+
 ### Requests
 `request.submitted` · `request.approved` · `request.rejected` · `request.cancelled`
 

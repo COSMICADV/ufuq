@@ -82,6 +82,13 @@ export const AUDIT_ACTIONS = [
   'request.approved',
   'request.rejected',
   'request.cancelled',
+  'leave.requested',
+  'leave.approved',
+  'leave.rejected',
+  'leave.cancelled',
+  'leave.balance_adjusted',
+  'leave_type.created',
+  'leave_type.updated',
 ] as const;
 
 /** The record kinds the product audits today — the entity-type filter's options. */
@@ -99,6 +106,9 @@ export const AUDIT_ENTITY_TYPES = [
   'goal',
   'performance_config',
   'request',
+  'leave_request',
+  'leave_balance',
+  'leave_type',
 ] as const;
 
 /** Translation key for an action — dots are the catalogue's path separator. */

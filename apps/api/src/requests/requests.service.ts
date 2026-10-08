@@ -9,7 +9,8 @@
  *     by the database from the correction itself; deciding or cancelling it
  *     here **delegates** to `CorrectionsService`, so the correction's window,
  *     recalculation and single transaction are the only ones there are. Leave
- *     rows cannot exist until Phase 10 creates their specialised record.
+ *     rows are indexed the same way from `leave_requests` (Phase 10), and
+ *     their decisions delegate to `LeaveRequestsService`.
  *   - **OD-03, option A.** Nobody decides their own request — a manager's goes
  *     to an ADMIN, and an ADMIN's to another ADMIN. Enforced here, in the
  *     shared correction logic, and by `requestReviewableWhere`, not only by
@@ -47,6 +48,8 @@ import {
   notFound,
   TenantScopedService,
 } from '../company-structure/tenant-scoped.service.js';
+import { LeaveRequestsService } from '../leave/leave-requests.service.js';
+import type { LeaveRequestDetailPayload } from '../leave/leave-payload.js';
 import { taskScopeWhere } from '../tasks/task-query.js';
 
 import type {
@@ -90,6 +93,7 @@ export interface PendingCount {
 }
 
 const ATTENDANCE_TYPE = SPECIALISED_RELATED_TYPE.attendance;
+const LEAVE_TYPE = SPECIALISED_RELATED_TYPE.leave;
 
 @Injectable()
 export class RequestsService extends TenantScopedService {
@@ -99,6 +103,7 @@ export class RequestsService extends TenantScopedService {
     @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
     @Inject(CorrectionsService) private readonly corrections: CorrectionsService,
     @Inject(RequestEventPublisher) private readonly events: RequestEventPublisher,
+    @Inject(LeaveRequestsService) private readonly leave: LeaveRequestsService,
   ) {
     super(prisma);
   }
@@ -302,6 +307,30 @@ export class RequestsService extends TenantScopedService {
       return this.findOne(ctx, id);
     }
 
+    if (target.relatedType === LEAVE_TYPE && target.relatedId !== null) {
+      // OD-09, completed in Phase 10: leave's own service decides it — its
+      // balance moves, its attendance days, its single transaction, its
+      // `leave.*` audit actions. The inbox row follows by trigger.
+      if (decision === 'approved') {
+        await this.leave.approve(
+          ctx,
+          target.relatedId,
+          response === undefined ? {} : { review_note: response },
+          origin,
+          now,
+        );
+      } else {
+        await this.leave.reject(
+          ctx,
+          target.relatedId,
+          { review_note: response ?? '' },
+          origin,
+          now,
+        );
+      }
+      return this.findOne(ctx, id);
+    }
+
     await this.tenant(ctx, async (tx) => {
       const before = await tx.request.findFirstOrThrow({
         where: { id },
@@ -367,6 +396,10 @@ export class RequestsService extends TenantScopedService {
 
     if (target.relatedType === ATTENDANCE_TYPE && target.relatedId !== null) {
       await this.corrections.cancel(ctx, target.relatedId, origin);
+      return this.findOne(ctx, id);
+    }
+    if (target.relatedType === LEAVE_TYPE && target.relatedId !== null) {
+      await this.leave.cancel(ctx, target.relatedId, {}, origin);
       return this.findOne(ctx, id);
     }
 
@@ -501,10 +534,18 @@ export class RequestsService extends TenantScopedService {
     const correctionIds = rows
       .filter((row) => row.relatedType === ATTENDANCE_TYPE && row.relatedId !== null)
       .map((row) => row.relatedId as string);
+    const leaveIds = rows
+      .filter((row) => row.relatedType === LEAVE_TYPE && row.relatedId !== null)
+      .map((row) => row.relatedId as string);
     const taskIds = rows
       .filter((row) => row.relatedType === 'task' && row.relatedId !== null)
       .map((row) => row.relatedId as string);
 
+    const leaveById: Map<string, LeaveRequestDetailPayload> = await this.leave.contextFor(
+      tx,
+      ctx,
+      leaveIds,
+    );
     const [corrections, tasks, reviewable] = await Promise.all([
       correctionIds.length === 0
         ? []
@@ -541,6 +582,7 @@ export class RequestsService extends TenantScopedService {
           row.relatedType === ATTENDANCE_TYPE
             ? (correctionById.get(row.relatedId ?? '') ?? null)
             : null,
+        leave: row.relatedType === LEAVE_TYPE ? (leaveById.get(row.relatedId ?? '') ?? null) : null,
         isOwn,
         abilities: {
           can_review: reviewableIds.has(row.id),

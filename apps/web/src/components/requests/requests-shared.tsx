@@ -5,6 +5,7 @@ import type { Locale, Translator } from '@ufuq/i18n';
 import { ageInDays, categoryKey, STATUS_TONE, statusKey, summaryOf } from '../../lib/requests';
 import type { RequestCategory, RequestItem, RequestStatus } from '../../lib/requests';
 import { formatDate } from '../attendance/attendance-shared';
+import { formatDays, typeName } from '../../lib/leave';
 import { Badge } from '../design-system';
 import { Ltr } from '../settings/screen-states';
 
@@ -41,7 +42,9 @@ export function RequestSummary({
   t,
   timeZone,
 }: {
-  readonly item: Pick<RequestItem, 'subject' | 'attendance'>;
+  readonly item: Pick<RequestItem, 'subject' | 'attendance'> & {
+    readonly leave?: RequestItem['leave'];
+  };
   readonly locale: Locale;
   readonly t: Translator;
   readonly timeZone: string;
@@ -52,6 +55,17 @@ export function RequestSummary({
     return (
       <span>
         {t('requests.summary_attendance')} <Ltr>{formatDate(summary.date, locale, timeZone)}</Ltr>
+      </span>
+    );
+  }
+  if (summary.kind === 'leave') {
+    return (
+      <span>
+        {typeName(summary.leave.leave_type, locale)} ·{' '}
+        <Ltr>{`${formatDate(summary.leave.start_date, locale, timeZone)} – ${formatDate(summary.leave.end_date, locale, timeZone)}`}</Ltr>{' '}
+        <span className="tasks-muted">
+          ({t('leave.days_short', { days: formatDays(summary.leave.days_count) })})
+        </span>
       </span>
     );
   }

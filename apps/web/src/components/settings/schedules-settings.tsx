@@ -77,6 +77,21 @@ interface HolidayPayload {
   readonly is_recurring: boolean;
 }
 
+/**
+ * `POST /holidays` also names the approved leave that already holds the new
+ * holiday (DOCUMENT 16, Phase 10): the day count is not silently
+ * recalculated, so the ADMIN is shown the requests and decides explicitly.
+ */
+interface CreatedHolidayPayload extends HolidayPayload {
+  readonly affected_leave_requests: readonly {
+    readonly id: string;
+    readonly employee_id: string;
+    readonly employee_name: string;
+    readonly start_date: string;
+    readonly end_date: string;
+  }[];
+}
+
 interface CompanyDefaults {
   readonly timezone: string;
 }
@@ -175,6 +190,9 @@ export function SchedulesSettings({ locale }: { readonly locale: Locale }): Reac
   const [editing, setEditing] = useState<Editing | null>(null);
   const [scheduleForm, setScheduleForm] = useState<ScheduleForm | null>(null);
   const [holidayOpen, setHolidayOpen] = useState(false);
+  const [affectedLeave, setAffectedLeave] = useState<
+    CreatedHolidayPayload['affected_leave_requests']
+  >([]);
   const [holidayForm, setHolidayForm] = useState<HolidayForm>(EMPTY_HOLIDAY);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -303,12 +321,13 @@ export function SchedulesSettings({ locale }: { readonly locale: Locale }): Reac
     setFieldIssues({});
     setFormError(null);
 
-    fetchOne<HolidayPayload>('/holidays', {
+    fetchOne<CreatedHolidayPayload>('/holidays', {
       locale,
       method: 'POST',
       body: holidayForm,
     })
-      .then(() => {
+      .then((created) => {
+        setAffectedLeave(created.affected_leave_requests);
         setHolidayOpen(false);
         setNotice(t('state.created'));
         reload();
@@ -346,6 +365,23 @@ export function SchedulesSettings({ locale }: { readonly locale: Locale }): Reac
     <>
       {heading}
       <SuccessNotice message={notice} t={t} />
+      {affectedLeave.length === 0 ? null : (
+        <Alert tone="warning" title={t('leave.holiday_affects_title')}>
+          <p>{t('leave.holiday_affects_note')}</p>
+          <ul className="leave-affected">
+            {affectedLeave.map((leave) => (
+              <li key={leave.id}>
+                <a
+                  href={`/${locale}/admin/requests?category=leave&status=approved&employee=${leave.employee_id}`}
+                >
+                  {leave.employee_name}
+                </a>{' '}
+                <span dir="ltr">{`${leave.start_date} – ${leave.end_date}`}</span>
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
 
       <Alert tone="warning" title={t('settings.historical_warning_title')}>
         {t('settings.historical_warning')}

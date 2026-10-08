@@ -12,6 +12,7 @@ import type { Prisma } from '@ufuq/db';
 
 import type { AttachmentPayload } from '../attachments/attachment-payload.js';
 import type { CorrectionPayload } from '../attendance/attendance-payload.js';
+import type { LeaveRequestDetailPayload } from '../leave/leave-payload.js';
 import { PERSON_SELECT, personRef } from '../tasks/task-payload.js';
 import type { PersonRef } from '../tasks/task-payload.js';
 
@@ -68,6 +69,8 @@ export interface RequestPayload {
   readonly task: RequestTaskRef | null;
   /** Attendance category: the correction this row indexes (OD-09). */
   readonly attendance: CorrectionPayload | null;
+  /** Leave category: the leave request this row indexes, with its balances (OD-09, B13). */
+  readonly leave: LeaveRequestDetailPayload | null;
   readonly reviewed_by: PersonRef | null;
   readonly reviewed_at: string | null;
   readonly admin_response: string | null;
@@ -87,6 +90,7 @@ export function requestPayload(
   extras: {
     readonly task: RequestTaskRef | null;
     readonly attendance: CorrectionPayload | null;
+    readonly leave: LeaveRequestDetailPayload | null;
     readonly isOwn: boolean;
     readonly abilities: RequestAbilities;
   },
@@ -115,6 +119,7 @@ export function requestPayload(
     related_id: row.relatedId,
     task: extras.task,
     attendance: extras.attendance,
+    leave: extras.leave,
     reviewed_by: row.reviewer === null ? null : personRef(row.reviewer),
     reviewed_at: row.reviewedAt?.toISOString() ?? null,
     admin_response: row.adminResponse,

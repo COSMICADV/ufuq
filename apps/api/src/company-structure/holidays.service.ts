@@ -26,7 +26,7 @@ import type { RequestOrigin } from '../common/request-context.js';
 import type { CreateHolidayDto } from './dto/holiday.dto.js';
 import type { ResolvedPage } from './dto/pagination.dto.js';
 import { holidayPayload } from './payloads.js';
-import type { HolidayPayload } from './payloads.js';
+import type { CreatedHolidayPayload, HolidayPayload } from './payloads.js';
 import { fieldError, isUniqueViolation, TenantScopedService } from './tenant-scoped.service.js';
 import { parseCalendarDate } from './validation.js';
 
@@ -59,7 +59,7 @@ export class HolidaysService extends TenantScopedService {
     ctx: AuthContext,
     dto: CreateHolidayDto,
     origin: RequestOrigin,
-  ): Promise<HolidayPayload> {
+  ): Promise<CreatedHolidayPayload> {
     // Already validated by `IsCalendarDate`; parsed here through the same
     // function so the validator and the write cannot disagree about what
     // "2026-02-29" means.
@@ -99,7 +99,36 @@ export class HolidaysService extends TenantScopedService {
         userAgent: origin.userAgent,
       });
 
-      return payload;
+      // Approved leave already holding this day stays exactly as approved.
+      const leaveDays = await tx.attendanceRecord.findMany({
+        where: { date, leaveRequestId: { not: null } },
+        select: {
+          leaveRequest: {
+            select: {
+              id: true,
+              status: true,
+              startDate: true,
+              endDate: true,
+              employee: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
+        },
+      });
+      const affected = leaveDays
+        .map((day) => day.leaveRequest)
+        .filter(
+          (leave): leave is NonNullable<typeof leave> =>
+            leave !== null && leave.status === 'approved',
+        )
+        .map((leave) => ({
+          id: leave.id,
+          employee_id: leave.employee.id,
+          employee_name: `${leave.employee.firstName} ${leave.employee.lastName}`.trim(),
+          start_date: leave.startDate.toISOString().slice(0, 10),
+          end_date: leave.endDate.toISOString().slice(0, 10),
+        }));
+
+      return { ...payload, affected_leave_requests: affected };
     });
   }
 }

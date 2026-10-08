@@ -33,7 +33,12 @@ export function MyRequests({ locale }: { readonly locale: Locale }): React.JSX.E
   const params = new URLSearchParams(useSearchParams()?.toString() ?? '');
   const requested = Number(params.get('page'));
   const page = Number.isInteger(requested) && requested >= 1 ? requested : 1;
-  const notice = params.get('notice') === 'cancelled' ? t('requests.cancelled_notice') : null;
+  const notice =
+    params.get('notice') === 'cancelled'
+      ? t('requests.cancelled_notice')
+      : params.get('notice') === 'submitted'
+        ? t('requests.submitted_notice')
+        : null;
 
   const load = useCallback(
     async (signal: AbortSignal) => {

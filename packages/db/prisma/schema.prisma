@@ -212,6 +212,25 @@ enum RequestStatus {
   @@map("request_status")
 }
 
+/// DOCUMENT 06 §3.12 / DOCUMENT 16 rule 13.
+enum LeaveCarryOverPolicy {
+  none
+  full
+  capped
+
+  @@map("leave_carry_over_policy")
+}
+
+/// DOCUMENT 06 §3.14.
+enum LeaveRequestStatus {
+  pending
+  approved
+  rejected
+  cancelled
+
+  @@map("leave_request_status")
+}
+
 /// DOCUMENT 21 — only the "Authentication & access" action group ships in
 /// Phase 3. Every later phase adds its own values to this type in its own
 /// migration; this is not a preview of the full DOCUMENT 21 catalogue.
@@ -267,6 +286,13 @@ enum AuditAction {
   REQUEST_APPROVED                     @map("request.approved")
   REQUEST_REJECTED                     @map("request.rejected")
   REQUEST_CANCELLED                    @map("request.cancelled")
+  LEAVE_REQUESTED                      @map("leave.requested")
+  LEAVE_APPROVED                       @map("leave.approved")
+  LEAVE_REJECTED                       @map("leave.rejected")
+  LEAVE_CANCELLED                      @map("leave.cancelled")
+  LEAVE_BALANCE_ADJUSTED               @map("leave.balance_adjusted")
+  LEAVE_TYPE_CREATED                   @map("leave_type.created")
+  LEAVE_TYPE_UPDATED                   @map("leave_type.updated")
 
   @@map("audit_action")
 }
@@ -319,6 +345,10 @@ model Company {
   performanceConfig PerformanceConfig?
 
   requests Request[]
+
+  leaveTypes    LeaveType[]
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
 
   @@index([status])
   @@map("companies")
@@ -523,6 +553,9 @@ model Employee {
 
   requests Request[]
 
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -647,6 +680,7 @@ model User {
   goalProgressCreated GoalProgress[]                @relation("goal_progress_created_by")
   performanceConfigs  PerformanceConfig[]           @relation("performance_config_updated_by")
   requestsReviewed    Request[]                     @relation("request_reviewed_by")
+  leaveReviewed       LeaveRequest[]                @relation("leave_reviewed_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -772,11 +806,9 @@ model AuditLog {
 /// past month (DOCUMENT 12 edge case "schedule changes mid-month"). They are
 /// null until there is something to derive them from.
 ///
-/// `leave_request_id` (DOCUMENT 06 §3.10) is deliberately **not** here: it is
-/// a foreign key to `leave_requests`, which Phase 10 creates. An unenforced
-/// UUID column now is the shortcut that never gets fixed — the same reasoning
-/// that kept `departments.manager_employee_id` out of Phase 4. See
-/// docs/PHASE-6-STATUS.md.
+/// `leave_request_id` (DOCUMENT 06 §3.10) arrived with `leave_requests` in
+/// Phase 10: approved leave writes `on_leave` days linked back to the request
+/// (DOCUMENT 12 rule 8, DOCUMENT 16 rule 5).
 model AttendanceRecord {
   id              String           @id @db.Uuid
   companyId       String           @map("company_id") @db.Uuid
@@ -796,8 +828,11 @@ model AttendanceRecord {
   /// Null for rows the system generated — there is no acting human to name
   /// (DOCUMENT 12 "source values": `system`).
   createdBy       String?          @map("created_by") @db.Uuid
+  leaveRequestId  String?          @map("leave_request_id") @db.Uuid
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  leaveRequest LeaveRequest? @relation(fields: [leaveRequestId], references: [id], onDelete: Restrict)
 
   company       Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
   employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
@@ -973,6 +1008,8 @@ model Attachment {
   company  Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
   uploader User    @relation("attachment_uploaded_by", fields: [uploadedBy], references: [id], onDelete: Restrict)
 
+  leaveRequests LeaveRequest[]
+
   @@index([companyId, relatedType, relatedId])
   @@map("attachments")
 }
@@ -1088,4 +1125,92 @@ model Request {
   @@index([companyId, status, createdAt])
   @@index([employeeId, createdAt])
   @@map("requests")
+}
+
+// ---------------------------------------------------------------------------
+// Leave — Phase 10 (DOCUMENT 06 §3.12–3.14, DOCUMENT 16)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.12. Seeded per company by the database (Annual, Sick,
+/// Emergency, Unpaid, Other), fully configurable, soft-deleted.
+model LeaveType {
+  id                    String               @id @db.Uuid
+  companyId             String               @map("company_id") @db.Uuid
+  nameAr                String               @map("name_ar") @db.VarChar(100)
+  nameEn                String               @map("name_en") @db.VarChar(100)
+  isPaid                Boolean              @default(true) @map("is_paid")
+  defaultDaysPerYear    Decimal              @default(0) @map("default_days_per_year") @db.Decimal(5, 2)
+  requiresAttachment    Boolean              @default(false) @map("requires_attachment")
+  allowsNegativeBalance Boolean              @default(false) @map("allows_negative_balance")
+  carryOverPolicy       LeaveCarryOverPolicy @default(none) @map("carry_over_policy")
+  carryOverCap          Decimal?             @map("carry_over_cap") @db.Decimal(5, 2)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?            @map("deleted_at") @db.Timestamptz(3)
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  balances LeaveBalance[]
+  requests LeaveRequest[]
+
+  @@index([companyId])
+  @@map("leave_types")
+}
+
+/// DOCUMENT 06 §3.13. `remaining = total + carried_over − used − pending` is
+/// computed, never stored.
+model LeaveBalance {
+  id                 String    @id @db.Uuid
+  companyId          String    @map("company_id") @db.Uuid
+  employeeId         String    @map("employee_id") @db.Uuid
+  leaveTypeId        String    @map("leave_type_id") @db.Uuid
+  year               Int       @db.SmallInt
+  totalDays          Decimal   @default(0) @map("total_days") @db.Decimal(5, 2)
+  usedDays           Decimal   @default(0) @map("used_days") @db.Decimal(5, 2)
+  pendingDays        Decimal   @default(0) @map("pending_days") @db.Decimal(5, 2)
+  carriedOverDays    Decimal   @default(0) @map("carried_over_days") @db.Decimal(5, 2)
+  /// Set when the annual carry-over job wrote `carried_over_days` (idempotency).
+  carryOverAppliedAt DateTime? @map("carry_over_applied_at") @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee  Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@index([companyId, year])
+  @@map("leave_balances")
+}
+
+/// DOCUMENT 06 §3.14 — the source of truth for a leave request. Its Requests
+/// Centre row is written and kept in step by a database trigger (OD-09).
+model LeaveRequest {
+  id             String             @id @db.Uuid
+  companyId      String             @map("company_id") @db.Uuid
+  employeeId     String             @map("employee_id") @db.Uuid
+  leaveTypeId    String             @map("leave_type_id") @db.Uuid
+  startDate      DateTime           @map("start_date") @db.Date
+  endDate        DateTime           @map("end_date") @db.Date
+  daysCount      Decimal            @map("days_count") @db.Decimal(5, 2)
+  /// Days held per calendar year at submission, e.g. {"2026": "3.00"}.
+  yearAllocation Json               @map("year_allocation")
+  reason         String             @db.Text
+  attachmentId   String?            @map("attachment_id") @db.Uuid
+  status         LeaveRequestStatus @default(pending)
+  reviewedBy     String?            @map("reviewed_by") @db.Uuid
+  reviewedAt     DateTime?          @map("reviewed_at") @db.Timestamptz(3)
+  reviewNote     String?            @map("review_note") @db.Text
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee          Employee           @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  leaveType         LeaveType          @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+  reviewer          User?              @relation("leave_reviewed_by", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  attachment        Attachment?        @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  attendanceRecords AttendanceRecord[]
+
+  @@index([companyId, status])
+  @@index([employeeId, startDate])
+  @@map("leave_requests")
 }
