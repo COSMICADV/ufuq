@@ -22,6 +22,11 @@ Make every material action in the system attributable, explicable, and reviewabl
 ### Leave
 `leave.requested` · `leave.approved` · `leave.rejected` · `leave.cancelled` · `leave.balance_adjusted` · `leave_type.created` · `leave_type.updated`
 
+### Requests
+`request.submitted` · `request.approved` · `request.rejected` · `request.cancelled`
+
+These record the lifecycle of the Requests Centre's own categories (Salary, Task, General) and the requester's cancellation of a request. Specialised records keep their own actions — an attendance correction is audited as `attendance.correction_requested` / `attendance.correction_approved` / `attendance.correction_rejected`, and leave as `leave.*`.
+
 ### Tasks & goals
 `task.created` · `task.updated` · `task.reassigned` · `task.deadline_changed` · `task.status_changed` · `task.cancelled` · `task.deleted` · `task.reopened` · `checklist.item_added` · `checklist.item_deleted` · `goal.created` · `goal.updated` · `goal.progress_updated` · `goal.target_changed` · `goal.cancelled`
 

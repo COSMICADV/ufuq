@@ -72,6 +72,13 @@ export const ERROR_CODES = {
   // so a manual figure for one is refused (rule 4, "No manual entry").
   GOAL_CANCELLED: 'GOAL_CANCELLED',
   GOAL_PROGRESS_AUTOMATIC: 'GOAL_PROGRESS_AUTOMATIC',
+  // Phase 9 — requests. A decided or cancelled request takes no further
+  // decision (409); nobody reviews their own request (OD-03, 403); and the
+  // specialised categories are submitted through their own records (OD-09
+  // hybrid model, 422).
+  REQUEST_NOT_PENDING: 'REQUEST_NOT_PENDING',
+  REQUEST_SELF_REVIEW: 'REQUEST_SELF_REVIEW',
+  REQUEST_CATEGORY_SPECIALISED: 'REQUEST_CATEGORY_SPECIALISED',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -97,6 +104,9 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   TASK_HAS_OPEN_ITEMS: 'error.task_has_open_items',
   GOAL_CANCELLED: 'error.goal_cancelled',
   GOAL_PROGRESS_AUTOMATIC: 'error.goal_progress_automatic',
+  REQUEST_NOT_PENDING: 'error.request_not_pending',
+  REQUEST_SELF_REVIEW: 'error.request_self_review',
+  REQUEST_CATEGORY_SPECIALISED: 'error.request_category_specialised',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',

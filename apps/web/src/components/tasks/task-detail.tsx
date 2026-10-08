@@ -394,7 +394,7 @@ export function TaskDetailScreen({
 
       <TaskAttachments
         key={`attachments-${task.id}`}
-        taskId={task.id}
+        recordId={task.id}
         initial={attachments}
         locale={locale}
         t={t}

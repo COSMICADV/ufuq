@@ -35,13 +35,19 @@ import { Ltr, SuccessNotice } from '../settings/screen-states';
  *   updates never wipe this list.
  */
 export function TaskAttachments({
-  taskId,
+  recordId,
+  relatedType = 'task',
   initial,
   locale,
   t,
   timeZone,
 }: {
-  readonly taskId: string;
+  readonly recordId: string;
+  /**
+   * The record kind the files belong to. The card is the attachment store's
+   * one UI (DOCUMENT 27 RULE 20); a request (Phase 9) uses it as a task does.
+   */
+  readonly relatedType?: 'task' | 'request';
   readonly initial: RecordAttachments;
   readonly locale: Locale;
   readonly t: Translator;
@@ -64,8 +70,8 @@ export function TaskAttachments({
 
   const upload = (file: File): void => {
     const form = new FormData();
-    form.append('related_type', 'task');
-    form.append('related_id', taskId);
+    form.append('related_type', relatedType);
+    form.append('related_id', recordId);
     form.append('file', file, file.name);
     setUploading(true);
     setError(null);

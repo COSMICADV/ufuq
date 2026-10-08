@@ -78,6 +78,10 @@ export const AUDIT_ACTIONS = [
   'goal.target_changed',
   'goal.cancelled',
   'settings.performance_weights_changed',
+  'request.submitted',
+  'request.approved',
+  'request.rejected',
+  'request.cancelled',
 ] as const;
 
 /** The record kinds the product audits today — the entity-type filter's options. */
@@ -94,6 +98,7 @@ export const AUDIT_ENTITY_TYPES = [
   'attachment',
   'goal',
   'performance_config',
+  'request',
 ] as const;
 
 /** Translation key for an action — dots are the catalogue's path separator. */

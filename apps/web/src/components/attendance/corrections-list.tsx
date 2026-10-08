@@ -17,15 +17,7 @@ import {
 } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 
-import {
-  Detail,
-  Duration,
-  employeeName,
-  formatDate,
-  formatTime,
-  ModeChip,
-  StatusChip,
-} from './attendance-shared';
+import { CorrectionComparison, employeeName, formatDate } from './attendance-shared';
 import { loadSession } from '../employees/use-session';
 
 /**
@@ -224,54 +216,7 @@ export function CorrectionsList({ locale }: { readonly locale: Locale }): React.
             )
           }
         >
-          <div className="attendance-compare">
-            <section>
-              <h3>{t('attendance.correction_current')}</h3>
-              {open.current === null ? (
-                <p>{t('attendance.correction_nothing_recorded')}</p>
-              ) : (
-                <dl className="attendance-details">
-                  <Detail label={t('attendance.status.present')}>
-                    <StatusChip status={open.current.status} t={t} />
-                  </Detail>
-                  <Detail label={t('attendance.work_mode')}>
-                    <ModeChip mode={open.current.work_mode} t={t} />
-                  </Detail>
-                  <Detail label={t('attendance.check_in_time')}>
-                    <span dir="ltr">
-                      {formatTime(open.current.check_in_at, locale, zone) ?? '—'}
-                    </span>
-                  </Detail>
-                  <Detail label={t('attendance.check_out_time')}>
-                    <span dir="ltr">
-                      {formatTime(open.current.check_out_at, locale, zone) ?? '—'}
-                    </span>
-                  </Detail>
-                  <Detail label={t('attendance.working_hours')}>
-                    <Duration minutes={open.current.working_minutes} />
-                  </Detail>
-                </dl>
-              )}
-            </section>
-            <section>
-              <h3>{t('attendance.correction_requested')}</h3>
-              <dl className="attendance-details">
-                <Detail label={t('attendance.check_in_time')}>
-                  <span dir="ltr">{formatTime(open.requested_check_in, locale, zone) ?? '—'}</span>
-                </Detail>
-                <Detail label={t('attendance.check_out_time')}>
-                  <span dir="ltr">{formatTime(open.requested_check_out, locale, zone) ?? '—'}</span>
-                </Detail>
-                <Detail label={t('attendance.work_mode')}>
-                  <ModeChip mode={open.requested_work_mode} t={t} />
-                </Detail>
-                <Detail label={t('attendance.correction_reason')}>{open.reason}</Detail>
-                {open.review_note === null ? null : (
-                  <Detail label={t('attendance.review_note')}>{open.review_note}</Detail>
-                )}
-              </dl>
-            </section>
-          </div>
+          <CorrectionComparison correction={open} locale={locale} t={t} timeZone={zone} />
         </Modal>
       )}
 

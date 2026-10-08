@@ -121,7 +121,10 @@
     "invalid_status_transition": "The task cannot move to that status from its current one.",
     "task_has_open_items": "Some checklist items are still open. Confirm to complete the task anyway.",
     "goal_cancelled": "This goal has been cancelled and can no longer be changed.",
-    "goal_progress_automatic": "A task goal’s progress is calculated from its completed tasks. It cannot be entered by hand."
+    "goal_progress_automatic": "A task goal’s progress is calculated from its completed tasks. It cannot be entered by hand.",
+    "request_not_pending": "This request has already been decided or cancelled.",
+    "request_self_review": "You cannot approve or reject your own request. Another administrator must review it.",
+    "request_category_specialised": "This kind of request is submitted from its own form."
   },
   "employees": {
     "title": "Employees",
@@ -395,7 +398,8 @@
     "unsupported_type": "This file type is not allowed",
     "must_sum_to_one": "These weights must add up to exactly 1",
     "not_same_employee": "This goal belongs to a different employee than the task’s assignee",
-    "cancelled": "This goal has been cancelled"
+    "cancelled": "This goal has been cancelled",
+    "too_long": "This value is too long"
   },
   "attendance": {
     "title": "Attendance",
@@ -603,7 +607,11 @@
       "goal__progress_updated": "{actor} updated a goal’s progress",
       "goal__target_changed": "{actor} changed a goal’s target",
       "goal__cancelled": "{actor} cancelled a goal",
-      "settings__performance_weights_changed": "{actor} changed the performance weights"
+      "settings__performance_weights_changed": "{actor} changed the performance weights",
+      "request__submitted": "{actor} submitted a request",
+      "request__approved": "{actor} approved a request",
+      "request__rejected": "{actor} rejected a request",
+      "request__cancelled": "{actor} cancelled a request"
     },
     "entity": {
       "user": "User account",
@@ -617,7 +625,8 @@
       "task": "Task",
       "attachment": "Attachment",
       "goal": "Goal",
-      "performance_config": "Performance settings"
+      "performance_config": "Performance settings",
+      "request": "Request"
     }
   },
   "tasks": {
@@ -781,7 +790,16 @@
     "my_goals_all": "All my goals",
     "my_goals_empty": "You have no active goals.",
     "welcome_title": "Welcome to Ufuq",
-    "welcome_description": "Start by checking in. Your tasks and goals will appear here once they are assigned to you."
+    "welcome_description": "Start by checking in. Your tasks and goals will appear here once they are assigned to you.",
+    "requests_pending": "Your pending requests",
+    "requests_awaiting_review": "Awaiting your review",
+    "requests_open_inbox": "Open the inbox",
+    "requests_all": "All my requests",
+    "kpi_pending_requests": "Pending requests",
+    "kpi_pending_requests_hint": "Awaiting your decision",
+    "pending_requests_title": "Pending requests",
+    "pending_requests_all": "Open the inbox",
+    "pending_requests_empty": "No requests are waiting for your decision."
   },
   "attachments": {
     "title": "Attachments",
@@ -949,5 +967,93 @@
     "no_data": "No data",
     "provisional": "provisional until the month ends",
     "weight_short": "weight"
+  },
+  "requests": {
+    "title": "Requests",
+    "admin_description": "Every request from your team in one inbox, pending first.",
+    "my_title": "My requests",
+    "my_description": "Everything you have asked for, and what was decided.",
+    "new_title": "New request",
+    "new_description": "Choose what you are asking for, then describe it.",
+    "new_request": "New request",
+    "back_to_inbox": "Back to the inbox",
+    "back_to_mine": "Back to my requests",
+    "tabs_label": "Request categories",
+    "tab_all": "All",
+    "category": {
+      "attendance": "Attendance",
+      "leave": "Leave",
+      "salary": "Salary",
+      "task": "Task",
+      "general": "General"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "filters": "Filters",
+    "field_status": "Status",
+    "all_statuses": "All statuses",
+    "field_employee": "Employee",
+    "all_employees": "All employees",
+    "field_from": "Submitted from",
+    "field_to": "Submitted to",
+    "clear_filters": "Clear filters",
+    "col_employee": "Employee",
+    "col_category": "Category",
+    "col_summary": "Summary",
+    "col_submitted": "Submitted",
+    "col_status": "Status",
+    "department": "Department",
+    "summary_attendance": "Attendance correction for",
+    "age_today": "Submitted today",
+    "age_days": "Waiting {count} days",
+    "inbox_empty_title": "Nothing waiting",
+    "inbox_empty_description": "There are no pending requests in this category.",
+    "filtered_empty_title": "No requests match",
+    "filtered_empty_description": "Try another status, employee or date range.",
+    "my_empty_title": "No requests yet",
+    "my_empty_description": "When you ask for something — a salary certificate, help with a task — it appears here with its decision.",
+    "field_category": "What is this about?",
+    "field_subject": "Subject",
+    "field_description": "Details",
+    "field_task": "Task",
+    "task_helper": "Optional — one of your own tasks this request is about.",
+    "no_task": "No specific task",
+    "attendance_hint": "Correcting a day’s attendance?",
+    "attendance_link": "Use the correction form",
+    "attach_after": "You can attach files on the request’s page after you submit it.",
+    "submit": "Submit request",
+    "submit_failed": "The request was not submitted",
+    "submitted_notice": "Your request was submitted. It is now pending review.",
+    "attendance_context": "Attendance record",
+    "decision_title": "Decision",
+    "decision": "Decision",
+    "reviewer": "Reviewed by",
+    "reviewed_at": "Reviewed on",
+    "admin_response": "Response",
+    "no_response": "No response was given.",
+    "response_helper": "Required when rejecting. The employee sees it.",
+    "reason_required": "Give a reason for rejecting this request.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved_notice": "The request was approved.",
+    "rejected_notice": "The request was rejected.",
+    "cancelled_notice": "The request was cancelled.",
+    "cancelled_state": "This request was cancelled by the employee.",
+    "awaiting_decision": "This request is waiting for a decision.",
+    "self_review_title": "This is your own request",
+    "self_review_note": "Nobody decides their own request. Another administrator must approve or reject it. If you are the only administrator, it stays pending until another administrator exists; you can still cancel it while it is pending.",
+    "action_failed": "That did not work",
+    "cancel_request": "Cancel request",
+    "keep_request": "Keep it",
+    "cancel_title": "Cancel this request?",
+    "cancel_body": "It will be withdrawn and nobody will review it. This cannot be undone.",
+    "history_title": "Decision history",
+    "history_empty_title": "No history yet",
+    "history_empty": "Actions on this request will be listed here.",
+    "reject_title": "Reject this request?"
   }
 }

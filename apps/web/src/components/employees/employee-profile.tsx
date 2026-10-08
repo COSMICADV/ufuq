@@ -30,6 +30,7 @@ import {
 } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { EmployeeGoals } from '../goals/employee-goals';
+import { EmployeeRequests } from '../requests/employee-requests';
 import { EmployeeTasks } from '../tasks/employee-tasks';
 import { newGoalPath } from '../../lib/goals';
 import { newTaskPath } from '../../lib/tasks';
@@ -439,6 +440,13 @@ function ProfileBody({
             employeeId={employee.id}
             timeZone={session.timeZone}
             assignAction={assignGoal}
+          />
+        ) : tab === 'requests' ? (
+          <EmployeeRequests
+            locale={locale}
+            t={t}
+            employeeId={employee.id}
+            timeZone={session.timeZone}
           />
         ) : (
           <EmptyState

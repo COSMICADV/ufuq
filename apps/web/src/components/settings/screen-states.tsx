@@ -240,6 +240,13 @@ export function describeError(error: unknown, t: Translator): string {
       return t('error.goal_cancelled');
     case 'GOAL_PROGRESS_AUTOMATIC':
       return t('error.goal_progress_automatic');
+    // Phase 9 — requests (OD-03, OD-09, terminal states).
+    case 'REQUEST_NOT_PENDING':
+      return t('error.request_not_pending');
+    case 'REQUEST_SELF_REVIEW':
+      return t('error.request_self_review');
+    case 'REQUEST_CATEGORY_SPECIALISED':
+      return t('error.request_category_specialised');
     default:
       return t('state.error');
   }

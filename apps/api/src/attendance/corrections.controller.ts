@@ -120,8 +120,9 @@ export class CorrectionsController {
   async cancel(
     @CurrentUser() ctx: AuthContext,
     @Param('id', uuidParam) id: string,
+    @RequestContext() origin: RequestOrigin,
     @RequestLocale() locale: Locale,
   ): Promise<SingleResponse<CorrectionPayload>> {
-    return single(await this.corrections.cancel(ctx, id), { locale });
+    return single(await this.corrections.cancel(ctx, id, origin), { locale });
   }
 }

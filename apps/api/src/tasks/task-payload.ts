@@ -20,7 +20,7 @@ import { PERCENT_SCALE, allowedTransitions, isOverdue } from './task-rules.js';
 import type { TaskPriorityValue, TaskStatusValue } from './task-rules.js';
 import type { AttachmentPayload } from '../attachments/attachment-payload.js';
 
-const PERSON_SELECT = {
+export const PERSON_SELECT = {
   id: true,
   email: true,
   employee: { select: { id: true, firstName: true, lastName: true } },

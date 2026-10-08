@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
-import { fetchMany } from '../../lib/api-client';
+import { fetchMany, fetchOne } from '../../lib/api-client';
 import {
   DASHBOARD_GOALS_LIMIT,
   dueTodayCount,
@@ -14,6 +14,8 @@ import {
 } from '../../lib/employee-dashboard';
 import { goalPath, goalsPath } from '../../lib/goals';
 import type { Goal } from '../../lib/goals';
+import { newRequestPath, requestsPath } from '../../lib/requests';
+import type { PendingCount } from '../../lib/requests';
 import { taskPath, todayIn } from '../../lib/tasks';
 import type { Task } from '../../lib/tasks';
 import { AttendanceCard } from '../attendance/attendance-card';
@@ -30,9 +32,10 @@ import { TaskCard } from '../tasks/tasks-admin';
  * `/{locale}/app` — DOCUMENT 04 C1, the employee dashboard.
  *
  * Only the components whose modules exist are rendered: the attendance card
- * (2), "My tasks" (3) and "My goals" (4). The greeting carries today's date;
- * salary, leave balance and requests (5–7) arrive with their phases rather
- * than as placeholders (DOCUMENT 27 RULE 26).
+ * (2), "My tasks" (3), "My goals" (4) and, from Phase 9, the requests pending
+ * count (7). The greeting carries today's date; salary and leave balance
+ * (5–6) arrive with their phases rather than as placeholders (DOCUMENT 27
+ * RULE 26).
  *
  * C1 "Loading": the attendance card loads first and on its own — it is the
  * same card as `/app/attendance`, with its own error state and no buttons
@@ -60,6 +63,9 @@ export function EmployeeDashboard({ locale }: { readonly locale: Locale }): Reac
         <ErrorState error={session.state.error} t={t} onRetry={session.reload} />
       ) : null}
       {ready === null ? null : <MyWork locale={locale} t={t} session={ready} />}
+      {ready !== null && ready.permissions.has('request.create') ? (
+        <MyRequestsCount locale={locale} t={t} />
+      ) : null}
     </div>
   );
 }
@@ -266,5 +272,58 @@ function NextTasks({
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * C1 component 7 — "Requests: pending count", from `GET /requests/pending-count`.
+ * For an employee that is their own pending requests; for a reviewer it is
+ * what awaits their decision, and the link goes to the inbox. It loads, fails
+ * and retries on its own, like the attendance card.
+ */
+function MyRequestsCount({
+  locale,
+  t,
+}: {
+  readonly locale: Locale;
+  readonly t: Translator;
+}): React.JSX.Element {
+  const load = useCallback(
+    (signal: AbortSignal) => fetchOne<PendingCount>('/requests/pending-count', { locale, signal }),
+    [locale],
+  );
+  const resource = useResource(load);
+  const review = resource.state.status === 'ready' && resource.state.value.basis === 'review';
+
+  return (
+    <Card
+      title={t('requests.my_title')}
+      className="tasks-reassignment"
+      action={
+        <Link className="tasks-back" href={newRequestPath(locale)}>
+          {t('requests.new_request')}
+        </Link>
+      }
+    >
+      {resource.state.status === 'loading' ? <LoadingState t={t} rows={1} /> : null}
+      {resource.state.status === 'error' ? (
+        <ErrorState error={resource.state.error} t={t} onRetry={resource.reload} />
+      ) : null}
+      {resource.state.status === 'ready' ? (
+        <ul className="attendance-chips">
+          <li>
+            <Badge tone="warning">
+              {review ? t('dashboard.requests_awaiting_review') : t('dashboard.requests_pending')}
+            </Badge>
+            <span dir="ltr">{resource.state.value.count}</span>
+          </li>
+          <li>
+            <Link href={review ? requestsPath(locale) : requestsPath(locale, 'app')}>
+              {review ? t('dashboard.requests_open_inbox') : t('dashboard.requests_all')}
+            </Link>
+          </li>
+        </ul>
+      ) : null}
+    </Card>
   );
 }

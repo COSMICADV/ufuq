@@ -2532,3 +2532,71 @@ a.button {
 .goals-chart__point {
   fill: var(--green-primary-600);
 }
+
+/* ===========================================================================
+   Requests Centre — Phase 9 (DOCUMENT 04 B13 / C8–C10). Appended; nothing
+   above is changed. Logical properties and design tokens only, so the screens
+   lay out right-to-left and left-to-right alike.
+   =========================================================================== */
+.requests-detail {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+.requests-detail__summary .card__body,
+.requests-decision .card__body {
+  display: grid;
+  gap: var(--space-4);
+}
+.requests-detail__subject {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.requests-detail__description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.requests-submitted {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Admin dashboard — DOCUMENT 04 B1 KPI row 2 and widget 7 (Phase 9). */
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+}
+.requests-pending {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.requests-pending__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.requests-pending__item:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+.requests-pending__main {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  flex: 1 1 16rem;
+}
+.requests-pending__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

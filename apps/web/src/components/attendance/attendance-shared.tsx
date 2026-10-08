@@ -10,7 +10,12 @@ import {
   statusKey,
   workModeKey,
 } from '../../lib/attendance';
-import type { AttendanceRecord, AttendanceStatus, WorkMode } from '../../lib/attendance';
+import type {
+  AttendanceRecord,
+  AttendanceStatus,
+  CorrectionRequest,
+  WorkMode,
+} from '../../lib/attendance';
 import { Ltr } from '../settings/screen-states';
 
 /**
@@ -125,6 +130,76 @@ export function Detail({
     <div className="attendance-detail">
       <dt>{label}</dt>
       <dd>{children}</dd>
+    </div>
+  );
+}
+
+/**
+ * DOCUMENT 04 B7 — a correction's "current recorded values vs requested
+ * values side by side". Shared by the corrections screen and the Requests
+ * Centre detail (DOCUMENT 04 B13: "the relevant attendance record for
+ * corrections"), so the comparison reads the same in both.
+ */
+export function CorrectionComparison({
+  correction,
+  locale,
+  t,
+  timeZone,
+}: {
+  readonly correction: CorrectionRequest;
+  readonly locale: Locale;
+  readonly t: Translator;
+  readonly timeZone: string;
+}): React.JSX.Element {
+  const zone = timeZone;
+  return (
+    <div className="attendance-compare">
+      <section>
+        <h3>{t('attendance.correction_current')}</h3>
+        {correction.current === null ? (
+          <p>{t('attendance.correction_nothing_recorded')}</p>
+        ) : (
+          <dl className="attendance-details">
+            <Detail label={t('attendance.status.present')}>
+              <StatusChip status={correction.current.status} t={t} />
+            </Detail>
+            <Detail label={t('attendance.work_mode')}>
+              <ModeChip mode={correction.current.work_mode} t={t} />
+            </Detail>
+            <Detail label={t('attendance.check_in_time')}>
+              <span dir="ltr">
+                {formatTime(correction.current.check_in_at, locale, zone) ?? '—'}
+              </span>
+            </Detail>
+            <Detail label={t('attendance.check_out_time')}>
+              <span dir="ltr">
+                {formatTime(correction.current.check_out_at, locale, zone) ?? '—'}
+              </span>
+            </Detail>
+            <Detail label={t('attendance.working_hours')}>
+              <Duration minutes={correction.current.working_minutes} />
+            </Detail>
+          </dl>
+        )}
+      </section>
+      <section>
+        <h3>{t('attendance.correction_requested')}</h3>
+        <dl className="attendance-details">
+          <Detail label={t('attendance.check_in_time')}>
+            <span dir="ltr">{formatTime(correction.requested_check_in, locale, zone) ?? '—'}</span>
+          </Detail>
+          <Detail label={t('attendance.check_out_time')}>
+            <span dir="ltr">{formatTime(correction.requested_check_out, locale, zone) ?? '—'}</span>
+          </Detail>
+          <Detail label={t('attendance.work_mode')}>
+            <ModeChip mode={correction.requested_work_mode} t={t} />
+          </Detail>
+          <Detail label={t('attendance.correction_reason')}>{correction.reason}</Detail>
+          {correction.review_note === null ? null : (
+            <Detail label={t('attendance.review_note')}>{correction.review_note}</Detail>
+          )}
+        </dl>
+      </section>
     </div>
   );
 }

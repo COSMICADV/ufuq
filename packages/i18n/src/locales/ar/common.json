@@ -121,7 +121,10 @@
     "invalid_status_transition": "لا يمكن نقل المهمة إلى هذه الحالة من حالتها الحالية.",
     "task_has_open_items": "ما زالت هناك بنود مفتوحة في قائمة التحقق. أكّد لإكمال المهمة على أي حال.",
     "goal_cancelled": "تم إلغاء هذا الهدف ولم يعد من الممكن تعديله.",
-    "goal_progress_automatic": "يُحسب تقدم هدف المهام تلقائيًا من المهام المكتملة، ولا يمكن إدخاله يدويًا."
+    "goal_progress_automatic": "يُحسب تقدم هدف المهام تلقائيًا من المهام المكتملة، ولا يمكن إدخاله يدويًا.",
+    "request_not_pending": "تم البت في هذا الطلب أو إلغاؤه بالفعل.",
+    "request_self_review": "لا يمكنك اعتماد طلبك أو رفضه. يجب أن يراجعه مسؤول آخر.",
+    "request_category_specialised": "يُقدَّم هذا النوع من الطلبات من نموذجه الخاص."
   },
   "employees": {
     "title": "الموظفون",
@@ -395,7 +398,8 @@
     "unsupported_type": "نوع الملف غير مسموح",
     "must_sum_to_one": "يجب أن يكون مجموع هذه الأوزان 1 بالضبط",
     "not_same_employee": "هذا الهدف يخص موظفًا غير المكلّف بالمهمة",
-    "cancelled": "تم إلغاء هذا الهدف"
+    "cancelled": "تم إلغاء هذا الهدف",
+    "too_long": "هذه القيمة أطول من المسموح"
   },
   "attendance": {
     "title": "الحضور والانصراف",
@@ -603,7 +607,11 @@
       "goal__progress_updated": "حدّث {actor} تقدم هدف",
       "goal__target_changed": "غيّر {actor} المستهدف لهدف",
       "goal__cancelled": "ألغى {actor} هدفًا",
-      "settings__performance_weights_changed": "غيّر {actor} أوزان تقييم الأداء"
+      "settings__performance_weights_changed": "غيّر {actor} أوزان تقييم الأداء",
+      "request__submitted": "قدّم {actor} طلبًا",
+      "request__approved": "اعتمد {actor} طلبًا",
+      "request__rejected": "رفض {actor} طلبًا",
+      "request__cancelled": "ألغى {actor} طلبًا"
     },
     "entity": {
       "user": "حساب مستخدم",
@@ -617,7 +625,8 @@
       "task": "مهمة",
       "attachment": "مرفق",
       "goal": "هدف",
-      "performance_config": "إعدادات الأداء"
+      "performance_config": "إعدادات الأداء",
+      "request": "طلب"
     }
   },
   "tasks": {
@@ -781,7 +790,16 @@
     "my_goals_all": "كل أهدافي",
     "my_goals_empty": "ليس لديك أهداف نشطة.",
     "welcome_title": "مرحبًا بك في أُفق",
-    "welcome_description": "ابدأ بتسجيل الحضور. ستظهر مهامك وأهدافك هنا عند إسنادها إليك."
+    "welcome_description": "ابدأ بتسجيل الحضور. ستظهر مهامك وأهدافك هنا عند إسنادها إليك.",
+    "requests_pending": "طلباتك قيد المراجعة",
+    "requests_awaiting_review": "بانتظار مراجعتك",
+    "requests_open_inbox": "فتح صندوق الطلبات",
+    "requests_all": "كل طلباتي",
+    "kpi_pending_requests": "الطلبات المعلّقة",
+    "kpi_pending_requests_hint": "بانتظار قرارك",
+    "pending_requests_title": "الطلبات المعلّقة",
+    "pending_requests_all": "فتح صندوق الطلبات",
+    "pending_requests_empty": "لا توجد طلبات بانتظار قرارك."
   },
   "attachments": {
     "title": "المرفقات",
@@ -949,5 +967,93 @@
     "no_data": "لا توجد بيانات",
     "provisional": "مؤقت حتى نهاية الشهر",
     "weight_short": "الوزن"
+  },
+  "requests": {
+    "title": "الطلبات",
+    "admin_description": "كل طلبات فريقك في صندوق واحد، والمعلّقة أولًا.",
+    "my_title": "طلباتي",
+    "my_description": "كل ما طلبته، وما تقرر بشأنه.",
+    "new_title": "طلب جديد",
+    "new_description": "اختر نوع طلبك، ثم صِفه.",
+    "new_request": "طلب جديد",
+    "back_to_inbox": "العودة إلى صندوق الطلبات",
+    "back_to_mine": "العودة إلى طلباتي",
+    "tabs_label": "فئات الطلبات",
+    "tab_all": "الكل",
+    "category": {
+      "attendance": "الحضور",
+      "leave": "الإجازات",
+      "salary": "الراتب",
+      "task": "المهام",
+      "general": "عام"
+    },
+    "status": {
+      "pending": "قيد المراجعة",
+      "approved": "مقبول",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى"
+    },
+    "filters": "عوامل التصفية",
+    "field_status": "الحالة",
+    "all_statuses": "كل الحالات",
+    "field_employee": "الموظف",
+    "all_employees": "كل الموظفين",
+    "field_from": "مقدَّم من",
+    "field_to": "مقدَّم حتى",
+    "clear_filters": "مسح عوامل التصفية",
+    "col_employee": "الموظف",
+    "col_category": "الفئة",
+    "col_summary": "الملخص",
+    "col_submitted": "تاريخ التقديم",
+    "col_status": "الحالة",
+    "department": "القسم",
+    "summary_attendance": "تصحيح حضور ليوم",
+    "age_today": "قُدِّم اليوم",
+    "age_days": "بانتظار المراجعة منذ {count} يوم",
+    "inbox_empty_title": "لا شيء بانتظارك",
+    "inbox_empty_description": "لا توجد طلبات قيد المراجعة في هذه الفئة.",
+    "filtered_empty_title": "لا توجد طلبات مطابقة",
+    "filtered_empty_description": "جرّب حالة أو موظفًا أو فترة أخرى.",
+    "my_empty_title": "لا توجد طلبات بعد",
+    "my_empty_description": "عندما تطلب شيئًا — شهادة راتب أو مساعدة في مهمة — يظهر هنا مع القرار بشأنه.",
+    "field_category": "بخصوص ماذا؟",
+    "field_subject": "الموضوع",
+    "field_description": "التفاصيل",
+    "field_task": "المهمة",
+    "task_helper": "اختياري — إحدى مهامك التي يتعلق بها الطلب.",
+    "no_task": "بدون مهمة محددة",
+    "attendance_hint": "تريد تصحيح حضور يوم؟",
+    "attendance_link": "استخدم نموذج التصحيح",
+    "attach_after": "يمكنك إرفاق ملفات في صفحة الطلب بعد تقديمه.",
+    "submit": "تقديم الطلب",
+    "submit_failed": "لم يُقدَّم الطلب",
+    "submitted_notice": "قُدِّم طلبك وهو الآن قيد المراجعة.",
+    "attendance_context": "سجل الحضور",
+    "decision_title": "القرار",
+    "decision": "القرار",
+    "reviewer": "راجعه",
+    "reviewed_at": "تاريخ المراجعة",
+    "admin_response": "الرد",
+    "no_response": "لم يُكتب رد.",
+    "response_helper": "مطلوب عند الرفض، ويراه الموظف.",
+    "reason_required": "اكتب سبب رفض هذا الطلب.",
+    "approve": "اعتماد",
+    "reject": "رفض",
+    "approved_notice": "اعتُمد الطلب.",
+    "rejected_notice": "رُفض الطلب.",
+    "cancelled_notice": "أُلغي الطلب.",
+    "cancelled_state": "ألغى الموظف هذا الطلب.",
+    "awaiting_decision": "هذا الطلب بانتظار القرار.",
+    "self_review_title": "هذا طلبك أنت",
+    "self_review_note": "لا يبتّ أحد في طلبه بنفسه، ويجب أن يعتمده أو يرفضه مسؤول آخر. إن كنت المسؤول الوحيد فسيبقى الطلب قيد المراجعة حتى يوجد مسؤول آخر، ويمكنك إلغاؤه ما دام قيد المراجعة.",
+    "action_failed": "لم يتم الإجراء",
+    "cancel_request": "إلغاء الطلب",
+    "keep_request": "الإبقاء عليه",
+    "cancel_title": "إلغاء هذا الطلب؟",
+    "cancel_body": "سيُسحب الطلب ولن يراجعه أحد. لا يمكن التراجع عن ذلك.",
+    "history_title": "سجل القرارات",
+    "history_empty_title": "لا يوجد سجل بعد",
+    "history_empty": "ستظهر هنا الإجراءات المتخذة على هذا الطلب.",
+    "reject_title": "رفض هذا الطلب؟"
   }
 }

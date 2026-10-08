@@ -26,7 +26,9 @@ Every requirement below needs a decision before or during development. Nothing h
 **Unclear:** In a small company the manager may be the only approver above an employee, and may also be an employee themselves.
 **Why it matters:** Self-approval defeats the purpose of the workflow, but blocking it entirely may leave a two-person company unable to process leave at all.
 **Options:** A) Self-approval always blocked; an ADMIN must approve manager requests. B) Configurable per company. C) Allowed but prominently flagged in the audit log.
-**Recommended:** A, with ADMIN as the fallback approver. If a company has exactly one ADMIN who is also the requester, that request routes to a designated secondary approver configured in settings.
+**Recommended:** A, with ADMIN as the fallback approver.
+**Decision (approved, Phase 9):** A. Self-review is never allowed, for a MANAGER or an ADMIN, and it is blocked server-side. A manager's request is reviewed by an ADMIN; an ADMIN's own request by another ADMIN.
+**V1 fallback (approved):** if the requester is the only eligible ADMIN, the request may still be submitted; it stays Pending; the requester may cancel it while it is Pending; and it can be reviewed only once another eligible ADMIN exists. V1 has no secondary-approver setting, and no temporary review power is granted to a MANAGER.
 
 ## OD-04 — Default work mode on check-in?
 **Status:** Non-blocking — Phase 6. Default: no default.
@@ -136,7 +138,7 @@ Every requirement below needs a decision before or during development. Nothing h
 |---|---|---|---|
 | OD-01 | Multi-company users | ✅ | 3 |
 | OD-02 | Session vs token auth | ✅ | 3 |
-| OD-03 | Manager self-approval | ✅ | 9 |
+| OD-03 | Manager self-approval (decided: A, Phase 9) | ✅ | 9 |
 | OD-04 | Default work mode | — | 6 |
 | OD-05 | Overnight shifts | ✅ | 6 |
 | OD-06 | Negative net salary | ✅ | 11 |

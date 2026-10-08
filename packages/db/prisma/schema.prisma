@@ -190,6 +190,28 @@ enum GoalProgressSource {
   @@map("goal_progress_source")
 }
 
+/// DOCUMENT 06 §3.20 — the five Requests Centre categories (DOCUMENT 01
+/// FR-08.1). Attendance and leave rows index a specialised record (OD-09).
+enum RequestCategory {
+  attendance
+  leave
+  salary
+  task
+  general
+
+  @@map("request_category")
+}
+
+/// DOCUMENT 01 FR-08.3.
+enum RequestStatus {
+  pending
+  approved
+  rejected
+  cancelled
+
+  @@map("request_status")
+}
+
 /// DOCUMENT 21 — only the "Authentication & access" action group ships in
 /// Phase 3. Every later phase adds its own values to this type in its own
 /// migration; this is not a preview of the full DOCUMENT 21 catalogue.
@@ -241,6 +263,10 @@ enum AuditAction {
   GOAL_TARGET_CHANGED                  @map("goal.target_changed")
   GOAL_CANCELLED                       @map("goal.cancelled")
   SETTINGS_PERFORMANCE_WEIGHTS_CHANGED @map("settings.performance_weights_changed")
+  REQUEST_SUBMITTED                    @map("request.submitted")
+  REQUEST_APPROVED                     @map("request.approved")
+  REQUEST_REJECTED                     @map("request.rejected")
+  REQUEST_CANCELLED                    @map("request.cancelled")
 
   @@map("audit_action")
 }
@@ -291,6 +317,8 @@ model Company {
 
   goals             Goal[]
   performanceConfig PerformanceConfig?
+
+  requests Request[]
 
   @@index([status])
   @@map("companies")
@@ -493,6 +521,8 @@ model Employee {
 
   goals Goal[]
 
+  requests Request[]
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -616,6 +646,7 @@ model User {
   goalsCreated        Goal[]                        @relation("goal_created_by")
   goalProgressCreated GoalProgress[]                @relation("goal_progress_created_by")
   performanceConfigs  PerformanceConfig[]           @relation("performance_config_updated_by")
+  requestsReviewed    Request[]                     @relation("request_reviewed_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -1023,4 +1054,38 @@ model PerformanceConfig {
   updatedByUser User?   @relation("performance_config_updated_by", fields: [updatedBy], references: [id], onDelete: SetNull)
 
   @@map("performance_config")
+}
+
+// ---------------------------------------------------------------------------
+// Requests — Phase 9 (DOCUMENT 06 §3.20, DOCUMENT 08 §4.9, OD-09)
+// ---------------------------------------------------------------------------
+
+/// The unified Requests Centre. Salary, task and general requests live here
+/// entirely; an attendance (and, from Phase 10, leave) row is the inbox entry
+/// for a specialised record, written and kept in step by a database trigger.
+/// `related_id` is polymorphic, so it has no Prisma relation; the database
+/// checks it by type (`requests_same_company`).
+model Request {
+  id            String          @id @db.Uuid
+  companyId     String          @map("company_id") @db.Uuid
+  employeeId    String          @map("employee_id") @db.Uuid
+  category      RequestCategory
+  subject       String?         @db.VarChar(255)
+  description   String?         @db.Text
+  relatedType   String?         @map("related_type") @db.VarChar(50)
+  relatedId     String?         @map("related_id") @db.Uuid
+  status        RequestStatus   @default(pending)
+  reviewedBy    String?         @map("reviewed_by") @db.Uuid
+  reviewedAt    DateTime?       @map("reviewed_at") @db.Timestamptz(3)
+  adminResponse String?         @map("admin_response") @db.Text
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  reviewer User?    @relation("request_reviewed_by", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@unique([relatedType, relatedId])
+  @@index([companyId, status, createdAt])
+  @@index([employeeId, createdAt])
+  @@map("requests")
 }

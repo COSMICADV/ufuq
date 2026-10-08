@@ -15,6 +15,10 @@
  *     DTO and by the table's own CHECK.
  *   - **An employee may cancel only their own, only while pending**
  *     (DOCUMENT 12 ACTIONS).
+ *   - **Nobody decides their own correction** (OD-03, option A, approved for
+ *     Phase 9): a manager's goes to an ADMIN, an ADMIN's to another ADMIN.
+ *     Checked here, so both `/attendance-corrections` and the Requests Centre
+ *     (which delegates to this service) refuse it.
  *   - The applied record is recalculated from the schedule in effect on that
  *     date, never copied from the request: an approver approves *times*, and
  *     what those times mean is the schedule's business, not the requester's.
@@ -31,6 +35,7 @@ import type {
 
 import { AuditService } from '../auth/audit.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
+import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import { ERROR_CODES } from '../common/errors.js';
 import type { RequestOrigin } from '../common/request-context.js';
@@ -429,8 +434,16 @@ export class CorrectionsService extends TenantScopedService {
     });
   }
 
-  /** DOCUMENT 12 ACTIONS — "cancel own pending correction". */
-  async cancel(ctx: AuthContext, id: string): Promise<CorrectionPayload> {
+  /**
+   * DOCUMENT 12 ACTIONS — "cancel own pending correction". Audited as
+   * `request.cancelled`: DOCUMENT 21's attendance group has no cancellation
+   * action, and the withdrawal of a request is a material lifecycle step.
+   */
+  async cancel(
+    ctx: AuthContext,
+    id: string,
+    origin: RequestOrigin = { ipAddress: null, userAgent: null },
+  ): Promise<CorrectionPayload> {
     return this.tenant(ctx, async (tx) => {
       const request = await tx.attendanceCorrectionRequest.findFirst({
         where: { id },
@@ -451,6 +464,17 @@ export class CorrectionsService extends TenantScopedService {
         where: { id },
         data: { status: 'cancelled' },
         include: CORRECTION_INCLUDE,
+      });
+      await this.audit.record(tx, {
+        companyId: ctx.companyId,
+        userId: ctx.userId,
+        action: 'REQUEST_CANCELLED',
+        entityType: 'attendance_correction_request',
+        entityId: id,
+        oldValues: { status: 'pending' },
+        newValues: { status: 'cancelled' },
+        ipAddress: origin.ipAddress,
+        userAgent: origin.userAgent,
       });
       return correctionPayload(row);
     });
@@ -488,6 +512,12 @@ export class CorrectionsService extends TenantScopedService {
     });
     if (reachable === null) {
       throw forbidden();
+    }
+    // OD-03: a `company`-scoped ADMIN reaches their own correction through
+    // the scope above, so the refusal is explicit. (A manager's `team` scope
+    // never includes themselves.)
+    if (row.employeeId === ctx.callerEmployeeId) {
+      throw new AppException(ERROR_CODES.REQUEST_SELF_REVIEW, 403);
     }
     if (row.status !== 'pending') {
       throw conflict(ERROR_CODES.CORRECTION_NOT_PENDING);

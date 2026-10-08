@@ -16,11 +16,14 @@ export interface SessionView {
   readonly timeZone: string;
   /** DOCUMENT 12 rule 13 — this company's attendance correction window. */
   readonly correctionWindowDays: number;
+  /** The caller's own employee record, or null (the seeded first admin has none). */
+  readonly employeeId: string | null;
 }
 
 interface MePayload {
   readonly company: { readonly timezone: string; readonly correctionWindowDays: number };
   readonly permissions: readonly { readonly key: string; readonly scope: string }[];
+  readonly employee: { readonly id: string } | null;
 }
 
 export async function loadSession(locale: Locale, signal: AbortSignal): Promise<SessionView> {
@@ -29,5 +32,6 @@ export async function loadSession(locale: Locale, signal: AbortSignal): Promise<
     permissions: new Set(me.permissions.map((permission) => permission.key)),
     timeZone: me.company.timezone,
     correctionWindowDays: me.company.correctionWindowDays,
+    employeeId: me.employee?.id ?? null,
   };
 }

@@ -53,12 +53,14 @@ Goals and goal progress. Three types. Manual progress for sales and custom. Auto
 ## PHASE 9 — Requests
 The unified requests centre, categories, approval workflow, admin inbox, employee submission and history.
 
-**Exit:** every category can be submitted, reviewed, approved, rejected, and cancelled, with reasons enforced.
+**Exit:** Attendance, Salary, Task and General requests can each be submitted, reviewed, approved, rejected, and cancelled, with reasons enforced. The Leave category exists in the unified centre as an integration boundary (OD-09 hybrid model: the inbox row indexes a specialised `leave_requests` record); Leave's specialised lifecycle is completed in Phase 10.
+
+> Roadmap clarification, approved during Phase 9: a leave request depends on leave types, balances and pending holds (DOCUMENT 16), which are Phase 10. Phase 9 therefore does not build a generic Leave submission; it leaves the category and the indexing boundary in place for Phase 10.
 
 ## PHASE 10 — Leave
-Leave types, balances with pending holds, requests, approval creating attendance records, carry-over job, balance adjustment.
+Leave types, balances with pending holds, requests, approval creating attendance records, carry-over job, balance adjustment. Leave requests are indexed into the unified Requests Centre exactly as attendance corrections are, and the centre's approve / reject / cancel delegate to the leave logic.
 
-**Exit:** approving leave produces correct attendance records and correct balances, and all the conflict cases in DOCUMENT 16 are blocked.
+**Exit:** approving leave produces correct attendance records and correct balances, and all the conflict cases in DOCUMENT 16 are blocked. Leave participates fully in the unified Requests Centre: a leave request can be submitted, reviewed, approved, rejected, and cancelled there, with reasons enforced — completing the Phase 9 exit criterion for the Leave category.
 
 > Placed after both Attendance and Requests because it depends on both.
 
