@@ -20,10 +20,18 @@
  *   - **Audit**: every DOCUMENT 21 task action is written in the same
  *     transaction as the change it describes.
  *
- * Deferred by phase, not forgotten (docs/PHASE-7-STATUS.md): goal linkage and
- * rule 8 (Phase 8), notifications to assignees (Phase 15). Attachments are the
- * generic store's (`src/attachments/`); `findOne` reads them through
- * `AttachmentsService`.
+ *   - **Goal link — rule 8 (Phase 8).** A task may link to a goal of the same
+ *     company and the same employee (DOCUMENT 13 validation). Any change that
+ *     can move a Task goal's count — completing, reopening, cancelling or
+ *     deleting a linked task, relinking it, changing its priority — asks the
+ *     goal ledger to re-derive that goal **in the same transaction**; the
+ *     ledger appends history, audits, and returns any milestones crossed,
+ *     which are published only after the commit. No goal rule is restated
+ *     here (DOCUMENT 27 RULE 6).
+ *
+ * Deferred by phase, not forgotten (docs/PHASE-7-STATUS.md): notifications to
+ * assignees (Phase 15). Attachments are the generic store's
+ * (`src/attachments/`); `findOne` reads them through `AttachmentsService`.
  */
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -46,6 +54,11 @@ import {
 } from '../company-structure/tenant-scoped.service.js';
 import { diffSnapshots } from '../employees/employee-payload.js';
 import { employeeScopeWhere } from '../employees/employee-query.js';
+import { GoalEventPublisher } from '../goals/goal-events.js';
+import type { GoalMilestoneEvent } from '../goals/goal-events.js';
+import { GoalLedgerService } from '../goals/goal-ledger.service.js';
+import type { GoalActor } from '../goals/goal-ledger.service.js';
+import { goalScopeWhere } from '../goals/goal-query.js';
 
 import type {
   ChangeTaskStatusDto,
@@ -113,8 +126,34 @@ export interface TaskSummary {
   readonly due_today: number;
 }
 
+/**
+ * DOCUMENT 13 edge case "Task linked to a goal outside its period": warned at
+ * creation (and on edit); the task does not contribute to that goal.
+ */
+export type TaskWriteWarning = 'goal_outside_period';
+
+/** `POST /tasks` and `PATCH /tasks/{id}` — the task, with any warning about its goal link. */
+export interface TaskWritePayload extends TaskDetailPayload {
+  readonly warnings: readonly TaskWriteWarning[];
+}
+
 /** DOCUMENT 21 general-edit fields; assignee and deadline have their own actions. */
-const GENERAL_FIELDS = ['title', 'description', 'department_id', 'priority', 'start_date'] as const;
+const GENERAL_FIELDS = [
+  'title',
+  'description',
+  'department_id',
+  'priority',
+  'start_date',
+  'goal_id',
+] as const;
+
+/** A goal a task may link to — DOCUMENT 13 validation. */
+interface LinkableGoal {
+  readonly id: string;
+  readonly status: string;
+  readonly periodStart: Date;
+  readonly periodEnd: Date;
+}
 
 type TaskPermission =
   | 'task.update'
@@ -129,6 +168,8 @@ export class TasksService extends TenantScopedService {
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
+    @Inject(GoalLedgerService) private readonly goalLedger: GoalLedgerService,
+    @Inject(GoalEventPublisher) private readonly goalEvents: GoalEventPublisher,
   ) {
     super(prisma);
   }
@@ -242,7 +283,7 @@ export class TasksService extends TenantScopedService {
     dto: CreateTaskDto,
     origin: RequestOrigin,
     now = new Date(),
-  ): Promise<TaskDetailPayload> {
+  ): Promise<TaskWritePayload> {
     assertDateOrder(dto.start_date ?? null, dto.deadline ?? null);
     const checklist = dto.checklist ?? [];
 
@@ -253,6 +294,10 @@ export class TasksService extends TenantScopedService {
       if (dto.department_id !== undefined && dto.department_id !== null) {
         await this.requireDepartment(tx, dto.department_id);
       }
+      const goal =
+        dto.goal_id === undefined || dto.goal_id === null
+          ? null
+          : await this.requireLinkableGoal(tx, ctx, dto.goal_id, assignee.id);
 
       const id = generateId();
       await tx.task.create({
@@ -268,6 +313,7 @@ export class TasksService extends TenantScopedService {
           status: 'not_started',
           startDate: dto.start_date ? dateValue(dto.start_date) : null,
           deadline: dto.deadline ? dateValue(dto.deadline) : null,
+          goalId: goal?.id ?? null,
           progressPercent: computeProgress({
             status: 'not_started',
             totalItems: checklist.length,
@@ -292,7 +338,11 @@ export class TasksService extends TenantScopedService {
       await this.record(tx, ctx, origin, 'TASK_CREATED', id, {
         newValues: { ...taskAuditSnapshot(row), checklist_items: String(checklist.length) },
       });
-      return taskDetailPayload(row, await this.today(tx, now));
+      // A new task is never completed, so no goal's count moves here.
+      return {
+        ...taskDetailPayload(row, await this.today(tx, now)),
+        warnings: goalWarnings(goal, dto.deadline ?? null),
+      };
     });
   }
 
@@ -302,8 +352,9 @@ export class TasksService extends TenantScopedService {
     dto: UpdateTaskDto,
     origin: RequestOrigin,
     now = new Date(),
-  ): Promise<TaskDetailPayload> {
-    return this.tenant(ctx, async (tx) => {
+  ): Promise<TaskWritePayload> {
+    const events: GoalMilestoneEvent[] = [];
+    const result = await this.tenant(ctx, async (tx) => {
       const before = await this.loadForWrite(tx, ctx, id, 'task.update');
 
       if (
@@ -325,6 +376,16 @@ export class TasksService extends TenantScopedService {
         dto.deadline === undefined ? wireDate(before.deadline) : (dto.deadline ?? null);
       assertDateOrder(startDate, deadline);
 
+      // DOCUMENT 13 validation: the linked goal must belong to the assignee.
+      // Checked whenever either side of that pair changes, so reassigning a
+      // linked task to someone else also requires relinking or unlinking it.
+      const assigneeId = dto.assignee_employee_id ?? before.assigneeEmployeeId;
+      const goalId = dto.goal_id === undefined ? before.goalId : dto.goal_id;
+      const goal =
+        goalId !== null && (goalId !== before.goalId || assigneeId !== before.assigneeEmployeeId)
+          ? await this.requireLinkableGoal(tx, ctx, goalId, assigneeId)
+          : null;
+
       const data: Prisma.TaskUncheckedUpdateInput = {
         ...(dto.title === undefined ? {} : { title: dto.title }),
         ...(dto.description === undefined ? {} : { description: emptyToNull(dto.description) }),
@@ -339,6 +400,7 @@ export class TasksService extends TenantScopedService {
         ...(dto.deadline === undefined
           ? {}
           : { deadline: dto.deadline === null ? null : dateValue(dto.deadline) }),
+        ...(dto.goal_id === undefined ? {} : { goalId: dto.goal_id }),
       };
       if (Object.keys(data).length > 0) {
         await tx.task.update({ where: { id }, data });
@@ -358,20 +420,39 @@ export class TasksService extends TenantScopedService {
       // change is recorded, which includes those, with old and new values.
       await this.recordDiff(tx, ctx, origin, 'TASK_DEADLINE_CHANGED', id, old, next, ['deadline']);
 
-      return taskDetailPayload(after, await this.today(tx, now));
+      // Rule 8: a relink or a priority change can move a Task goal's count —
+      // the goal it left and the goal it joined are both re-derived.
+      if (old['goal_id'] !== next['goal_id'] || old['priority'] !== next['priority']) {
+        events.push(...(await this.syncGoals(tx, ctx, origin, now, [before.goalId, after.goalId])));
+      }
+
+      return {
+        ...taskDetailPayload(after, await this.today(tx, now)),
+        warnings: goalWarnings(goal, deadline),
+      };
     });
+    await this.goalEvents.publish(events);
+    return result;
   }
 
   /** Soft delete — DOCUMENT 06 §6, DOCUMENT 08 §4.7. */
-  async remove(ctx: AuthContext, id: string, origin: RequestOrigin): Promise<void> {
-    await this.tenant(ctx, async (tx) => {
+  async remove(
+    ctx: AuthContext,
+    id: string,
+    origin: RequestOrigin,
+    now = new Date(),
+  ): Promise<void> {
+    const events = await this.tenant(ctx, async (tx) => {
       const before = await this.loadForWrite(tx, ctx, id, 'task.delete');
       await tx.task.update({ where: { id }, data: { deletedAt: new Date() } });
       await this.record(tx, ctx, origin, 'TASK_DELETED', id, {
         oldValues: { title: before.title, status: before.status },
         newValues: { deleted: 'true' },
       });
+      // A deleted task no longer counts toward a Task goal (rule 8).
+      return this.syncGoals(tx, ctx, origin, now, [before.goalId]);
     });
+    await this.goalEvents.publish(events);
   }
 
   // -- Status — DOCUMENT 13 rules 4, 6, 7 ------------------------------------
@@ -383,7 +464,8 @@ export class TasksService extends TenantScopedService {
     origin: RequestOrigin,
     now = new Date(),
   ): Promise<TaskDetailPayload> {
-    return this.tenant(ctx, async (tx) => {
+    const events: GoalMilestoneEvent[] = [];
+    const result = await this.tenant(ctx, async (tx) => {
       const before = await this.loadForWrite(tx, ctx, id, 'task.update_status');
       const from = before.status as TaskStatusValue;
       const to = dto.status;
@@ -432,8 +514,14 @@ export class TasksService extends TenantScopedService {
         // is where it is kept — the Phase 6 adjustment-reason pattern.
         newValues: isReopen(from, to) ? { ...changed.newValues, reason } : changed.newValues,
       });
+      // Rule 8 and its edge case: completing a linked task raises its Task
+      // goal; reopening it recalculates the goal downward — in this same
+      // transaction, audited by the ledger.
+      events.push(...(await this.syncGoals(tx, ctx, origin, now, [after.goalId])));
       return taskDetailPayload(after, await this.today(tx, now));
     });
+    await this.goalEvents.publish(events);
+    return result;
   }
 
   // -- Checklist — DOCUMENT 05 FLOW 11 ---------------------------------------
@@ -617,6 +705,64 @@ export class TasksService extends TenantScopedService {
   }
 
   // -- Internals ---------------------------------------------------------------
+
+  /** Re-derive the Task goals a change touched, as the acting user. */
+  private async syncGoals(
+    tx: TenantClient,
+    ctx: AuthContext,
+    origin: RequestOrigin,
+    now: Date,
+    goalIds: readonly (string | null)[],
+  ): Promise<readonly GoalMilestoneEvent[]> {
+    if (goalIds.every((goalId) => goalId === null)) {
+      return [];
+    }
+    const actor: GoalActor = { companyId: ctx.companyId, userId: ctx.userId, origin };
+    return this.goalLedger.afterTaskChange(
+      tx,
+      goalIds,
+      actor,
+      await this.goalLedger.clock(tx, now),
+    );
+  }
+
+  /**
+   * DOCUMENT 13 validation: "Linked goal must belong to the same company and,
+   * when employee-scoped, the same employee." Every V1 goal is
+   * employee-scoped. A goal the caller cannot see reads as not found (row
+   * security has already hidden another company's); a cancelled goal takes
+   * no new work (DOCUMENT 14 "Error states").
+   */
+  private async requireLinkableGoal(
+    tx: TenantClient,
+    ctx: AuthContext,
+    goalId: string,
+    assigneeId: string,
+  ): Promise<LinkableGoal> {
+    let scope: Prisma.GoalWhereInput;
+    try {
+      scope = goalScopeWhere(ctx, 'goal.view');
+    } catch (error) {
+      if (error instanceof AppException) {
+        throw fieldError({ goal_id: ['not_found'] });
+      }
+      throw error;
+    }
+    const goal = await tx.goal.findFirst({
+      where: { AND: [{ id: goalId, deletedAt: null }, scope] },
+      select: { id: true, status: true, employeeId: true, periodStart: true, periodEnd: true },
+    });
+    if (goal === null) {
+      throw fieldError({ goal_id: ['not_found'] });
+    }
+    if (goal.status === 'cancelled') {
+      throw fieldError({ goal_id: ['cancelled'] });
+    }
+    if (goal.employeeId !== assigneeId) {
+      throw fieldError({ goal_id: ['not_same_employee'] });
+    }
+    return goal;
+  }
 
   /** The company's calendar day — overdue is measured against it (rule 1). */
   private async today(tx: TenantClient, now: Date): Promise<string> {
@@ -826,6 +972,26 @@ function assertDateOrder(startDate: string | null, deadline: string | null): voi
 
 function wireDate(value: Date | null): string | null {
   return value === null ? null : value.toISOString().slice(0, 10);
+}
+
+/**
+ * DOCUMENT 13 edge case: a task linked to a goal outside its period is warned
+ * about — its deadline falls outside the goal's period, or the goal's period
+ * has already closed. Linking is still allowed; the task simply does not
+ * count (`GoalLedgerService.qualifyingWhere`).
+ */
+function goalWarnings(
+  goal: LinkableGoal | null,
+  deadline: string | null,
+): readonly TaskWriteWarning[] {
+  if (goal === null) {
+    return [];
+  }
+  const start = wireDate(goal.periodStart) as string;
+  const end = wireDate(goal.periodEnd) as string;
+  const closed = goal.status === 'achieved' || goal.status === 'missed';
+  const outside = deadline !== null && (deadline < start || deadline > end);
+  return closed || outside ? ['goal_outside_period'] : [];
 }
 
 /** An emptied description is cleared, not stored as an empty string. */

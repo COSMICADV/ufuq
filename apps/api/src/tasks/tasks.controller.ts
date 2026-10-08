@@ -65,7 +65,7 @@ import type {
   TaskWithAttachmentsPayload,
 } from './task-payload.js';
 import { TasksService } from './tasks.service.js';
-import type { TaskSummary } from './tasks.service.js';
+import type { TaskSummary, TaskWritePayload } from './tasks.service.js';
 
 const uuidParam = new ParseUUIDPipe();
 
@@ -92,7 +92,7 @@ export class TasksController {
     @Body() dto: CreateTaskDto,
     @RequestContext() origin: RequestOrigin,
     @RequestLocale() locale: Locale,
-  ): Promise<SingleResponse<TaskDetailPayload>> {
+  ): Promise<SingleResponse<TaskWritePayload>> {
     return single(await this.tasks.create(ctx, dto, origin), { locale });
   }
 
@@ -124,7 +124,7 @@ export class TasksController {
     @Body() dto: UpdateTaskDto,
     @RequestContext() origin: RequestOrigin,
     @RequestLocale() locale: Locale,
-  ): Promise<SingleResponse<TaskDetailPayload>> {
+  ): Promise<SingleResponse<TaskWritePayload>> {
     return single(await this.tasks.update(ctx, id, dto, origin), { locale });
   }
 

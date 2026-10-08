@@ -5,17 +5,21 @@
  * through rather than duplicating (DOCUMENT 27 RULE 6). No background work:
  * overdue is derived on read (DOCUMENT 13 rule 1), so there is nothing to
  * schedule — the overdue *notification* is Phase 15's.
+ *
+ * `GoalsCoreModule` (Phase 8) is imported for the goal ledger: DOCUMENT 13
+ * rule 8 has a task change recalculate its Task goal in the same transaction.
  */
 
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
+import { GoalsCoreModule } from '../goals/goals-core.module.js';
 
 import { TasksController } from './tasks.controller.js';
 import { TasksService } from './tasks.service.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, GoalsCoreModule],
   controllers: [TasksController],
   providers: [TasksService],
 })

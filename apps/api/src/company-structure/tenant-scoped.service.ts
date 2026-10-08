@@ -44,7 +44,13 @@ export type FieldIssue =
   | 'not_active'
   // Phase 7 attachments — DOCUMENT 20 §7: size and type allowlist.
   | 'too_large'
-  | 'unsupported_type';
+  | 'unsupported_type'
+  // Phase 8 — DOCUMENT 14 "Validation": performance weights must sum to
+  // exactly 1.0; DOCUMENT 13: a linked goal must belong to the task's
+  // assignee when it is employee-scoped.
+  | 'must_sum_to_one'
+  | 'not_same_employee'
+  | 'cancelled';
 
 @Injectable()
 export abstract class TenantScopedService {

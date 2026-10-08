@@ -50,6 +50,13 @@ export interface Task {
   } | null;
   readonly priority: TaskPriority;
   readonly status: TaskStatus;
+  /** DOCUMENT 04 B9 "linked goal" (Phase 8). */
+  readonly goal: {
+    readonly id: string;
+    readonly title: string;
+    readonly type: string;
+    readonly status: string;
+  } | null;
   readonly start_date: string | null;
   readonly deadline: string | null;
   readonly completed_at: string | null;
@@ -305,6 +312,8 @@ export interface TaskFilters {
   readonly priority: string;
   readonly assignee: string;
   readonly department: string;
+  /** DOCUMENT 04 B8 "goal" filter (Phase 8). */
+  readonly goal: string;
   readonly overdue: boolean;
   readonly from: string;
   readonly to: string;
@@ -317,6 +326,7 @@ export const EMPTY_TASK_FILTERS: TaskFilters = {
   priority: '',
   assignee: '',
   department: '',
+  goal: '',
   overdue: false,
   from: '',
   to: '',
@@ -342,6 +352,7 @@ export function taskFiltersFromParams(params: URLSearchParams): TaskFilters {
     priority: pick(read('priority'), TASK_PRIORITIES),
     assignee: UUID.test(read('assignee')) ? read('assignee') : '',
     department: UUID.test(read('department')) ? read('department') : '',
+    goal: UUID.test(read('goal')) ? read('goal') : '',
     overdue: read('overdue') === 'true',
     from: DATE.test(read('from')) ? read('from') : '',
     to: DATE.test(read('to')) ? read('to') : '',
@@ -357,6 +368,7 @@ export function searchForTaskFilters(filters: TaskFilters): string {
   if (filters.priority !== '') params.set('priority', filters.priority);
   if (filters.assignee !== '') params.set('assignee', filters.assignee);
   if (filters.department !== '') params.set('department', filters.department);
+  if (filters.goal !== '') params.set('goal', filters.goal);
   if (filters.overdue) params.set('overdue', 'true');
   if (filters.from !== '') params.set('from', filters.from);
   if (filters.to !== '') params.set('to', filters.to);
@@ -378,6 +390,7 @@ export function apiQueryForTaskFilters(
     ...(filters.priority === '' ? {} : { priority: filters.priority }),
     ...(filters.assignee === '' ? {} : { assignee_employee_id: filters.assignee }),
     ...(filters.department === '' ? {} : { department_id: filters.department }),
+    ...(filters.goal === '' ? {} : { goal_id: filters.goal }),
     ...(filters.overdue ? { overdue: 'true' } : {}),
     ...(filters.from === '' ? {} : { from: filters.from }),
     ...(filters.to === '' ? {} : { to: filters.to }),
@@ -391,6 +404,7 @@ export function activeTaskFilterCount(filters: TaskFilters): number {
     filters.priority !== '',
     filters.assignee !== '',
     filters.department !== '',
+    filters.goal !== '',
     filters.overdue,
     filters.from !== '',
     filters.to !== '',
@@ -403,6 +417,7 @@ export function hasActiveTaskFilters(filters: TaskFilters): boolean {
     filters.priority !== '' ||
     filters.assignee !== '' ||
     filters.department !== '' ||
+    filters.goal !== '' ||
     filters.overdue ||
     filters.from !== '' ||
     filters.to !== ''

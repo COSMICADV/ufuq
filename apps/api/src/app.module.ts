@@ -16,8 +16,10 @@ import { SessionAuthGuard } from './auth/guards/session-auth.guard.js';
 import { DbModule } from './common/db.module.js';
 import { RedisModule } from './common/redis.module.js';
 import { EmployeesModule } from './employees/employees.module.js';
+import { GoalsModule } from './goals/goals.module.js';
 import { HealthModule } from './health/health.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { PerformanceModule } from './performance/performance.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 
 /**
@@ -31,8 +33,9 @@ import { TasksModule } from './tasks/tasks.module.js';
  * background worker (`AttendanceModule`, BullMQ on the existing Redis); Phase 7
  * adds tasks (`TasksModule`) and, as an approved addendum, the generic
  * attachment store over private S3-compatible storage (`AttachmentsModule`,
- * AD-02). The remaining business modules arrive one phase
- * at a time (DOCUMENT 25).
+ * AD-02); Phase 8 adds goals (`GoalsModule`, with its period-end job) and the
+ * configurable performance model (`PerformanceModule`). The remaining business
+ * modules arrive one phase at a time (DOCUMENT 25).
  *
  * The three global guards run in this order for every request:
  *  1. `SessionAuthGuard` — DOCUMENT 09 §4 check 1, and binds tenant scope.
@@ -74,6 +77,8 @@ export class AppModule {
         AuditModule,
         AttachmentsModule.register(env),
         TasksModule,
+        GoalsModule.register({ scheduler: options.backgroundJobs }),
+        PerformanceModule,
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

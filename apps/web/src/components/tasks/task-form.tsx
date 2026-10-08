@@ -44,7 +44,11 @@ import { useResource } from '../settings/use-resource';
  * `?assignee=<id>` preselects the assignee — the employee profile's "Assign
  * task" quick action.
  *
- * Not here: linked goal (Phase 8). Attachments are added on the task detail
+ * Linked goal (Phase 8, FLOW 09 "optional goal link"): only the chosen
+ * assignee's goals are offered, because the API requires the goal to belong
+ * to the assignee (DOCUMENT 13 validation). A deadline outside the goal's
+ * period is warned about before saving — the task would not count toward it
+ * (DOCUMENT 13 edge cases). Attachments are added on the task detail
  * once the task exists — a file belongs to an existing record
  * (`task-attachments.tsx`).
  */
@@ -57,8 +61,18 @@ interface Option {
   readonly department: { readonly id: string; readonly label: string } | null;
 }
 
+interface GoalOption {
+  readonly id: string;
+  readonly title: string;
+  readonly employeeId: string;
+  readonly periodStart: string;
+  readonly periodEnd: string;
+}
+
 interface FormOptions {
   readonly session: SessionView;
+  /** Uncancelled goals the caller may see; empty when they may see none. */
+  readonly goals: readonly GoalOption[];
   readonly assignees: readonly Option[];
   /** Null when the caller may not list departments; the assignee's is used. */
   readonly departments: readonly { readonly id: string; readonly label: string }[] | null;
@@ -72,6 +86,7 @@ interface Draft {
   readonly priority: TaskPriority;
   readonly startDate: string;
   readonly deadline: string;
+  readonly goal: string;
   readonly checklist: readonly string[];
 }
 
@@ -84,6 +99,7 @@ function draftFrom(task: TaskDetail | null): Draft {
     priority: task?.priority ?? 'medium',
     startDate: task?.start_date ?? '',
     deadline: task?.deadline ?? '',
+    goal: task?.goal?.id ?? '',
     checklist: [],
   };
 }
@@ -107,7 +123,7 @@ export function TaskForm({
   const load = useCallback(
     async (signal: AbortSignal): Promise<FormOptions> => {
       const query = { per_page: OPTIONS_PAGE_SIZE };
-      const [session, employees, departments] = await Promise.all([
+      const [session, employees, departments, goals] = await Promise.all([
         loadSession(locale, signal),
         fetchMany<EmployeeView>('/employees', {
           locale,
@@ -119,6 +135,14 @@ export function TaskForm({
           signal,
           query,
         }).catch(() => null),
+        fetchMany<{
+          id: string;
+          title: string;
+          status: string;
+          employee: { id: string };
+          period_start: string;
+          period_end: string;
+        }>('/goals', { locale, signal, query }).catch(() => null),
       ]);
       const assignees: Option[] = employees.items.map((e) => ({
         id: e.id,
@@ -148,6 +172,15 @@ export function TaskForm({
       }
       return {
         session,
+        goals: (goals?.items ?? [])
+          .filter((goal) => goal.status !== 'cancelled' || goal.id === task?.goal?.id)
+          .map((goal) => ({
+            id: goal.id,
+            title: goal.title,
+            employeeId: goal.employee.id,
+            periodStart: goal.period_start,
+            periodEnd: goal.period_end,
+          })),
         assignees,
         departments:
           departments === null
@@ -199,7 +232,13 @@ export function TaskForm({
   if (options.state.status === 'error') {
     return <ErrorState error={options.state.error} t={t} onRetry={options.reload} />;
   }
-  const { session, assignees, departments } = options.state.value;
+  const { session, assignees, departments, goals } = options.state.value;
+  const goalChoices = goals.filter((goal) => goal.employeeId === draft.assignee);
+  const chosenGoal = goalChoices.find((goal) => goal.id === draft.goal);
+  const goalOutsidePeriod =
+    chosenGoal !== undefined &&
+    draft.deadline !== '' &&
+    (draft.deadline < chosenGoal.periodStart || draft.deadline > chosenGoal.periodEnd);
   const today = todayIn(session.timeZone);
   const pastDeadline = draft.deadline !== '' && draft.deadline < today;
   const assigneeInactive =
@@ -236,6 +275,7 @@ export function TaskForm({
       priority: draft.priority,
       start_date: draft.startDate === '' ? null : draft.startDate,
       deadline: draft.deadline === '' ? null : draft.deadline,
+      goal_id: draft.goal === '' ? null : draft.goal,
     };
     const request =
       task === null
@@ -329,8 +369,13 @@ export function TaskForm({
             onChange={(event) => {
               const chosen = assignees.find((option) => option.id === event.target.value);
               // DOCUMENT 04 B10: the department follows the assignee, and the
-              // admin may still override it afterwards.
-              set({ assignee: event.target.value, department: chosen?.department?.id ?? '' });
+              // admin may still override it afterwards. A goal belongs to one
+              // employee, so a new assignee clears the link.
+              set({
+                assignee: event.target.value,
+                department: chosen?.department?.id ?? '',
+                goal: event.target.value === draft.assignee ? draft.goal : '',
+              });
             }}
           >
             <option value="">{t('tasks.choose_assignee')}</option>
@@ -413,6 +458,32 @@ export function TaskForm({
           </Alert>
         ) : null}
 
+        <Field
+          label={t('tasks.field_goal')}
+          helper={t('tasks.field_goal_helper')}
+          {...optionalError(fieldIssue('goal_id'))}
+        >
+          <Select
+            value={draft.goal}
+            disabled={draft.assignee === ''}
+            onChange={(event) => {
+              set({ goal: event.target.value });
+            }}
+          >
+            <option value="">{t('tasks.no_goal')}</option>
+            {goalChoices.map((goal) => (
+              <option key={goal.id} value={goal.id}>
+                {goal.title}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {goalOutsidePeriod ? (
+          <Alert tone="warning" title={t('tasks.goal_outside_period_title')}>
+            {t('tasks.goal_outside_period')}
+          </Alert>
+        ) : null}
+
         {task === null ? (
           <ChecklistBuilder
             t={t}
@@ -477,6 +548,7 @@ function changedFields(
     priority: TaskPriority;
     start_date: string | null;
     deadline: string | null;
+    goal_id: string | null;
   },
 ): Record<string, unknown> {
   const before: Record<string, unknown> = {
@@ -487,6 +559,7 @@ function changedFields(
     priority: task.priority,
     start_date: task.start_date,
     deadline: task.deadline,
+    goal_id: task.goal?.id ?? null,
   };
   return Object.fromEntries(Object.entries(next).filter(([key, value]) => before[key] !== value));
 }

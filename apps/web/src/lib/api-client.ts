@@ -247,6 +247,9 @@ const KNOWN_ISSUES = new Set([
   'not_active',
   'too_large',
   'unsupported_type',
+  'must_sum_to_one',
+  'not_same_employee',
+  'cancelled',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

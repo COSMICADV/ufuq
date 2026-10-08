@@ -39,6 +39,7 @@ export const TASK_LIST_INCLUDE = {
   department: { select: { id: true, nameAr: true, nameEn: true } },
   createdByUser: { select: PERSON_SELECT },
   checklistItems: { select: { isCompleted: true } },
+  goal: { select: { id: true, title: true, type: true, status: true } },
 } as const;
 
 export const TASK_DETAIL_INCLUDE = {
@@ -85,6 +86,13 @@ export interface TaskPayload {
   } | null;
   readonly priority: TaskPriorityValue;
   readonly status: TaskStatusValue;
+  /** DOCUMENT 04 B9 "linked goal" (Phase 8). */
+  readonly goal: {
+    readonly id: string;
+    readonly title: string;
+    readonly type: string;
+    readonly status: string;
+  } | null;
   readonly start_date: string | null;
   readonly deadline: string | null;
   readonly completed_at: string | null;
@@ -179,6 +187,10 @@ export function taskPayload(row: TaskListRow | TaskDetailRow, today: string): Ta
         : { id: row.department.id, name_ar: row.department.nameAr, name_en: row.department.nameEn },
     priority: row.priority as TaskPriorityValue,
     status,
+    goal:
+      row.goal === null
+        ? null
+        : { id: row.goal.id, title: row.goal.title, type: row.goal.type, status: row.goal.status },
     start_date: row.startDate === null ? null : dateToWire(row.startDate),
     deadline,
     completed_at: row.completedAt?.toISOString() ?? null,
@@ -238,6 +250,7 @@ export function taskAuditSnapshot(row: {
   readonly deadline: Date | null;
   readonly progressPercent: Prisma.Decimal;
   readonly cancelledReason: string | null;
+  readonly goalId: string | null;
 }): TaskAuditSnapshot {
   return {
     title: row.title,
@@ -250,5 +263,6 @@ export function taskAuditSnapshot(row: {
     deadline: row.deadline === null ? null : dateToWire(row.deadline),
     progress_percent: percentToWire(row.progressPercent),
     cancelled_reason: row.cancelledReason,
+    goal_id: row.goalId,
   };
 }

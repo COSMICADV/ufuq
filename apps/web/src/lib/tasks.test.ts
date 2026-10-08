@@ -41,6 +41,7 @@ function task(overrides: Partial<TaskDetail> = {}): TaskDetail {
     department: null,
     priority: 'medium',
     status: 'not_started',
+    goal: null,
     start_date: null,
     deadline: null,
     completed_at: null,

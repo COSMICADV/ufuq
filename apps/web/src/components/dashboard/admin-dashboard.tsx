@@ -8,14 +8,16 @@ import { Alert } from '../design-system';
 import { loadSession } from '../employees/use-session';
 import { ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
+import { GoalProgressWidget } from '../goals/goal-progress-widget';
 import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
 
 /**
  * `/{locale}/admin` — DOCUMENT 04 B1, the admin dashboard.
  *
- * Only one widget exists so far: DOCUMENT 13's "tasks needing reassignment"
- * list. The other B1 widgets (KPI rows, attendance and task overviews, goals,
- * requests, payroll, inventory, recent activity, quick actions) are not
+ * Two widgets exist so far: DOCUMENT 13's "tasks needing reassignment" list
+ * and, from Phase 8, B1 widget 6 "Goal progress". The other B1 widgets (KPI
+ * rows, attendance and task overviews, requests, payroll, inventory, recent
+ * activity, quick actions) are not
  * rendered as placeholders (DOCUMENT 27 RULE 26). They arrive with the
  * modules that own their data, mostly Phase 12.
  *
@@ -47,6 +49,9 @@ export function AdminDashboard({ locale }: { readonly locale: Locale }): React.J
     <div className="dashboard-widgets">
       {permissions.has('task.view') ? (
         <TasksNeedingReassignment locale={locale} t={t} timeZone={session.state.value.timeZone} />
+      ) : null}
+      {permissions.has('goal.view') ? (
+        <GoalProgressWidget locale={locale} t={t} timeZone={session.state.value.timeZone} />
       ) : null}
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createTranslator } from '@ufuq/i18n';
@@ -21,6 +22,7 @@ import {
 } from '../../lib/tasks';
 import type { ProgressUpdate, TaskDetail, TaskStatus } from '../../lib/tasks';
 import type { RecordAttachments } from '../../lib/attachments';
+import { goalPath } from '../../lib/goals';
 import { formatDate, formatTime } from '../attendance/attendance-shared';
 import { Alert, Button, Card, EmptyState, Field, Input, Modal, Textarea } from '../design-system';
 import { loadSession } from '../employees/use-session';
@@ -65,7 +67,8 @@ import { Deadline, PriorityChip, ProgressRing, TaskStatusChip } from './tasks-sh
  *   server's own `can_upload` / `can_delete` answers — see
  *   `task-attachments.tsx`.
  *
- * Not here: the linked goal (Phase 8).
+ * - **Linked goal** (Phase 8, DOCUMENT 04 B9) — a link to the goal, on the
+ *   surface the caller is on.
  */
 
 interface Loaded {
@@ -288,6 +291,16 @@ export function TaskDetailScreen({
                     : locale === 'en'
                       ? task.department.name_en
                       : task.department.name_ar}
+                </dd>
+              </div>
+              <div>
+                <dt>{t('tasks.field_goal')}</dt>
+                <dd>
+                  {task.goal === null ? (
+                    t('tasks.no_goal')
+                  ) : (
+                    <Link href={goalPath(locale, task.goal.id, surface)}>{task.goal.title}</Link>
+                  )}
                 </dd>
               </div>
               <div>

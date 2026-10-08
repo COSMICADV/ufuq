@@ -188,7 +188,11 @@ beforeAll(async () => {
     .compile();
 
   app = moduleRef.createNestApplication();
-  await app.init();
+  // Listening once, here, matters: given a server that is not listening,
+  // supertest listens for each request and closes the server after it, and
+  // a request that starts while that close is in progress fails with
+  // "socket hang up". `listen` also runs `init`.
+  await app.listen(0, '127.0.0.1');
   prisma = app.get<PrismaClient>(PRISMA_CLIENT);
 
   // Reference data is written by the seed, which runs as the migration owner —

@@ -8,7 +8,8 @@
  *     through `POST /tasks/{id}/status`, where the transition matrix is
  *     enforced; progress is derived and never free-typed (DOCUMENT 06 §1.3,
  *     OD-10). The whitelist turns an attempt to send either into a 422.
- *   - `goal_id`: goals are Phase 8 (see docs/PHASE-7-STATUS.md).
+ *   - `goal_id` is writable from Phase 8: an optional link to a goal of the
+ *     same company and the same employee (DOCUMENT 13 validation).
  *   - `company_id`, ever (DOCUMENT 08 §1's critical rule).
  */
 
@@ -92,6 +93,11 @@ export class CreateTaskDto {
   @IsCalendarDate({ message: 'invalid' })
   deadline?: string | null;
 
+  /** DOCUMENT 05 FLOW 09 "optional goal link" — checked against the assignee. */
+  @IsOptional()
+  @IsUUID(undefined, { message: 'invalid' })
+  goal_id?: string | null;
+
   @IsOptional()
   @Transform(({ value }) =>
     Array.isArray(value)
@@ -142,6 +148,11 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsCalendarDate({ message: 'invalid' })
   deadline?: string | null;
+
+  /** Link, relink or (with `null`) unlink a goal. */
+  @IsOptional()
+  @IsUUID(undefined, { message: 'invalid' })
+  goal_id?: string | null;
 }
 
 /** POST /tasks/{id}/status — DOCUMENT 13 rules 4, 6, 7. */
@@ -215,10 +226,10 @@ export class CreateProgressUpdateDto {
 
 /**
  * GET /tasks — DOCUMENT 08 §4.7 filters: status, priority, assignee,
- * department, overdue, date range (`from`/`to` on the deadline), plus
- * `needs_reassignment` for DOCUMENT 13's dashboard list. `goal_id`
- * arrives with goals in Phase 8. DOCUMENT 08 documents no sort whitelist for
- * this endpoint, so the order is fixed (deadline first).
+ * department, goal, overdue, date range (`from`/`to` on the deadline), plus
+ * `needs_reassignment` for DOCUMENT 13's dashboard list. DOCUMENT 08
+ * documents no sort whitelist for this endpoint, so the order is fixed
+ * (deadline first).
  */
 export class ListTasksQueryDto extends PaginationQueryDto {
   @IsOptional()
@@ -236,6 +247,11 @@ export class ListTasksQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   department_id?: string;
+
+  /** DOCUMENT 08 §4.7 `goal_id` — the tasks linked to one goal. */
+  @IsOptional()
+  @IsUUID()
+  goal_id?: string;
 
   @IsOptional()
   @IsIn(BOOLEAN_STRINGS)

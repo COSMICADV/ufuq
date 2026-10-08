@@ -126,6 +126,9 @@ export function listWhere(
   if (query.department_id !== undefined) {
     and.push({ departmentId: query.department_id });
   }
+  if (query.goal_id !== undefined) {
+    and.push({ goalId: query.goal_id });
+  }
   if (query.overdue === 'true') {
     and.push(overdueWhere(today));
   } else if (query.overdue === 'false') {

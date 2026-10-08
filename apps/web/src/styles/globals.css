@@ -2471,3 +2471,64 @@ a.button {
   display: flex;
   gap: var(--space-2);
 }
+
+/* ===========================================================================
+   Goals — Phase 8 (DOCUMENT 14, DOCUMENT 04 B11–B12 / C7). Appended; nothing
+   above is changed. The goal screens reuse the task page, card, facts and
+   bar styles; these are the few pieces they add. Tokens and logical
+   properties only.
+   =========================================================================== */
+.goals-progress {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.goals-card .goals-progress {
+  max-inline-size: 28rem;
+}
+.goals-history {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.goals-history li {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.goals-history li:last-child {
+  border-block-end: 0;
+}
+.goals-history__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+.goals-chart {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.goals-chart svg {
+  inline-size: 100%;
+  max-inline-size: 40rem;
+  block-size: auto;
+}
+.goals-chart__target {
+  stroke: var(--border-default);
+  stroke-dasharray: 4 4;
+}
+.goals-chart__line {
+  fill: none;
+  stroke: var(--green-primary-600);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.goals-chart__point {
+  fill: var(--green-primary-600);
+}

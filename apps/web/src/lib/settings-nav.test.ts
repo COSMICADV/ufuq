@@ -12,12 +12,13 @@ import {
 } from './settings-nav';
 
 describe('SETTINGS_SECTIONS', () => {
-  it('contains exactly the four Phase 4 sections and the audit log', () => {
+  it('contains the four Phase 4 sections, performance (Phase 8) and the audit log', () => {
     expect([...SETTINGS_SECTIONS]).toEqual([
       'company',
       'departments',
       'positions',
       'schedules',
+      'performance',
       'audit-log',
     ]);
   });
@@ -26,7 +27,7 @@ describe('SETTINGS_SECTIONS', () => {
     // DOCUMENT 03 §3 also lists these; each belongs to a later phase, and a
     // link to a screen that is not built is a "coming soon" panel by another
     // name (DOCUMENT 27 RULE 26).
-    for (const later of ['leave-types', 'salary-policy', 'performance', 'roles', 'notifications']) {
+    for (const later of ['leave-types', 'salary-policy', 'roles', 'notifications']) {
       expect(isSettingsSection(later)).toBe(false);
     }
   });

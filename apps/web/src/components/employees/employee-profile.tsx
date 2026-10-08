@@ -29,11 +29,14 @@ import {
   SuccessNotice,
 } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
+import { EmployeeGoals } from '../goals/employee-goals';
 import { EmployeeTasks } from '../tasks/employee-tasks';
+import { newGoalPath } from '../../lib/goals';
 import { newTaskPath } from '../../lib/tasks';
 
 import { EmployeeHistory } from './employee-history';
 import { EmployeesBreadcrumb } from './employees-shell';
+import { PerformanceSnapshot } from './performance-snapshot';
 import { loadSession } from './use-session';
 import type { SessionView } from './use-session';
 
@@ -44,11 +47,13 @@ import type { SessionView } from './use-session';
  * date, and the quick actions this phase can perform — edit, deactivate or
  * activate, resend the invitation, and — from Phase 7 — "Assign task" for a
  * caller holding `task.create` while the employee is active (the API refuses
- * an inactive assignee and one outside the caller's scope again). "Assign
- * goal" belongs to Phase 8 and is not rendered.
+ * an inactive assignee and one outside the caller's scope again) and — from
+ * Phase 8 — "Assign goal" on the same terms with `goal.create`.
  *
  * Tabs: all seven. The Tasks tab lists this employee's tasks (Phase 7,
- * `employee-tasks.tsx`). DOCUMENT 25 Phase 5 allows the later-phase tabs to be
+ * `employee-tasks.tsx`), the Goals tab their goal cards (Phase 8,
+ * `employee-goals.tsx`), and the Overview carries the performance snapshot
+ * for a caller holding `report.employee_monthly` (Phase 8). DOCUMENT 25 Phase 5 allows the later-phase tabs to be
  * empty; each one shows the honest empty state for data that does not exist
  * yet, never sample data (DOCUMENT 27 RULE 26). Tab visibility follows
  * permissions, and a tab the caller may not see is refused here as well as by
@@ -158,6 +163,13 @@ function ProfileBody({
     permissions.has('task.create') && employee.status === 'active' ? (
       <Link className="button button--secondary button--md" href={newTaskPath(locale, employee.id)}>
         {t('employees.assign_task')}
+      </Link>
+    ) : null;
+  // DOCUMENT 04 B4 "assign goal" — the same rule: an owner must be active.
+  const assignGoal =
+    permissions.has('goal.create') && employee.status === 'active' ? (
+      <Link className="button button--secondary button--md" href={newGoalPath(locale, employee.id)}>
+        {t('employees.assign_goal')}
       </Link>
     ) : null;
   const tabs = visibleTabs(permissions);
@@ -334,6 +346,7 @@ function ProfileBody({
 
         <div className="profile-header__actions">
           {assignTask}
+          {assignGoal}
           {permissions.has('employee.update') ? (
             <Link
               className="button button--secondary button--md"
@@ -397,6 +410,9 @@ function ProfileBody({
         ) : tab === 'overview' ? (
           <>
             <Overview locale={locale} t={t} employee={employee} timeZone={session.timeZone} />
+            {permissions.has('report.employee_monthly') ? (
+              <PerformanceSnapshot locale={locale} t={t} employeeId={employee.id} />
+            ) : null}
             {/* DOCUMENT 21 "UI" — the record's audit trail inline, for a
                 caller who may read the audit log (ADMIN only in V1). */}
             {permissions.has('audit.view') ? (
@@ -415,6 +431,14 @@ function ProfileBody({
             employeeId={employee.id}
             timeZone={session.timeZone}
             assignAction={assignTask}
+          />
+        ) : tab === 'goals' ? (
+          <EmployeeGoals
+            locale={locale}
+            t={t}
+            employeeId={employee.id}
+            timeZone={session.timeZone}
+            assignAction={assignGoal}
           />
         ) : (
           <EmptyState

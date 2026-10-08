@@ -235,6 +235,11 @@ export function describeError(error: unknown, t: Translator): string {
       return t('error.invalid_status_transition');
     case 'TASK_HAS_OPEN_ITEMS':
       return t('error.task_has_open_items');
+    // Phase 8 — goals (DOCUMENT 14 "Error states").
+    case 'GOAL_CANCELLED':
+      return t('error.goal_cancelled');
+    case 'GOAL_PROGRESS_AUTOMATIC':
+      return t('error.goal_progress_automatic');
     default:
       return t('state.error');
   }

@@ -76,6 +76,7 @@ interface Option {
 interface FilterOptions {
   readonly assignees: readonly Option[];
   readonly departments: readonly Option[];
+  readonly goals: readonly Option[];
 }
 
 type Listing =
@@ -149,7 +150,7 @@ export function TasksAdmin({ locale }: { readonly locale: Locale }): React.JSX.E
       const query = { per_page: OPTIONS_PAGE_SIZE };
       // A filter is a convenience: if an option list fails, the screen still
       // works with that filter's "all" choice rather than failing outright.
-      const [employees, departments] = await Promise.all([
+      const [employees, departments, goals] = await Promise.all([
         fetchMany<{ id: string; first_name: string; last_name: string }>('/employees', {
           locale,
           signal,
@@ -160,8 +161,12 @@ export function TasksAdmin({ locale }: { readonly locale: Locale }): React.JSX.E
           signal,
           query,
         }).catch(() => null),
+        fetchMany<{ id: string; title: string }>('/goals', { locale, signal, query }).catch(
+          () => null,
+        ),
       ]);
       return {
+        goals: (goals?.items ?? []).map((g) => ({ id: g.id, label: g.title })),
         assignees: (employees?.items ?? []).map((e) => ({
           id: e.id,
           label: `${e.first_name} ${e.last_name}`.trim(),
@@ -176,7 +181,9 @@ export function TasksAdmin({ locale }: { readonly locale: Locale }): React.JSX.E
   );
   const options = useResource(loadOptions);
   const optionValues: FilterOptions =
-    options.state.status === 'ready' ? options.state.value : { assignees: [], departments: [] };
+    options.state.status === 'ready'
+      ? options.state.value
+      : { assignees: [], departments: [], goals: [] };
 
   const zone = session.state.status === 'ready' ? session.state.value.timeZone : 'UTC';
   const canCreate =
@@ -284,6 +291,21 @@ export function TasksAdmin({ locale }: { readonly locale: Locale }): React.JSX.E
             >
               <option value="">{t('tasks.all_departments')}</option>
               {optionValues.departments.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label={t('tasks.field_goal')}>
+            <Select
+              value={filters.goal}
+              onChange={(event) => {
+                change({ goal: event.target.value });
+              }}
+            >
+              <option value="">{t('tasks.all_goals')}</option>
+              {optionValues.goals.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
                 </option>

@@ -160,51 +160,87 @@ enum TaskPriority {
   @@map("task_priority")
 }
 
+/// DOCUMENT 06 §3.18, DOCUMENT 14 "Types". DOCUMENT 14: "The enum is
+/// extensible; adding a type must not require touching progress calculation
+/// for existing types."
+enum GoalType {
+  sales
+  task
+  custom
+
+  @@map("goal_type")
+}
+
+/// DOCUMENT 14 "Statuses".
+enum GoalStatus {
+  active
+  achieved
+  missed
+  cancelled
+
+  @@map("goal_status")
+}
+
+/// DOCUMENT 06 §3.19 — who produced a history row: a person's update
+/// (`manual`) or a derivation the system made (`system`).
+enum GoalProgressSource {
+  manual
+  system
+
+  @@map("goal_progress_source")
+}
+
 /// DOCUMENT 21 — only the "Authentication & access" action group ships in
 /// Phase 3. Every later phase adds its own values to this type in its own
 /// migration; this is not a preview of the full DOCUMENT 21 catalogue.
 enum AuditAction {
-  LOGIN_SUCCESS                   @map("login.success")
-  LOGIN_FAILED                    @map("login.failed")
-  LOGIN_LOCKED                    @map("login.locked")
-  LOGOUT                          @map("logout")
-  PASSWORD_CHANGED                @map("password.changed")
-  PASSWORD_RESET_REQUESTED        @map("password.reset_requested")
-  PASSWORD_RESET_COMPLETED        @map("password.reset_completed")
-  INVITATION_SENT                 @map("invitation.sent")
-  INVITATION_ACCEPTED             @map("invitation.accepted")
-  SESSION_REVOKED                 @map("session.revoked")
-  PERMISSION_DENIED               @map("permission.denied")
-  TENANCY_VIOLATION_ATTEMPT       @map("tenancy.violation_attempt")
-  SETTINGS_COMPANY_UPDATED        @map("settings.company_updated")
-  SETTINGS_SCHEDULE_CHANGED       @map("settings.schedule_changed")
-  EMPLOYEE_CREATED                @map("employee.created")
-  EMPLOYEE_UPDATED                @map("employee.updated")
-  EMPLOYEE_DEACTIVATED            @map("employee.deactivated")
-  EMPLOYEE_ACTIVATED              @map("employee.activated")
-  EMPLOYEE_MANAGER_CHANGED        @map("employee.manager_changed")
-  EMPLOYEE_DEPARTMENT_CHANGED     @map("employee.department_changed")
-  EMPLOYEE_ROLE_CHANGED           @map("employee.role_changed")
-  ATTENDANCE_CHECKED_IN           @map("attendance.checked_in")
-  ATTENDANCE_CHECKED_OUT          @map("attendance.checked_out")
-  ATTENDANCE_ADJUSTED_BY_ADMIN    @map("attendance.adjusted_by_admin")
-  ATTENDANCE_CORRECTION_REQUESTED @map("attendance.correction_requested")
-  ATTENDANCE_CORRECTION_APPROVED  @map("attendance.correction_approved")
-  ATTENDANCE_CORRECTION_REJECTED  @map("attendance.correction_rejected")
-  ATTENDANCE_GENERATED_BY_SYSTEM  @map("attendance.generated_by_system")
-  TASK_CREATED                    @map("task.created")
-  TASK_UPDATED                    @map("task.updated")
-  TASK_REASSIGNED                 @map("task.reassigned")
-  TASK_DEADLINE_CHANGED           @map("task.deadline_changed")
-  TASK_STATUS_CHANGED             @map("task.status_changed")
-  TASK_CANCELLED                  @map("task.cancelled")
-  TASK_DELETED                    @map("task.deleted")
-  TASK_REOPENED                   @map("task.reopened")
-  CHECKLIST_ITEM_ADDED            @map("checklist.item_added")
-  CHECKLIST_ITEM_DELETED          @map("checklist.item_deleted")
-  ATTACHMENT_UPLOADED             @map("attachment.uploaded")
-  ATTACHMENT_DELETED              @map("attachment.deleted")
-  ATTACHMENT_ACCESSED             @map("attachment.accessed")
+  LOGIN_SUCCESS                        @map("login.success")
+  LOGIN_FAILED                         @map("login.failed")
+  LOGIN_LOCKED                         @map("login.locked")
+  LOGOUT                               @map("logout")
+  PASSWORD_CHANGED                     @map("password.changed")
+  PASSWORD_RESET_REQUESTED             @map("password.reset_requested")
+  PASSWORD_RESET_COMPLETED             @map("password.reset_completed")
+  INVITATION_SENT                      @map("invitation.sent")
+  INVITATION_ACCEPTED                  @map("invitation.accepted")
+  SESSION_REVOKED                      @map("session.revoked")
+  PERMISSION_DENIED                    @map("permission.denied")
+  TENANCY_VIOLATION_ATTEMPT            @map("tenancy.violation_attempt")
+  SETTINGS_COMPANY_UPDATED             @map("settings.company_updated")
+  SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
+  EMPLOYEE_CREATED                     @map("employee.created")
+  EMPLOYEE_UPDATED                     @map("employee.updated")
+  EMPLOYEE_DEACTIVATED                 @map("employee.deactivated")
+  EMPLOYEE_ACTIVATED                   @map("employee.activated")
+  EMPLOYEE_MANAGER_CHANGED             @map("employee.manager_changed")
+  EMPLOYEE_DEPARTMENT_CHANGED          @map("employee.department_changed")
+  EMPLOYEE_ROLE_CHANGED                @map("employee.role_changed")
+  ATTENDANCE_CHECKED_IN                @map("attendance.checked_in")
+  ATTENDANCE_CHECKED_OUT               @map("attendance.checked_out")
+  ATTENDANCE_ADJUSTED_BY_ADMIN         @map("attendance.adjusted_by_admin")
+  ATTENDANCE_CORRECTION_REQUESTED      @map("attendance.correction_requested")
+  ATTENDANCE_CORRECTION_APPROVED       @map("attendance.correction_approved")
+  ATTENDANCE_CORRECTION_REJECTED       @map("attendance.correction_rejected")
+  ATTENDANCE_GENERATED_BY_SYSTEM       @map("attendance.generated_by_system")
+  TASK_CREATED                         @map("task.created")
+  TASK_UPDATED                         @map("task.updated")
+  TASK_REASSIGNED                      @map("task.reassigned")
+  TASK_DEADLINE_CHANGED                @map("task.deadline_changed")
+  TASK_STATUS_CHANGED                  @map("task.status_changed")
+  TASK_CANCELLED                       @map("task.cancelled")
+  TASK_DELETED                         @map("task.deleted")
+  TASK_REOPENED                        @map("task.reopened")
+  CHECKLIST_ITEM_ADDED                 @map("checklist.item_added")
+  CHECKLIST_ITEM_DELETED               @map("checklist.item_deleted")
+  ATTACHMENT_UPLOADED                  @map("attachment.uploaded")
+  ATTACHMENT_DELETED                   @map("attachment.deleted")
+  ATTACHMENT_ACCESSED                  @map("attachment.accessed")
+  GOAL_CREATED                         @map("goal.created")
+  GOAL_UPDATED                         @map("goal.updated")
+  GOAL_PROGRESS_UPDATED                @map("goal.progress_updated")
+  GOAL_TARGET_CHANGED                  @map("goal.target_changed")
+  GOAL_CANCELLED                       @map("goal.cancelled")
+  SETTINGS_PERFORMANCE_WEIGHTS_CHANGED @map("settings.performance_weights_changed")
 
   @@map("audit_action")
 }
@@ -252,6 +288,9 @@ model Company {
   tasks Task[]
 
   attachments Attachment[]
+
+  goals             Goal[]
+  performanceConfig PerformanceConfig?
 
   @@index([status])
   @@map("companies")
@@ -452,6 +491,8 @@ model Employee {
   assignedTasks   Task[]
   progressUpdates TaskProgressUpdate[]
 
+  goals Goal[]
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -572,6 +613,9 @@ model User {
   checklistCompleted  TaskChecklistItem[]           @relation("checklist_completed_by")
   progressUpdates     TaskProgressUpdate[]          @relation("progress_update_created_by")
   attachmentsUploaded Attachment[]                  @relation("attachment_uploaded_by")
+  goalsCreated        Goal[]                        @relation("goal_created_by")
+  goalProgressCreated GoalProgress[]                @relation("goal_progress_created_by")
+  performanceConfigs  PerformanceConfig[]           @relation("performance_config_updated_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -800,6 +844,9 @@ model Task {
   progressPercent    Decimal      @default(0) @map("progress_percent") @db.Decimal(5, 2)
   createdBy          String       @map("created_by") @db.Uuid
   cancelledReason    String?      @map("cancelled_reason") @db.Text
+  /// DOCUMENT 06 §3.15, added in Phase 8 with the table it points at.
+  /// DOCUMENT 13: `SET NULL` on goal deletion.
+  goalId             String?      @map("goal_id") @db.Uuid
   createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
   /// DOCUMENT 06 §6 — tasks are soft-deleted for reporting integrity.
@@ -809,6 +856,7 @@ model Task {
   assignee      Employee    @relation(fields: [assigneeEmployeeId], references: [id], onDelete: Restrict)
   department    Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   createdByUser User        @relation("task_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+  goal          Goal?       @relation(fields: [goalId], references: [id], onDelete: SetNull)
 
   checklistItems  TaskChecklistItem[]
   progressUpdates TaskProgressUpdate[]
@@ -816,6 +864,7 @@ model Task {
   @@index([companyId, status])
   @@index([assigneeEmployeeId, status])
   @@index([companyId, deadline])
+  @@index([goalId, status])
   @@map("tasks")
 }
 
@@ -895,4 +944,83 @@ model Attachment {
 
   @@index([companyId, relatedType, relatedId])
   @@map("attachments")
+}
+
+// ---------------------------------------------------------------------------
+// Goals & performance — Phase 8 (DOCUMENT 06 §3.18–3.19, DOCUMENT 14)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.18. `currentValue` is a cache of the latest `goal_progress`
+/// row (DOCUMENT 14 rule 5); progress is computed, never stored (DOCUMENT 06
+/// §3.18). `taskCountRule` is present exactly when `type` is `task`.
+model Goal {
+  id            String     @id @db.Uuid
+  companyId     String     @map("company_id") @db.Uuid
+  employeeId    String     @map("employee_id") @db.Uuid
+  type          GoalType
+  title         String     @db.VarChar(255)
+  description   String?    @db.Text
+  targetValue   Decimal    @map("target_value") @db.Decimal(15, 2)
+  currentValue  Decimal    @default(0) @map("current_value") @db.Decimal(15, 2)
+  unit          String     @db.VarChar(20)
+  periodStart   DateTime   @map("period_start") @db.Date
+  periodEnd     DateTime   @map("period_end") @db.Date
+  status        GoalStatus @default(active)
+  taskCountRule Json?      @map("task_count_rule")
+  createdBy     String     @map("created_by") @db.Uuid
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// DOCUMENT 06 §6 — goals are soft-deleted for reporting integrity.
+  deletedAt     DateTime?  @map("deleted_at") @db.Timestamptz(3)
+
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  createdByUser User     @relation("goal_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  progress GoalProgress[]
+  tasks    Task[]
+
+  @@index([companyId, employeeId, status])
+  @@index([companyId, periodEnd])
+  @@map("goals")
+}
+
+/// DOCUMENT 06 §3.19 — append-only history. The database refuses UPDATE and
+/// DELETE for every role. `targetValue` is the target in effect when the row
+/// was written (DOCUMENT 14 "Target changed mid-period"). No `company_id`:
+/// tenancy is reached through the goal.
+model GoalProgress {
+  id            String             @id @db.Uuid
+  goalId        String             @map("goal_id") @db.Uuid
+  value         Decimal            @db.Decimal(15, 2)
+  previousValue Decimal?           @map("previous_value") @db.Decimal(15, 2)
+  targetValue   Decimal            @map("target_value") @db.Decimal(15, 2)
+  note          String?            @db.Text
+  source        GoalProgressSource
+  createdBy     String             @map("created_by") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  goal          Goal @relation(fields: [goalId], references: [id], onDelete: Restrict)
+  createdByUser User @relation("goal_progress_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([goalId, createdAt])
+  @@map("goal_progress")
+}
+
+/// DOCUMENT 14 "Database requirements": per-company structured JSON with a
+/// schema version. One row per company, written by the database when the
+/// company is created (the documented default model) and only updated after.
+model PerformanceConfig {
+  id            String   @id @db.Uuid
+  companyId     String   @unique @map("company_id") @db.Uuid
+  schemaVersion Int      @map("schema_version")
+  config        Json
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company       Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  updatedByUser User?   @relation("performance_config_updated_by", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@map("performance_config")
 }

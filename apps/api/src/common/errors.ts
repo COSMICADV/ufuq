@@ -67,6 +67,11 @@ export const ERROR_CODES = {
   // count (DOCUMENT 13 rule 6) — a 409 the client answers by confirming.
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
   TASK_HAS_OPEN_ITEMS: 'TASK_HAS_OPEN_ITEMS',
+  // Phase 8 — goals. DOCUMENT 14 "Error states": a cancelled goal takes no
+  // further changes (422), and a Task goal's value is derived from its tasks,
+  // so a manual figure for one is refused (rule 4, "No manual entry").
+  GOAL_CANCELLED: 'GOAL_CANCELLED',
+  GOAL_PROGRESS_AUTOMATIC: 'GOAL_PROGRESS_AUTOMATIC',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -90,6 +95,8 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   ATTENDANCE_DATE_IN_FUTURE: 'error.attendance_date_in_future',
   INVALID_STATUS_TRANSITION: 'error.invalid_status_transition',
   TASK_HAS_OPEN_ITEMS: 'error.task_has_open_items',
+  GOAL_CANCELLED: 'error.goal_cancelled',
+  GOAL_PROGRESS_AUTOMATIC: 'error.goal_progress_automatic',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',
