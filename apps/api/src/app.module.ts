@@ -8,6 +8,7 @@ import type { AppInfo } from './app.tokens.js';
 import { AttendanceModule } from './attendance/attendance.module.js';
 import { AttachmentsModule } from './attachments/attachments.module.js';
 import { AuditModule } from './audit/audit.module.js';
+import { AuditRetryWorker } from './auth/audit-dispatcher.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CompanyStructureModule } from './company-structure/company-structure.module.js';
 import { CsrfGuard } from './auth/guards/csrf.guard.js';
@@ -92,6 +93,8 @@ export class AppModule {
         { provide: APP_GUARD, useClass: SessionAuthGuard },
         { provide: APP_GUARD, useClass: CsrfGuard },
         { provide: APP_GUARD, useClass: PermissionsGuard },
+        // Retries post-commit audit writes that failed (DOCUMENT 21 §2).
+        ...(options.backgroundJobs ? [AuditRetryWorker] : []),
       ],
       exports: [APP_ENV, APP_INFO],
     };

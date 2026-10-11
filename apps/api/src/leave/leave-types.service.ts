@@ -21,7 +21,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
 import type { Prisma, PrismaClient } from '@ufuq/db';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import type { AuditEntry } from '../auth/audit.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import type { RequestOrigin } from '../common/request-context.js';
@@ -41,7 +42,7 @@ import { days } from './leave-rules.js';
 export class LeaveTypesService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {
     super(prisma);
   }
@@ -75,7 +76,8 @@ export class LeaveTypesService extends TenantScopedService {
     origin: RequestOrigin,
   ): Promise<LeaveTypePayload> {
     const cap = this.capFor(dto.carry_over_policy, dto.carry_over_cap ?? null);
-    return this.tenant(ctx, async (tx) => {
+    const audits: AuditEntry[] = [];
+    const created = await this.tenant(ctx, async (tx) => {
       const row = await tx.leaveType.create({
         data: {
           id: generateId(),
@@ -91,7 +93,7 @@ export class LeaveTypesService extends TenantScopedService {
         },
       });
       const payload = leaveTypePayload(row);
-      await this.audit.record(tx, {
+      audits.push({
         companyId: ctx.companyId,
         userId: ctx.userId,
         action: 'LEAVE_TYPE_CREATED',
@@ -103,6 +105,8 @@ export class LeaveTypesService extends TenantScopedService {
       });
       return payload;
     });
+    await this.audit.dispatch(audits);
+    return created;
   }
 
   async update(
@@ -111,7 +115,8 @@ export class LeaveTypesService extends TenantScopedService {
     dto: UpdateLeaveTypeDto,
     origin: RequestOrigin,
   ): Promise<LeaveTypePayload> {
-    return this.tenant(ctx, async (tx) => {
+    const audits: AuditEntry[] = [];
+    const updated = await this.tenant(ctx, async (tx) => {
       const before = await tx.leaveType.findFirst({ where: { id, deletedAt: null } });
       if (before === null) {
         throw notFound();
@@ -143,22 +148,27 @@ export class LeaveTypesService extends TenantScopedService {
           carryOverCap: cap,
         },
       });
-      await this.recordChange(tx, ctx, id, leaveTypePayload(before), leaveTypePayload(row), origin);
+      audits.push(...changeAudit(ctx, id, leaveTypePayload(before), leaveTypePayload(row), origin));
       return leaveTypePayload(row);
     });
+    await this.audit.dispatch(audits);
+    return updated;
   }
 
   /** Soft delete — DOCUMENT 16 "Soft delete on leave types". Audited as `leave_type.updated`. */
   async retire(ctx: AuthContext, id: string, origin: RequestOrigin): Promise<LeaveTypePayload> {
-    return this.tenant(ctx, async (tx) => {
+    const audits: AuditEntry[] = [];
+    const retired = await this.tenant(ctx, async (tx) => {
       const before = await tx.leaveType.findFirst({ where: { id, deletedAt: null } });
       if (before === null) {
         throw notFound();
       }
       const row = await tx.leaveType.update({ where: { id }, data: { deletedAt: new Date() } });
-      await this.recordChange(tx, ctx, id, leaveTypePayload(before), leaveTypePayload(row), origin);
+      audits.push(...changeAudit(ctx, id, leaveTypePayload(before), leaveTypePayload(row), origin));
       return leaveTypePayload(row);
     });
+    await this.audit.dispatch(audits);
+    return retired;
   }
 
   /** The cap exists exactly when the policy is `capped` (the table's own CHECK). */
@@ -169,20 +179,22 @@ export class LeaveTypesService extends TenantScopedService {
     }
     return null;
   }
+}
 
-  private async recordChange(
-    tx: Parameters<Parameters<LeaveTypesService['tenant']>[1]>[0],
-    ctx: AuthContext,
-    id: string,
-    before: LeaveTypePayload,
-    after: LeaveTypePayload,
-    origin: RequestOrigin,
-  ): Promise<void> {
-    const changed = (Object.keys(after) as (keyof LeaveTypePayload)[]).filter(
-      (key) => key !== 'id' && before[key] !== after[key],
-    );
-    if (changed.length === 0) return;
-    await this.audit.record(tx, {
+/** `leave_type.updated` with only the changed fields, or nothing when nothing changed. */
+function changeAudit(
+  ctx: AuthContext,
+  id: string,
+  before: LeaveTypePayload,
+  after: LeaveTypePayload,
+  origin: RequestOrigin,
+): AuditEntry[] {
+  const changed = (Object.keys(after) as (keyof LeaveTypePayload)[]).filter(
+    (key) => key !== 'id' && before[key] !== after[key],
+  );
+  if (changed.length === 0) return [];
+  return [
+    {
       companyId: ctx.companyId,
       userId: ctx.userId,
       action: 'LEAVE_TYPE_UPDATED',
@@ -192,6 +204,6 @@ export class LeaveTypesService extends TenantScopedService {
       newValues: Object.fromEntries(changed.map((key) => [key, after[key]])),
       ipAddress: origin.ipAddress,
       userAgent: origin.userAgent,
-    });
-  }
+    },
+  ];
 }

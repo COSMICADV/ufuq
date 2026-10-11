@@ -9,8 +9,9 @@
  *
  * What is new in kind: leave types the database seeds for every company, a
  * leave record that writes its own Requests Centre row, the Phase 9 leave
- * refusal replaced by the real linkage rule, and a narrow function that may
- * remove only a future day written by leave.
+ * refusal replaced by the real linkage rule, and (after the corrective pass)
+ * proof that no path, not even a database function, hard-deletes an
+ * attendance record.
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
@@ -399,41 +400,65 @@ describe('with every migration applied', () => {
     });
   });
 
-  describe('removing a future leave day (DOCUMENT 16 rule 15 vs DOCUMENT 12)', () => {
-    async function leaveDay(id: string, date: string, extra = ''): Promise<void> {
+  describe('attendance records are never hard-deleted (DOCUMENT 06 §6, DOCUMENT 12)', () => {
+    const DAY = '00000000-0000-7000-8000-00000000ad01';
+
+    async function leaveDay(id: string, date: string): Promise<void> {
       await asOwner(
         COMPANY_A,
-        `INSERT INTO attendance_records (id, company_id, employee_id, date, status, source, leave_request_id, updated_at${extra === '' ? '' : ', check_in_at'})
-           VALUES ('${id}', '${COMPANY_A}', '${A.employee}', DATE '${date}', 'on_leave', 'system', '${A.leave}', now()${extra})`,
+        `INSERT INTO attendance_records (id, company_id, employee_id, date, status, source, leave_request_id, updated_at)
+           VALUES ('${id}', '${COMPANY_A}', '${A.employee}', DATE '${date}', 'on_leave', 'system', '${A.leave}', now())`,
       );
     }
 
-    it('removes only that leave’s own, never-worked, not-yet-happened day', async () => {
-      await leaveDay('00000000-0000-7000-8000-00000000ad01', '2026-03-16');
-      await leaveDay('00000000-0000-7000-8000-00000000ad02', '2026-03-09');
-      // A future day is removable.
-      await asApp(
-        COMPANY_A,
-        `SELECT attendance_remove_future_leave_day('00000000-0000-7000-8000-00000000ad01', '${A.leave}', DATE '2026-03-10')`,
-      );
-      // A past day is history: refused.
-      const past = await expectRejection(() =>
+    async function ids(): Promise<string[]> {
+      const rows = await asApp<{ id: string }>(COMPANY_A, 'SELECT id FROM attendance_records');
+      return rows.map((row) => row.id);
+    }
+
+    it('the application role cannot DELETE attendance_records, with or without a WHERE', async () => {
+      await leaveDay(DAY, '2026-03-16');
+      expect(
+        await expectRejection(() => asApp(COMPANY_A, 'DELETE FROM attendance_records')),
+      ).toMatch(/permission denied/i);
+      expect(
+        await expectRejection(() =>
+          asApp(COMPANY_A, `DELETE FROM attendance_records WHERE id = '${DAY}'`),
+        ),
+      ).toMatch(/permission denied/i);
+      expect(await ids()).toEqual([DAY]);
+    });
+
+    it('the Phase 10 removal function is gone, so leave cancellation has no delete path', async () => {
+      await leaveDay(DAY, '2026-03-16');
+      const message = await expectRejection(() =>
         asApp(
           COMPANY_A,
-          `SELECT attendance_remove_future_leave_day('00000000-0000-7000-8000-00000000ad02', '${A.leave}', DATE '2026-03-10')`,
+          `SELECT attendance_remove_future_leave_day('${DAY}', '${A.leave}', DATE '2026-03-10')`,
         ),
       );
-      expect(past).toMatch(/not a future day/);
-      // Another company cannot remove it either.
-      const foreign = await expectRejection(() =>
-        asApp(
-          COMPANY_B,
-          `SELECT attendance_remove_future_leave_day('00000000-0000-7000-8000-00000000ad02', '${A.leave}', DATE '2026-01-01')`,
-        ),
+      expect(message).toMatch(/does not exist/);
+      expect(await ids()).toEqual([DAY]);
+    });
+
+    it('no database function deletes from attendance_records', async () => {
+      const rows = await db.query<{ proname: string }>(
+        `SELECT proname FROM pg_proc WHERE prosrc ~* 'delete\\s+from\\s+"?attendance_records'`,
       );
-      expect(foreign).toMatch(/not a future day/);
-      const left = await asApp<{ id: string }>(COMPANY_A, 'SELECT id FROM attendance_records');
-      expect(left.map((row) => row.id)).toEqual(['00000000-0000-7000-8000-00000000ad02']);
+      expect(rows.rows).toEqual([]);
+    });
+
+    it('a leave day can still be reconciled in place by the application role', async () => {
+      await leaveDay(DAY, '2026-03-16');
+      await asApp(
+        COMPANY_A,
+        `UPDATE attendance_records SET status = 'pending', leave_request_id = NULL WHERE id = '${DAY}'`,
+      );
+      const rows = await asApp<{ status: string; leave_request_id: string | null }>(
+        COMPANY_A,
+        'SELECT status, leave_request_id FROM attendance_records',
+      );
+      expect(rows).toEqual([{ status: 'pending', leave_request_id: null }]);
     });
   });
 

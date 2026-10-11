@@ -94,6 +94,7 @@ Unique `(employee_id, date)`. Indexes on `(company_id, date)`, `(employee_id, da
 | Schedule changes mid-month | Each day is evaluated against the schedule in effect on that date, not the current one |
 | Holiday added retroactively | Existing records are not silently rewritten. The admin is shown which records would change and confirms explicitly, and the change is audited |
 | Leave approved for past dates | Existing records for those dates are updated to `on_leave` and audited. Blocked if payroll is finalized |
+| Approved leave cancelled | Its records are kept and reconciled in place, never deleted (DOCUMENT 16 rule 15). A past working day becomes `absent`, and a holiday or rest day takes its calendar status. Today or a later working day becomes `pending` with no check-in (`source = system`). Checking in converts that row. If nobody checks in, the nightly job turns it into `absent` once the day has ended |
 | Two devices check in simultaneously | Unique constraint plus a transaction makes the second attempt a clean 409, not a duplicate |
 | Timezone | All calculations use the company timezone. The browser timezone is never trusted |
 | Clock skew | Server time is authoritative. Client-supplied timestamps are ignored |

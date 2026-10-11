@@ -20,7 +20,8 @@
  * (DOCUMENT 21 "Record content": system actions name a designated system
  * user): it is a change to an entitlement, recording the carried days, the
  * forfeited days and the year they came from. DOCUMENT 21 has no other leave
- * action that describes it.
+ * action that describes it. The records are written after the company's
+ * carry has committed (`AuditDispatcher`, DOCUMENT 21 §1).
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -32,7 +33,8 @@ import {
   SystemActorService,
   SystemActorUnavailableError,
 } from '../attendance/system-actor.service.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import type { AuditEntry } from '../auth/audit.service.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 
 import { LeaveBalancesService } from './leave-balances.service.js';
@@ -53,13 +55,14 @@ export class LeaveCarryOverService {
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     @Inject(LeaveBalancesService) private readonly balances: LeaveBalancesService,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(SystemActorService) private readonly systemActor: SystemActorService,
   ) {}
 
   /** One company: last year's balances into this year (the company's own year). */
   async runForCompany(companyId: string, now: Date = new Date()): Promise<CarryOverResult> {
-    return withTenant(this.prisma, companyId, async (tx) => {
+    const audits: AuditEntry[] = [];
+    const outcome = await withTenant(this.prisma, companyId, async (tx) => {
       const year = (await this.balances.today(tx, now)).year;
       const previous = await tx.leaveBalance.findMany({
         where: {
@@ -114,7 +117,7 @@ export class LeaveCarryOverService {
           data: { carriedOverDays: result.carried.toString(), carryOverAppliedAt: now },
         });
         actor ??= await this.systemActor.resolve(tx, companyId);
-        await this.audit.record(tx, {
+        audits.push({
           companyId,
           userId: actor,
           action: 'LEAVE_BALANCE_ADJUSTED',
@@ -134,6 +137,8 @@ export class LeaveCarryOverService {
       }
       return { year, applied, forfeited: forfeitedTotal.toString() };
     });
+    await this.audit.dispatch(audits);
+    return outcome;
   }
 
   /** Every active company, each against its own year. */

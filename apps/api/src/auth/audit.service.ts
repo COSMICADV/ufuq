@@ -1,15 +1,18 @@
 /**
- * Audit writes for the authentication action group — DOCUMENT 21.
+ * The single audit writer — DOCUMENT 21.
  *
- * Every call takes the caller's own transaction (`tx`, a `TenantClient`),
- * not the shared `PrismaClient`: the record is written *inside* the same
- * transaction as the action it documents, so "audit after commit" (DOCUMENT
- * 21 "Business rules" §1) is a consequence of ordinary transaction atomicity
- * rather than a second, separate write that could succeed or fail
- * independently of the action itself. A rolled-back login attempt — there
- * is no such thing here, since nothing about login is transactional beyond
- * the audit write itself — produces no audit record, by the same logic that
- * makes any other rollback produce none.
+ * `record` writes one row in the transaction it is given (`tx`, a
+ * `TenantClient`). There are two ways that happens:
+ *
+ *   - **Post-commit, through `AuditDispatcher`** (DOCUMENT 21 §1–§3). The
+ *     business transaction commits first. The dispatcher then writes each
+ *     entry in its own short transaction and retries any failure, so a
+ *     rollback writes no audit and an audit failure never undoes a committed
+ *     action. Phase 10 Leave uses this path (the Phase 10 corrective pass).
+ *   - **Inside the caller's transaction**, which is how Phases 3–9 call it. A
+ *     rollback still writes no audit. But an audit-write failure there rolls
+ *     back the action, which is the known divergence recorded in
+ *     docs/PHASE-10-STATUS.md.
  */
 
 import { Injectable } from '@nestjs/common';
@@ -27,6 +30,14 @@ export interface AuditEntry {
   readonly newValues?: Prisma.InputJsonObject;
   readonly ipAddress?: string | null;
   readonly userAgent?: string | null;
+  /**
+   * Set by `AuditDispatcher` for a post-commit write: the id is fixed before
+   * the first attempt so a retry after an ambiguous failure cannot write the
+   * record twice, and the time is when the action committed, not when a
+   * retry finally landed.
+   */
+  readonly id?: string;
+  readonly occurredAt?: Date;
 }
 
 @Injectable()
@@ -34,7 +45,8 @@ export class AuditService {
   async record(tx: TenantClient, entry: AuditEntry): Promise<void> {
     await tx.auditLog.create({
       data: {
-        id: generateId(),
+        id: entry.id ?? generateId(),
+        ...(entry.occurredAt !== undefined ? { createdAt: entry.occurredAt } : {}),
         companyId: entry.companyId,
         userId: entry.userId,
         action: entry.action,

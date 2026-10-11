@@ -50,7 +50,7 @@ Settings: `/admin/settings/leave-types`
 12. **Leave in a finalized payroll period cannot be approved.** Directed to the payroll adjustment flow.
 13. **Carry-over** runs as an annual job per the type's policy: none, full, or capped.
 14. **Balance adjustments by an admin** require a reason and are audited with old and new values.
-15. **Employees cancel only their own pending requests.** Approved leave is cancelled by an admin, which reverses the balance and removes the attendance records — audited.
+15. **Employees cancel only their own pending requests.** Approved leave is cancelled by an admin. Approved leave cancellation reverses the balance and reconciles the system-generated attendance records back to their correct non-leave state. Attendance records are never hard-deleted. All of it is audited after the cancellation commits.
 
 ### Example
 ```
@@ -99,7 +99,7 @@ Unique `(employee_id, leave_type_id, year)` on balances. Indexes on `(company_id
 | Employee joins mid-year | Allowance pro-rated per company policy (configurable) |
 | Employee terminated with unused balance | Encashment is out of V1 scope (OD-08) |
 | Retroactive leave request | Allowed within a configurable window; blocked if the period is finalized |
-| Approved leave cancelled | Reverses balance and deletes the generated attendance records, all audited. Blocked if the period is finalized |
+| Approved leave cancelled | Approved leave cancellation reverses the balance and reconciles the system-generated attendance records back to their correct non-leave state. Attendance records are never hard-deleted. A past working day becomes `absent`; a holiday or rest day takes its calendar status; today or a later working day becomes `pending` until it is checked into or ends (DOCUMENT 12). Real check-in/check-out data is never overwritten. All audited after commit. Blocked if the period is finalized |
 | Two approvers act simultaneously | Optimistic locking; the second receives 409 with the current status |
 | Carry-over exceeding the cap | Excess is forfeited and the forfeiture is recorded in the audit log |
 

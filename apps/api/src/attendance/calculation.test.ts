@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   calculateDay,
+  dayWithoutLeave,
   lateMinutesFor,
   overtimeMinutesFor,
   scheduledEndInstant,
@@ -315,5 +316,66 @@ describe('closing a forgotten record — DOCUMENT 12 edge case', () => {
 describe('a TIME column is read as wall-clock, not shifted by the host zone', () => {
   it('reads 09:00 as 540 minutes', () => {
     expect(minutesFromTime(new Date('1970-01-01T09:00:00Z'))).toBe(540);
+  });
+});
+
+describe('a day cancelled leave hands back — reconciled, never deleted', () => {
+  function without(input: {
+    day: ScheduleDay;
+    isHoliday?: boolean;
+    beforeToday: boolean;
+    checkInAt?: Date | null;
+    checkOutAt?: Date | null;
+  }) {
+    return dayWithoutLeave({
+      date: DATE,
+      schedule: schedule(),
+      day: input.day,
+      checkInAt: input.checkInAt ?? null,
+      checkOutAt: input.checkOutAt ?? null,
+      isHoliday: input.isHoliday ?? false,
+      beforeToday: input.beforeToday,
+    });
+  }
+
+  it('a past working day with no attendance is what the nightly job writes: absent', () => {
+    expect(without({ day: workingDay(), beforeToday: true })).toEqual(
+      calculateDay({
+        date: DATE,
+        schedule: schedule(),
+        day: workingDay(),
+        checkInAt: null,
+        checkOutAt: null,
+        isHoliday: false,
+      }),
+    );
+    expect(without({ day: workingDay(), beforeToday: true }).status).toBe('absent');
+  });
+
+  it('today or a later working day is not an absence yet: pending, no minutes', () => {
+    expect(without({ day: workingDay(), beforeToday: false })).toEqual({
+      status: 'pending',
+      workingMinutes: null,
+      overtimeMinutes: null,
+      lateMinutes: null,
+    });
+  });
+
+  it('holidays and rest days take their calendar status, past or future', () => {
+    for (const beforeToday of [true, false]) {
+      expect(without({ day: workingDay(), isHoliday: true, beforeToday }).status).toBe('holiday');
+      expect(without({ day: restDay, beforeToday }).status).toBe('weekend');
+    }
+  });
+
+  it('real check-in and check-out times are never discarded; they decide the status', () => {
+    const worked = without({
+      day: workingDay(),
+      beforeToday: false,
+      checkInAt: at(9, 30),
+      checkOutAt: at(17, 0),
+    });
+    expect(worked.status).toBe('late');
+    expect(worked.lateMinutes).toBe(30);
   });
 });

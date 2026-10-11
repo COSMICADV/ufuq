@@ -16,6 +16,7 @@
 
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+import { Logger } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { hashPassword, PERMISSIONS, ROLE_PERMISSIONS, SYSTEM_ROLES } from '@ufuq/auth';
@@ -31,6 +32,11 @@ import { API_PREFIX } from '../src/api-prefix.js';
 import { AppModule } from '../src/app.module.js';
 import type { AppInfo } from '../src/app.tokens.js';
 import { OBJECT_STORAGE } from '../src/attachments/object-storage.js';
+import { AttendanceGenerationService } from '../src/attendance/attendance-generation.service.js';
+import { parseCalendarDate } from '../src/attendance/zoned-time.js';
+import type { CalendarDate } from '../src/attendance/zoned-time.js';
+import { AUDIT_RETRY_QUEUE, AuditDispatcher } from '../src/auth/audit-dispatcher.js';
+import type { AuditRetryQueue, QueuedAuditEntry } from '../src/auth/audit-dispatcher.js';
 import { PRISMA_CLIENT } from '../src/common/db.tokens.js';
 import { ErrorFilter } from '../src/common/error.filter.js';
 import { REDIS_CLIENT } from '../src/common/redis.tokens.js';
@@ -71,6 +77,18 @@ class CapturingSink implements LeaveEventSink {
   }
 }
 const sink = new CapturingSink();
+
+/** Stands in for the BullMQ retry queue (no Redis here); `failing` simulates the queue being down too. */
+class CapturingRetryQueue implements AuditRetryQueue {
+  readonly entries: QueuedAuditEntry[] = [];
+  failing = false;
+  enqueue(entry: QueuedAuditEntry): Promise<void> {
+    if (this.failing) return Promise.reject(new Error('retry queue unavailable'));
+    this.entries.push(entry);
+    return Promise.resolve();
+  }
+}
+const retryQueue = new CapturingRetryQueue();
 
 const COMPANY_A = generateId();
 const COMPANY_B = generateId();
@@ -227,6 +245,8 @@ beforeAll(async () => {
     .useValue(storage)
     .overrideProvider(LEAVE_EVENT_SINK)
     .useValue(sink)
+    .overrideProvider(AUDIT_RETRY_QUEUE)
+    .useValue(retryQueue)
     .compile();
 
   app = moduleRef.createNestApplication();
@@ -785,6 +805,8 @@ describe('submission — the hold, and every conflict blocked', () => {
     expect(withFile.status).toBe(201);
     const fileId = (withFile.body.data as Leave).attachment?.id as string;
     expect(fileId).toBeDefined();
+    // Audited after the submission committed, with the request's own record.
+    expect(await auditsFor('attachment', fileId, 'ATTACHMENT_UPLOADED')).toHaveLength(1);
     expect((await (await api(MANAGER)).get(`/attachments/${fileId}`)).status).toBe(200);
     expect((await (await api(OUTSIDER)).get(`/attachments/${fileId}`)).status).toBe(404);
     expect((await (await api(ADMIN_B)).get(`/attachments/${fileId}`)).status).toBe(404);
@@ -1084,7 +1106,7 @@ describe('rejection and cancellation release exactly the hold', () => {
     expect((await act(WORKER, approved.id, 'cancel')).status).toBe(409);
   });
 
-  it('an ADMIN cancels approved leave: balance back, past days kept as history, future days removed', async () => {
+  it('an ADMIN cancels approved leave: balance back, every day kept and reconciled, none deleted', async () => {
     // Sunday 8 – Thursday 12 March: 8 and 9 have passed; 10 is today.
     const created = await submitted(OUTSIDER, {
       type: 'Annual',
@@ -1092,7 +1114,13 @@ describe('rejection and cancellation release exactly the hold', () => {
       end: '2026-03-12',
     });
     expect((await act(ADMIN_A, created.id, 'approve')).status).toBe(200);
-    expect(dates(await leaveDays(created.id))).toHaveLength(5);
+    const approvedDays = await withTenant(prisma, COMPANY_A, (tx) =>
+      tx.attendanceRecord.findMany({
+        where: { leaveRequestId: created.id },
+        orderBy: { date: 'asc' },
+      }),
+    );
+    expect(dates(approvedDays)).toHaveLength(5);
     expect((await balanceOf(outsiderEmployeeId, 'Annual')).used_days).toBe('5.00');
 
     expect((await act(MANAGER, created.id, 'cancel', { reason: 'x' })).status).toBe(403);
@@ -1106,22 +1134,282 @@ describe('rejection and cancellation release exactly the hold', () => {
       used_days: '0.00',
       remaining_days: '14.00',
     });
+    // The leave relationship is fully reversed…
     expect(await leaveDays(created.id)).toEqual([]);
+    // …and every row it wrote still exists, the same rows by id.
     const kept = await withTenant(prisma, COMPANY_A, (tx) =>
       tx.attendanceRecord.findMany({
         where: { employeeId: outsiderEmployeeId, date: { gte: new Date('2026-03-08T00:00:00Z') } },
         orderBy: { date: 'asc' },
       }),
     );
-    expect(dates(kept)).toEqual(['2026-03-08', '2026-03-09']);
-    expect(kept.every((day) => day.status === 'absent' && day.leaveRequestId === null)).toBe(true);
+    expect(kept.map((day) => day.id)).toEqual(approvedDays.map((day) => day.id));
+    expect(kept.every((day) => day.leaveRequestId === null && day.checkInAt === null)).toBe(true);
+    // Past working days: what the nightly job writes. Today and later: not
+    // an absence yet (approved [DECISION REQUIRED]: `pending`).
+    expect(kept.map((day) => [dates([day])[0], day.status])).toEqual([
+      ['2026-03-08', 'absent'],
+      ['2026-03-09', 'absent'],
+      ['2026-03-10', 'pending'],
+      ['2026-03-11', 'pending'],
+      ['2026-03-12', 'pending'],
+    ]);
     const audit = await auditsFor('leave_request', created.id, 'LEAVE_CANCELLED');
     expect(audit[0]?.newValues).toMatchObject({
       reason: 'Recalled for audit',
-      reverted_dates: ['2026-03-08', '2026-03-09'],
-      removed_dates: ['2026-03-10', '2026-03-11', '2026-03-12'],
+      reconciled_days: {
+        '2026-03-08': 'absent',
+        '2026-03-09': 'absent',
+        '2026-03-10': 'pending',
+        '2026-03-11': 'pending',
+        '2026-03-12': 'pending',
+      },
     });
+    for (const day of kept) {
+      expect(
+        await auditsFor('attendance_record', day.id, 'ATTENDANCE_ADJUSTED_BY_ADMIN'),
+      ).toHaveLength(1);
+    }
     expect((await inboxRow(created.id))?.status).toBe('cancelled');
+
+    // Today's reconciled day: checking in converts it like any generated row.
+    const checkIn = await (await api(OUTSIDER))
+      .post('/attendance/check-in')
+      .send({ work_mode: 'office' });
+    expect(checkIn.status).toBe(201);
+    // Tomorrow's, once it has ended with nobody checking in, becomes absent.
+    await app
+      .get(AttendanceGenerationService)
+      .generateRange(
+        COMPANY_A,
+        parseCalendarDate('2026-03-11') as CalendarDate,
+        parseCalendarDate('2026-03-11') as CalendarDate,
+        new Date(Date.UTC(2026, 2, 12, 8, 0, 0)),
+      );
+    const later = await withTenant(prisma, COMPANY_A, (tx) =>
+      tx.attendanceRecord.findMany({
+        where: { id: { in: kept.map((day) => day.id) } },
+        orderBy: { date: 'asc' },
+      }),
+    );
+    // 10 March is now a real, open check-in (status `pending` until check-out).
+    expect(
+      later.map((day) => [dates([day])[0], day.status, day.source, day.checkInAt !== null]),
+    ).toEqual([
+      ['2026-03-08', 'absent', 'system', false],
+      ['2026-03-09', 'absent', 'system', false],
+      ['2026-03-10', 'pending', 'self', true],
+      ['2026-03-11', 'absent', 'system', false],
+      ['2026-03-12', 'pending', 'system', false],
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Audit after commit (DOCUMENT 21 §1–§3) and the cancellation transaction
+// ---------------------------------------------------------------------------
+
+describe('leave audits are dispatched only after commit', () => {
+  async function withForcedFailure(
+    table: string,
+    condition: string,
+    run: () => Promise<void>,
+  ): Promise<void> {
+    await asOwner(async () => {
+      await prisma.$executeRawUnsafe(`
+        CREATE FUNCTION test_force_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+          IF ${condition} THEN RAISE EXCEPTION 'forced failure'; END IF;
+          RETURN NEW;
+        END $$`);
+      await prisma.$executeRawUnsafe(
+        `CREATE TRIGGER test_force_audit_failure BEFORE INSERT OR UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION test_force_audit_failure()`,
+      );
+    });
+    try {
+      await run();
+    } finally {
+      await asOwner(async () => {
+        await prisma.$executeRawUnsafe(`DROP TRIGGER test_force_audit_failure ON ${table}`);
+        await prisma.$executeRawUnsafe('DROP FUNCTION test_force_audit_failure()');
+      });
+    }
+  }
+
+  beforeEach(() => {
+    retryQueue.entries.length = 0;
+    retryQueue.failing = false;
+  });
+
+  it('a forced rollback of an approved-leave cancellation leaves everything, and writes no audit', async () => {
+    const created = await submitted(OUTSIDER, {
+      type: 'Annual',
+      start: '2026-04-05',
+      end: '2026-04-06',
+    });
+    expect((await act(ADMIN_A, created.id, 'approve')).status).toBe(200);
+    const before = {
+      balance: await balanceOf(outsiderEmployeeId, 'Annual'),
+      days: await withTenant(prisma, COMPANY_A, (tx) =>
+        tx.attendanceRecord.findMany({
+          where: { leaveRequestId: created.id },
+          orderBy: { date: 'asc' },
+        }),
+      ),
+      inbox: (await inboxRow(created.id))?.status,
+    };
+    expect(before.days).toHaveLength(2);
+    sink.events.length = 0;
+
+    async function expectUnchanged(): Promise<void> {
+      expect((await leave(created.id)).status).toBe('approved');
+      expect(await balanceOf(outsiderEmployeeId, 'Annual')).toEqual(before.balance);
+      const days = await withTenant(prisma, COMPANY_A, (tx) =>
+        tx.attendanceRecord.findMany({
+          where: { id: { in: before.days.map((day) => day.id) } },
+          orderBy: { date: 'asc' },
+        }),
+      );
+      expect(days).toEqual(before.days);
+      expect((await inboxRow(created.id))?.status).toBe(before.inbox);
+      expect(await auditsFor('leave_request', created.id, 'LEAVE_CANCELLED')).toEqual([]);
+      for (const day of before.days) {
+        expect(
+          await auditsFor('attendance_record', day.id, 'ATTENDANCE_ADJUSTED_BY_ADMIN'),
+        ).toEqual([]);
+      }
+      expect(sink.events).toEqual([]);
+      expect(retryQueue.entries).toEqual([]);
+    }
+
+    // The reconciliation of the second day fails, after the balance moved
+    // and the first day was reconciled.
+    await withForcedFailure(
+      'attendance_records',
+      `TG_OP = 'UPDATE' AND OLD.leave_request_id = '${created.id}'::uuid AND NEW.date = DATE '2026-04-06'`,
+      async () => {
+        expect(
+          (await act(ADMIN_A, created.id, 'cancel', { reason: 'Forced failure' })).status,
+        ).toBe(500);
+      },
+    );
+    await expectUnchanged();
+
+    // The request's own status change fails, after everything else.
+    await withForcedFailure(
+      'leave_requests',
+      `TG_OP = 'UPDATE' AND NEW.id = '${created.id}'::uuid AND NEW.status = 'cancelled'`,
+      async () => {
+        expect(
+          (await act(ADMIN_A, created.id, 'cancel', { reason: 'Forced failure' })).status,
+        ).toBe(500);
+      },
+    );
+    await expectUnchanged();
+
+    expect((await act(ADMIN_A, created.id, 'cancel', { reason: 'Now it works' })).status).toBe(200);
+    expect(await auditsFor('leave_request', created.id, 'LEAVE_CANCELLED')).toHaveLength(1);
+  });
+
+  it('a successful approval is committed before its audit is dispatched, and its event after that', async () => {
+    const created = await submitted(OUTSIDER, {
+      type: 'Annual',
+      start: '2026-04-19',
+      end: '2026-04-19',
+    });
+    const dispatcher = app.get(AuditDispatcher);
+    const original = dispatcher.dispatch.bind(dispatcher);
+    const seen: { status: string | undefined; audits: number; events: number }[] = [];
+    const spy = vi.spyOn(dispatcher, 'dispatch').mockImplementation(async (entries, at) => {
+      // Read from outside the business transaction: only committed state is visible.
+      const row = await withTenant(prisma, COMPANY_A, (tx) =>
+        tx.leaveRequest.findUnique({ where: { id: created.id }, select: { status: true } }),
+      );
+      seen.push({
+        status: row?.status,
+        audits: (await auditsFor('leave_request', created.id, 'LEAVE_APPROVED')).length,
+        events: sink.events.length,
+      });
+      await original(entries, at);
+    });
+    sink.events.length = 0;
+    try {
+      expect((await act(ADMIN_A, created.id, 'approve')).status).toBe(200);
+    } finally {
+      spy.mockRestore();
+    }
+    // Already committed, no audit written yet, no event yet.
+    expect(seen).toEqual([{ status: 'approved', audits: 0, events: 0 }]);
+    expect(await auditsFor('leave_request', created.id, 'LEAVE_APPROVED')).toHaveLength(1);
+    expect(sink.events.map((event) => event.type)).toEqual(['leave_approved']);
+  });
+
+  it('a failed audit write never undoes the committed leave action; it is retried, then lands once', async () => {
+    const created = await submitted(OUTSIDER, {
+      type: 'Annual',
+      start: '2026-04-26',
+      end: '2026-04-26',
+    });
+    const usedBefore = (await balanceOf(outsiderEmployeeId, 'Annual')).used_days;
+    sink.events.length = 0;
+    await withForcedFailure(
+      'audit_logs',
+      `NEW.entity_id = '${created.id}'::uuid AND NEW.action = 'leave.approved'`,
+      async () => {
+        expect((await act(ADMIN_A, created.id, 'approve')).status).toBe(200);
+      },
+    );
+    // The business action stands.
+    expect((await leave(created.id)).status).toBe('approved');
+    expect((await inboxRow(created.id))?.status).toBe('approved');
+    expect(await leaveDays(created.id)).toHaveLength(1);
+    expect(Number((await balanceOf(outsiderEmployeeId, 'Annual')).used_days)).toBe(
+      Number(usedBefore) + 1,
+    );
+    expect(sink.events.map((event) => event.type)).toEqual(['leave_approved']);
+    // The audit is not lost: it is on the retry queue, not yet written.
+    expect(await auditsFor('leave_request', created.id, 'LEAVE_APPROVED')).toEqual([]);
+    expect(retryQueue.entries).toHaveLength(1);
+    const queued = retryQueue.entries[0] as QueuedAuditEntry;
+    expect(queued).toMatchObject({ action: 'LEAVE_APPROVED', entityId: created.id });
+
+    // The retry worker's write, run twice: it lands exactly once.
+    const dispatcher = app.get(AuditDispatcher);
+    await dispatcher.write(queued);
+    await dispatcher.write(queued);
+    const written = await auditsFor('leave_request', created.id, 'LEAVE_APPROVED');
+    expect(written).toHaveLength(1);
+    expect(written[0]?.id).toBe(queued.id);
+  });
+
+  it('when even the retry queue is unavailable, the entry goes to the error-log fallback', async () => {
+    const created = await submitted(OUTSIDER, {
+      type: 'Annual',
+      start: '2026-05-03',
+      end: '2026-05-03',
+    });
+    retryQueue.failing = true;
+    const errors = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    try {
+      await withForcedFailure(
+        'audit_logs',
+        `NEW.entity_id = '${created.id}'::uuid AND NEW.action = 'leave.rejected'`,
+        async () => {
+          expect(
+            (await act(ADMIN_A, created.id, 'reject', { review_note: 'Not now' })).status,
+          ).toBe(200);
+        },
+      );
+      expect((await leave(created.id)).status).toBe('rejected');
+      const fallback = errors.mock.calls
+        .map((call) => String(call[0]))
+        .filter((line) => line.startsWith('AUDIT_FALLBACK'));
+      expect(fallback).toHaveLength(1);
+      expect(fallback[0]).toContain(created.id);
+      expect(fallback[0]).toContain('LEAVE_REJECTED');
+    } finally {
+      errors.mockRestore();
+    }
   });
 });
 

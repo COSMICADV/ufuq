@@ -5,7 +5,9 @@
 
 **Status: COMPLETE.** Committed as `Complete Phase 10: Leave Management`.
 
-**Known Phase 11 dependency:** the finalized-payroll-period guard (DOCUMENT 16 rule 12). See "Phase 11 payroll boundary".
+**Known Phase 11 dependency:** the finalized-payroll-period guard (DOCUMENT 16 rule 12). See "Phase 11 payroll boundary". It is the only Phase 10 dependency on a later phase.
+
+**Corrective pass:** `Fix Phase 10 audit and attendance invariants`, on top of `3c8d9aa`. It fixes two architecture violations: leave audits are now written after commit, and attendance rows are never hard-deleted. See "Phase 10 corrective pass".
 
 ## Decisions applied
 
@@ -18,7 +20,10 @@
 | **Seeded allowances**                    | approved in this phase                   | All five seeded types start at 0 days. An ADMIN sets them in `/admin/settings/leave-types`.                                                                                                                                                                                        |
 | **OD-03**                                | Phase 9, authoritative                   | Nobody decides their own leave. A manager's request goes to an ADMIN, an ADMIN-employee's to another ADMIN, on both `/leave-requests` and `/requests`.                                                                                                                             |
 
-There is no open **[DECISION REQUIRED]**. All three questions the documents left open were asked and answered before implementation.
+There is no open **[DECISION REQUIRED]**. All three questions the documents left open were asked and answered before implementation. The corrective pass raised two more, and both were answered before it was implemented:
+
+- the post-commit audit mechanism: a shared dispatcher on the existing writer, used by Leave;
+- the state of a today/future working-day row when approved leave is cancelled: `pending`, which the nightly job converts.
 
 ---
 
@@ -65,11 +70,11 @@ There is no open **[DECISION REQUIRED]**. All three questions the documents left
      - that change is audited as `attendance.adjusted_by_admin` (DOCUMENT 12 "Leave approved for past dates");
   8. set the request to approved;
   9. the Requests Centre row follows by trigger;
-  10. write `leave.approved`;
-  11. commit;
-  12. only then is the event published.
+  10. commit;
+  11. then the audit records (`leave.approved`, plus any `attendance.adjusted_by_admin`) are dispatched;
+  12. then the event is published.
 - **Forced failure rolls everything back.** Two e2e cases prove it, one with a failing attendance write and one with a failing balance update. Afterwards the request is still pending, the balance unchanged, no attendance day exists, the centre row is pending, there is no audit, and no event.
-- **Audit placement:** audit records are written **inside** the transaction, not after commit. This is stricter than the brief's step 12: a decision can never commit without its audit record, and an audit can never describe a change that rolled back. Only the notification **event** waits for the commit (DOCUMENT 19 rule 2).
+- **Audit placement: after commit** (DOCUMENT 21 §1–§3). Every leave write collects its audit entries while its transaction runs. It hands them to `AuditDispatcher` only after the commit, and publishes the event after that. A rollback therefore writes no audit. A failed audit write is retried, and it never undoes the committed action. See "Phase 10 corrective pass".
 - **Unpaid types** (rule 7) hold and charge no balance, and have no balance row.
   - The leave record and its `on_leave` days are kept, so Phase 11 Payroll can deduct by the type's `is_paid`.
 - **A type that allows a negative balance** (rule 6):
@@ -108,11 +113,75 @@ There is no open **[DECISION REQUIRED]**. All three questions the documents left
 
 - **Who:** `leave.approve` at company scope, never on their own leave, with a required reason.
 - **Balance:** the used days go back.
-- **Attendance:** DOCUMENT 16 says the generated records are deleted. DOCUMENT 06 §6 and DOCUMENT 12 say attendance is never hard-deleted, and the app role has no DELETE. Reconciled as follows:
-  - a day that has **ended** is history. It is kept, re-evaluated without the leave (`absent`, or a holiday declared since), and audited;
-  - a day **not yet reached** is a projection the leave wrote. It is removed through one narrow `SECURITY DEFINER` function, which refuses anything that is not that leave's own system-written, never-checked-in future day in the caller's company.
-- **Audit:** `leave.cancelled` records the reason and both date lists.
+- **Attendance: reconciled, never deleted.** Attendance records are never hard-deleted (DOCUMENT 06 §6, DOCUMENT 12; DOCUMENT 16 rule 15 corrected). Every row the leave wrote is kept with the same id. Its `leave_request_id` is cleared and its `on_leave` state replaced by the state the day has without the leave (`dayWithoutLeave`, in the attendance calculation module):
+  - **before today, a working day:** `absent`, with the minutes the nightly absence job writes;
+  - **any day that is now a holiday or rest day**, past or future: `holiday` / `weekend`, from the schedule and holiday configuration;
+  - **today or later, a working day:** `pending`, with no check-in and `source = system`. This was a **[DECISION REQUIRED]**, approved in the corrective pass. The day has not happened, so it is not an absence yet. Checking in converts the row, as it converts any generated row. If nobody checks in, the nightly job turns it into `absent` once the day has ended;
+  - **real check-in/check-out data is never overwritten.** If a row has times, they are kept and they decide the status.
+  - Each reconciled row is audited as `attendance.adjusted_by_admin`, old and new, after commit.
+- **Audit:** `leave.cancelled` records the reason and `reconciled_days` (date → new status), after commit.
+- **One transaction**, in this order:
+
+  1. authorization: `leave.approve` at company scope;
+  2. no self-review (OD-03);
+  3. the request and employee locks;
+  4. still approved;
+  5. the payroll-period guard, for the leave's days;
+  6. the balance locks;
+  7. used days reversed;
+  8. attendance reconciled, with no DELETE;
+  9. request set to `cancelled`;
+  10. the Requests Centre row follows by trigger;
+  11. commit.
+
+  Only then come the `leave.cancelled` audit and the `leave_cancelled` event. A forced failure at the attendance step or the request-status step leaves everything unchanged: request, balance, attendance rows (compared field by field), centre row, audits, events and the retry queue (e2e).
+
 - **Employees** cannot cancel approved leave (409).
+
+## Phase 10 corrective pass
+
+### 1. Audit after commit
+
+The Phase 10 brief said to reuse "the existing post-commit audit infrastructure", but **none existed**. Phases 3–9 all write audit inside the business transaction with `AuditService.record(tx, …)`, and there was no audit retry or fallback anywhere. With approval, the corrective pass added one post-commit path on top of the single existing writer. No second writer was created.
+
+- **`AuditDispatcher`** (`apps/api/src/auth/audit-dispatcher.ts`, provided and exported by `AuthModule`):
+  - `dispatch(entries)` is called only after the business transaction has returned, meaning it committed. It never throws.
+  - Each entry is written with `AuditService.record` in its own short tenant transaction.
+  - The record's id and time are fixed at dispatch. A retry therefore cannot duplicate the record (a unique violation on that id means an earlier attempt landed), and the record keeps the time the action committed.
+- **Retry:** a failed write goes to `AUDIT_RETRY_QUEUE`:
+  - `BullMqAuditRetryQueue` runs on the existing Redis (AD-01), queue `audit`, job id = record id;
+  - 10 attempts with exponential backoff, failed jobs kept;
+  - `AuditRetryWorker` drains it and is registered wherever background jobs run.
+- **Fallback:** if the enqueue also fails, or a job runs out of retries, the full entry is logged at error level with the prefix `AUDIT_FALLBACK`. It is never dropped silently (DOCUMENT 21 §2).
+- **Moved to post-commit:** every audit the leave module writes:
+  - `leave.requested`, `leave.approved`, `leave.rejected`, `leave.cancelled` (both the requester's withdrawal and an ADMIN's cancellation);
+  - `leave.balance_adjusted`, both the ADMIN adjustment and the carry-over's system-actor record;
+  - `leave_type.created`, and `leave_type.updated` (including retire);
+  - the `attendance.adjusted_by_admin` records that approval and cancellation write;
+  - the `attachment.uploaded` of a file submitted with a leave request (`storeChecked` gained an optional post-commit list; `/attachments` is unchanged).
+- **Order on success:** business transaction → COMMIT → audit dispatch → event publish.
+- **Known divergence, not changed in this pass:** the modules of Phases 3–9 still audit inside their own transactions. For them, a rollback still writes no audit. But a failed audit write rolls back their action, which DOCUMENT 21's edge case does not allow. Moving them onto `AuditDispatcher` is mechanical (the same collect-then-dispatch pattern). It was left out of this pass because the brief limits it to Phase 10.
+
+### 2. Attendance never hard-deleted
+
+- The cancellation path no longer deletes anything. See "Approved leave cancelled by an ADMIN" above for the exact reconciliation.
+- The `SECURITY DEFINER` delete function is dropped. Phase 6's REVOKE is the only DELETE rule for `attendance_records`, and it allows no delete at all.
+- **Nightly job** (`AttendanceGenerationService`): it gained one conditional step. A `system` row that is `pending`, with no check-in and no leave, becomes what an unrecorded day becomes (`absent`, or the calendar status) once its day has ended. It is audited as `attendance.generated_by_system`. Rows for a forgotten check-out have a check-in, so they are untouched.
+
+### Proof (added tests)
+
+| Guarantee                                                                                                                                                                                                  | Test               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Forced rollback of an approved-leave cancellation (two failure points) leaves request, balance, attendance rows, centre row unchanged; no `leave.cancelled` or attendance audit, no event, nothing queued  | `leave.e2e`        |
+| A successful approval is already committed (visible from another connection) when its audit is dispatched; no audit row and no event exist at that moment; the event follows the audit                     | `leave.e2e`        |
+| A failed audit write (forced DB failure on `audit_logs`) keeps the approval: status, centre row, attendance and balance stand; the entry is queued; the retry write lands exactly once even when run twice | `leave.e2e`        |
+| Retry queue also down → `AUDIT_FALLBACK` error log with the full entry; the rejection stands                                                                                                               | `leave.e2e`        |
+| Cancellation keeps all five rows (same ids): 2 past days `absent`, today and later `pending`; check-in converts today's; the nightly job turns an ended one `absent`                                       | `leave.e2e`        |
+| Leave attachment's `attachment.uploaded` audit is written (post-commit)                                                                                                                                    | `leave.e2e`        |
+| `DELETE` on `attendance_records` as `ufuq_app` is refused (with and without `WHERE`); the old function no longer exists; no function in `pg_proc` deletes from it; in-place reconciliation still works     | `phase10-rls`      |
+| `dayWithoutLeave`: past → absent; today/future working → pending; holiday/rest → calendar status; real times kept                                                                                          | `calculation.test` |
+
+---
 
 ## Carry-over (rule 13)
 
@@ -126,7 +195,7 @@ There is no open **[DECISION REQUIRED]**. All three questions the documents left
   - `none` writes nothing.
 - **Writes:** this year's row (created pro-rated if missing) receives `carried_over_days` and is marked `carry_over_applied_at`.
 - **Idempotent and safe to rerun.** A marked row is never touched again. A rerun, or the hourly schedule all year, changes nothing and never overwrites a later ADMIN adjustment. Proved: the rerun applies 0, and no further audit records appear.
-- **Forfeiture audit.** It is recorded as `leave.balance_adjusted` by the company's system actor, with `carried_over_days`, `forfeited_days`, `from_year`, `from_balance_id` and `reason: "carry_over"`.
+- **Forfeiture audit.** It is recorded as `leave.balance_adjusted` by the company's system actor, with `carried_over_days`, `forfeited_days`, `from_year`, `from_balance_id` and `reason: "carry_over"`. It is written after the company's carry commits.
   - DOCUMENT 21 has no other leave action, and this one describes what happens: an entitlement change with its consequence.
   - DOCUMENT 21 now says so explicitly.
   - No new action name was invented.
@@ -190,6 +259,7 @@ The migration implications required by DOCUMENT 27 RULE 31 are written at the to
 - **Same-company triggers** on every new reference.
 - **RLS** (ENABLE and FORCE) on the three tables.
 - **No DELETE** for the app role.
+- **Attendance hard-delete path removed** (corrective migration `20261011000000_phase10_attendance_never_deleted`). It drops `attendance_remove_future_leave_day`, the `SECURITY DEFINER` function the Phase 10 migration had added, and restates Phase 6's `REVOKE DELETE ON attendance_records FROM ufuq_app`. No other database function deletes from `attendance_records`, and a test checks `pg_proc` to prove it.
 - **Seeds and triggers:**
   - the five seeded types for every existing company;
   - a `companies` trigger that seeds them for new companies;
@@ -259,12 +329,14 @@ All screens have loading, empty, error and success states.
 
 ## Documentation amendments
 
-| Document          | Amendment                                                                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 08 — §4.2         | `PATCH/DELETE /leave-types/{id}` (leave.configure_types; DELETE is a soft delete). The GET note says a `leave.request` holder reads active types.            |
-| 08 — §4.6         | `POST /leave-requests/{id}/cancel`: own pending; or an ADMIN (`leave.approve` at company scope, never their own) cancelling approved leave, reason required. |
-| 21 — Leave        | The carry-over and its forfeiture are recorded as `leave.balance_adjusted` by the system actor.                                                              |
-| 28 — OD-11, OD-16 | Recorded as decided (A); OD-16 with the exact month-count and rounding rule.                                                                                 |
+| Document                 | Amendment                                                                                                                                                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 08 — §4.2                | `PATCH/DELETE /leave-types/{id}` (leave.configure_types; DELETE is a soft delete). The GET note says a `leave.request` holder reads active types.                                                                          |
+| 08 — §4.6                | `POST /leave-requests/{id}/cancel`: own pending; or an ADMIN (`leave.approve` at company scope, never their own) cancelling approved leave, reason required.                                                               |
+| 21 — Leave               | The carry-over and its forfeiture are recorded as `leave.balance_adjusted` by the system actor.                                                                                                                            |
+| 28 — OD-11, OD-16        | Recorded as decided (A); OD-16 with the exact month-count and rounding rule.                                                                                                                                               |
+| 16 — rule 15, edge cases | Corrective pass: approved-leave cancellation reverses the balance and reconciles the system-generated attendance records back to their correct non-leave state. Attendance records are never hard-deleted.                 |
+| 12 — edge cases          | Corrective pass: "Approved leave cancelled": past working day → `absent`; holiday or rest day → calendar status; today or later working day → `pending` until checked into or ended, then the nightly job writes `absent`. |
 
 ## Interpretations made
 
@@ -289,32 +361,24 @@ All screens have loading, empty, error and success states.
 
 ## Verification results
 
-| Command                       | Result                                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| `pnpm format:check`           | Pass                                                                                           |
-| `turbo run lint --force`      | Pass — 0 errors; the same 4 pre-existing `no-console` warnings in `packages/db/prisma/seed.ts` |
-| `turbo run typecheck --force` | Pass — 15/15                                                                                   |
-| `turbo run test --force`      | Pass — 15/15, **1278 tests**                                                                   |
-| `turbo run build --force`     | Pass — 8/8; `/admin/settings/leave-types` prerenders in `ar` and `en`                          |
-| `pnpm verify`                 | Not run — it needs real PostgreSQL and Redis                                                   |
+After the corrective pass. The affected suites ran first: `phase10-rls`, `leave.e2e`, `calculation`, `requests.e2e`, `attachments.e2e`, and the whole API package. The full set ran after them.
 
-The affected suites ran first:
+| Command                        | Result                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `pnpm format` / `format:check` | Pass                                                                                        |
+| `turbo run lint --force`       | Pass: 0 errors. The same 4 `no-console` warnings as before, in `packages/db/prisma/seed.ts` |
+| `turbo run typecheck --force`  | Pass: 15/15                                                                                 |
+| `turbo run test --force`       | Pass: 15/15, **1289 tests**                                                                 |
+| `turbo run build --force`      | Pass: 8/8. `/admin/settings/leave-types` prerenders in `ar` and `en`                        |
+| `pnpm verify`                  | Not run. It needs real PostgreSQL and Redis                                                 |
 
-- `phase10-rls`, plus `phase9-rls` (updated);
-- `leave-rules`, `leave.e2e`;
-- `requests.e2e`, `attendance.e2e`, `attachments.e2e`, `company-structure.e2e`;
-- web `leave`, `requests`, `settings-nav`;
-- i18n parity.
-
-The full set ran after them.
-
-| Package        | Tests    | Phase 10 additions                                                            |
-| -------------- | -------- | ----------------------------------------------------------------------------- |
-| `packages/db`  | 243      | **+22** — `test/phase10-rls.test.ts`                                          |
-| `apps/api`     | 717      | **+46** — `test/leave.e2e.test.ts` (30), `src/leave/leave-rules.test.ts` (16) |
-| `apps/web`     | 205      | **+8** — `lib/leave.test.ts`, one `requests` case                             |
-| other packages | 113      | — (i18n parity covers the new keys in both languages)                         |
-| **Total**      | **1278** | **+76** (1202 at the end of Phase 9)                                          |
+| Package        | Tests    | Phase 10 additions                                                                                                        |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `packages/db`  | 246      | **+25**: `test/phase10-rls.test.ts`. The corrective pass replaced the removal-function case with 4 no-delete cases        |
+| `apps/api`     | 725      | **+54**: `test/leave.e2e.test.ts` (34), `src/leave/leave-rules.test.ts` (16), `dayWithoutLeave` in `calculation.test` (4) |
+| `apps/web`     | 205      | **+8**: `lib/leave.test.ts`, plus one `requests` case                                                                     |
+| other packages | 113      | None added. i18n parity covers the new keys in both languages                                                             |
+| **Total**      | **1289** | **+87** (1202 at the end of Phase 9; 1278 at `3c8d9aa`)                                                                   |
 
 **Web test coverage note:** as in earlier phases, the web package has no component-rendering harness. The leave form's rules are unit-tested in `lib/leave.ts`:
 

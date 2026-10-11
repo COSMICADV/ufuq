@@ -22,8 +22,15 @@
  *     holds, or sees the request already decided (409).
  *   - **Approval is one transaction** (rule 4): revalidation, balance, the
  *     `on_leave` attendance days linked back to the request (rule 5), the
- *     request's status, its Requests Centre row (by trigger) and the audit
- *     record — all or nothing. Events are published only after commit.
+ *     request's status and its Requests Centre row (by trigger), all or
+ *     nothing.
+ *   - **Audit after commit** (DOCUMENT 21 §1–§3): each write collects its
+ *     audit entries while the transaction runs and hands them to
+ *     `AuditDispatcher` only once it has committed, then publishes the event.
+ *     A rollback writes no audit; a failed audit write is retried and never
+ *     undoes the committed change.
+ *   - **Attendance is never hard-deleted** (DOCUMENT 06 §6, DOCUMENT 12):
+ *     cancelling approved leave reconciles its days in place.
  *   - **OD-03**: nobody decides their own leave.
  */
 
@@ -36,7 +43,7 @@ import { AttachmentsService } from '../attachments/attachments.service.js';
 import type { CheckedUpload, UploadedFile } from '../attachments/attachments.service.js';
 import { attendanceAuditSnapshot } from '../attendance/attendance-payload.js';
 import { dateValue } from '../attendance/attendance-query.js';
-import { calculateDay } from '../attendance/calculation.js';
+import { dayWithoutLeave } from '../attendance/calculation.js';
 import {
   dayFor,
   isHolidayOn,
@@ -51,7 +58,8 @@ import {
   parseCalendarDate,
 } from '../attendance/zoned-time.js';
 import type { CalendarDate } from '../attendance/zoned-time.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import type { AuditEntry } from '../auth/audit.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
@@ -160,7 +168,7 @@ const OPEN: ('pending' | 'approved')[] = ['pending', 'approved'];
 export class LeaveRequestsService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(LeaveBalancesService) private readonly balances: LeaveBalancesService,
     @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
     @Inject(LeaveEventPublisher) private readonly events: LeaveEventPublisher,
@@ -239,6 +247,7 @@ export class LeaveRequestsService extends TenantScopedService {
     const checked: CheckedUpload | null =
       file === undefined ? null : await this.attachments.prepareUpload(ctx, file);
 
+    const audits: AuditEntry[] = [];
     const { id, warnings, excess } = await this.tenant(ctx, async (tx) => {
       const employee = await this.lockEmployee(tx, employeeId);
       const type = await this.activeType(tx, dto.leave_type_id);
@@ -303,11 +312,12 @@ export class LeaveRequestsService extends TenantScopedService {
           'leave_request',
           leaveId,
           origin,
+          audits,
         );
         attachmentId = stored.id;
         await tx.leaveRequest.update({ where: { id: leaveId }, data: { attachmentId } });
       }
-      await this.audit.record(tx, {
+      audits.push({
         companyId: ctx.companyId,
         userId: ctx.userId,
         action: 'LEAVE_REQUESTED',
@@ -329,6 +339,7 @@ export class LeaveRequestsService extends TenantScopedService {
       return { id: leaveId, warnings: notes, excess: excessDays };
     });
 
+    await this.audit.dispatch(audits);
     await this.publish('leave_request_submitted', ctx.companyId, id, employeeId, now);
     return { ...(await this.findOne(ctx, id)), warnings, excess_days: excess.toString() };
   }
@@ -415,6 +426,7 @@ export class LeaveRequestsService extends TenantScopedService {
     origin: RequestOrigin,
     now: Date = new Date(),
   ): Promise<LeaveRequestDetailPayload> {
+    const audits: AuditEntry[] = [];
     const employeeId = await this.tenant(ctx, async (tx) => {
       const row = await this.lockForDecision(tx, ctx, id);
       const employee = await this.subject(tx, row.employeeId);
@@ -486,7 +498,7 @@ export class LeaveRequestsService extends TenantScopedService {
             where: { id: record.id },
             data: leaveDay,
           });
-          await this.audit.record(tx, {
+          audits.push({
             companyId: ctx.companyId,
             userId: ctx.userId,
             action: 'ATTENDANCE_ADJUSTED_BY_ADMIN',
@@ -509,7 +521,7 @@ export class LeaveRequestsService extends TenantScopedService {
           reviewNote: dto.review_note ?? null,
         },
       });
-      await this.audit.record(tx, {
+      audits.push({
         companyId: ctx.companyId,
         userId: ctx.userId,
         action: 'LEAVE_APPROVED',
@@ -528,6 +540,7 @@ export class LeaveRequestsService extends TenantScopedService {
       return row.employeeId;
     });
 
+    await this.audit.dispatch(audits);
     await this.publish('leave_approved', ctx.companyId, id, employeeId, now);
     return this.findOne(ctx, id);
   }
@@ -540,6 +553,7 @@ export class LeaveRequestsService extends TenantScopedService {
     origin: RequestOrigin,
     now: Date = new Date(),
   ): Promise<LeaveRequestDetailPayload> {
+    const audits: AuditEntry[] = [];
     const employeeId = await this.tenant(ctx, async (tx) => {
       const row = await this.lockForDecision(tx, ctx, id);
       await this.releaseHolds(tx, ctx, row);
@@ -552,7 +566,7 @@ export class LeaveRequestsService extends TenantScopedService {
           reviewNote: dto.review_note,
         },
       });
-      await this.audit.record(tx, {
+      audits.push({
         companyId: ctx.companyId,
         userId: ctx.userId,
         action: 'LEAVE_REJECTED',
@@ -565,6 +579,7 @@ export class LeaveRequestsService extends TenantScopedService {
       });
       return row.employeeId;
     });
+    await this.audit.dispatch(audits);
     await this.publish('leave_rejected', ctx.companyId, id, employeeId, now);
     return this.findOne(ctx, id);
   }
@@ -577,11 +592,9 @@ export class LeaveRequestsService extends TenantScopedService {
    *     hold is released. An employee never cancels approved leave.
    *   - **An ADMIN cancels approved leave** (rule 15): `leave.approve` at
    *     company scope, never their own (OD-03), with a reason. The used days
-   *     go back to the balance, and the leave's attendance days are reversed:
-   *     a day that has ended is kept as history and re-evaluated without the
-   *     leave (absent, or a holiday declared since), audited; a day not yet
-   *     reached is removed (DOCUMENT 12 keeps history, DOCUMENT 16 removes
-   *     the leave — see the Phase 10 migration).
+   *     go back to the balance, and every attendance day the leave wrote is
+   *     reconciled in place to its non-leave state (`dayWithoutLeave`).
+   *     Attendance records are never hard-deleted.
    */
   async cancel(
     ctx: AuthContext,
@@ -590,6 +603,7 @@ export class LeaveRequestsService extends TenantScopedService {
     origin: RequestOrigin,
     now: Date = new Date(),
   ): Promise<LeaveRequestDetailPayload> {
+    const audits: AuditEntry[] = [];
     const employeeId = await this.tenant(ctx, async (tx) => {
       const found = await tx.leaveRequest.findFirst({
         where: { id },
@@ -616,7 +630,7 @@ export class LeaveRequestsService extends TenantScopedService {
         }
         await this.releaseHolds(tx, ctx, row);
         await tx.leaveRequest.update({ where: { id }, data: { status: 'cancelled' } });
-        await this.audit.record(tx, {
+        audits.push({
           companyId: ctx.companyId,
           userId: ctx.userId,
           action: 'LEAVE_CANCELLED',
@@ -649,11 +663,12 @@ export class LeaveRequestsService extends TenantScopedService {
       if (dto.reason === undefined) {
         throw fieldError({ reason: ['required'] });
       }
-      await this.reverseApproved(tx, ctx, row, dto.reason, origin, now);
+      await this.reverseApproved(tx, ctx, row, dto.reason, origin, now, audits);
       await tx.leaveRequest.update({ where: { id }, data: { status: 'cancelled' } });
       return found.employeeId;
     });
 
+    await this.audit.dispatch(audits);
     await this.publish('leave_cancelled', ctx.companyId, id, employeeId, now);
     return this.findOne(ctx, id);
   }
@@ -771,7 +786,7 @@ export class LeaveRequestsService extends TenantScopedService {
     }
   }
 
-  /** Rule 15 — undo an approval: balance back, attendance days reversed, audited. */
+  /** Rule 15 — undo an approval: balance back, attendance days reconciled in place, audited after commit. */
   private async reverseApproved(
     tx: TenantClient,
     ctx: AuthContext,
@@ -779,6 +794,7 @@ export class LeaveRequestsService extends TenantScopedService {
     reason: string,
     origin: RequestOrigin,
     now: Date,
+    audits: AuditEntry[],
   ): Promise<void> {
     const records = await tx.attendanceRecord.findMany({
       where: { leaveRequestId: row.id },
@@ -799,62 +815,59 @@ export class LeaveRequestsService extends TenantScopedService {
       }
     }
 
+    // Reconcile every day the leave wrote, in place: never deleted
+    // (DOCUMENT 06 §6, DOCUMENT 12; the app role has no DELETE on
+    // attendance_records). See `dayWithoutLeave` for the state each gets.
     const today = await this.balances.today(tx, now);
-    const reverted: string[] = [];
-    const removed: string[] = [];
+    const reconciled: Record<string, string> = {};
     if (records.length > 0) {
       const first = dates[0] as CalendarDate;
       const last = dates[dates.length - 1] as CalendarDate;
       const context = await loadScheduleContext(tx, employee.workScheduleId, first, last);
       for (const [index, record] of records.entries()) {
         const date = dates[index] as CalendarDate;
-        if (compareDates(date, today) < 0) {
-          // History: kept, re-evaluated without the leave.
-          const evaluated = calculateDay({
-            date,
-            schedule: context.settings,
-            day: dayFor(context, date, employee.workScheduleId),
-            checkInAt: null,
-            checkOutAt: null,
-            isHoliday: isHolidayOn(context, date),
-          });
-          const updated = await tx.attendanceRecord.update({
-            where: { id: record.id },
-            data: { status: evaluated.status as never, leaveRequestId: null, source: 'system' },
-          });
-          await this.audit.record(tx, {
-            companyId: ctx.companyId,
-            userId: ctx.userId,
-            action: 'ATTENDANCE_ADJUSTED_BY_ADMIN',
-            entityType: 'attendance_record',
-            entityId: record.id,
-            oldValues: { ...attendanceAuditSnapshot(record), leave_request_id: row.id },
-            newValues: { ...attendanceAuditSnapshot(updated), leave_request_id: null },
-            ipAddress: origin.ipAddress,
-            userAgent: origin.userAgent,
-          });
-          reverted.push(formatCalendarDate(date));
-        } else {
-          // Not yet reached: the projection the leave wrote is removed.
-          await tx.$executeRaw`SELECT attendance_remove_future_leave_day(${record.id}::uuid, ${row.id}::uuid, ${dateValue(today)}::date)`;
-          removed.push(formatCalendarDate(date));
-        }
+        const evaluated = dayWithoutLeave({
+          date,
+          schedule: context.settings,
+          day: dayFor(context, date, employee.workScheduleId),
+          checkInAt: record.checkInAt,
+          checkOutAt: record.checkOutAt,
+          isHoliday: isHolidayOn(context, date),
+          beforeToday: compareDates(date, today) < 0,
+        });
+        const updated = await tx.attendanceRecord.update({
+          where: { id: record.id },
+          data: {
+            status: evaluated.status as never,
+            workingMinutes: evaluated.workingMinutes,
+            overtimeMinutes: evaluated.overtimeMinutes,
+            lateMinutes: evaluated.lateMinutes,
+            leaveRequestId: null,
+          },
+        });
+        audits.push({
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: 'ATTENDANCE_ADJUSTED_BY_ADMIN',
+          entityType: 'attendance_record',
+          entityId: record.id,
+          oldValues: { ...attendanceAuditSnapshot(record), leave_request_id: row.id },
+          newValues: { ...attendanceAuditSnapshot(updated), leave_request_id: null },
+          ipAddress: origin.ipAddress,
+          userAgent: origin.userAgent,
+        });
+        reconciled[formatCalendarDate(date)] = evaluated.status;
       }
     }
 
-    await this.audit.record(tx, {
+    audits.push({
       companyId: ctx.companyId,
       userId: ctx.userId,
       action: 'LEAVE_CANCELLED',
       entityType: 'leave_request',
       entityId: row.id,
       oldValues: { status: 'approved' },
-      newValues: {
-        status: 'cancelled',
-        reason,
-        reverted_dates: reverted,
-        removed_dates: removed,
-      },
+      newValues: { status: 'cancelled', reason, reconciled_days: reconciled },
       ipAddress: origin.ipAddress,
       userAgent: origin.userAgent,
     });

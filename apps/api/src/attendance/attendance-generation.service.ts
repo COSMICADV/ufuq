@@ -12,12 +12,16 @@
  *   3. **Closing a forgotten record**: checked in, never checked out — closed
  *      at the schedule's end time and left `pending`, which is the state the
  *      employee is asked to correct.
+ *   4. **A day cancelled leave handed back** (Phase 10 corrective pass): a
+ *      system `pending` row with no check-in and no leave, once its day has
+ *      ended, becomes what job 2 would have written: `absent`, or the
+ *      calendar's `holiday` / `weekend`.
  *
  * **Idempotent** is the property that matters, because a nightly job that runs
  * twice, or is re-run by hand after a failure, must not double-write or
  * overwrite a real day. Every write here is conditional on the day not already
  * having a record, except the close, which is conditional on the record being
- * open. Nothing generated ever replaces something an employee or an admin
+ * open, and job 4, which is conditional on that exact never-worked shape. Nothing generated ever replaces something an employee or an admin
  * recorded.
  *
  * DOCUMENT 12's mid-month joiners and leavers fall out of the employee query:
@@ -168,6 +172,7 @@ export class AttendanceGenerationService {
         lateMinutes: true,
         source: true,
         note: true,
+        leaveRequestId: true,
       },
     });
     const byDate = new Map(existing.map((row) => [row.date.toISOString().slice(0, 10), row]));
@@ -216,6 +221,47 @@ export class AttendanceGenerationService {
             });
             closed += 1;
           }
+        }
+        // A day cancelled leave handed back before it happened: reconciled
+        // to `pending` with no check-in (`dayWithoutLeave`). Once it has
+        // ended with still no check-in, it is what any unrecorded working day
+        // becomes. Only that exact shape is touched: system-written, never
+        // checked in, not linked to leave.
+        if (
+          record.status === 'pending' &&
+          record.source === 'system' &&
+          record.checkInAt === null &&
+          record.leaveRequestId === null &&
+          this.dayHasEnded(date, day, context.settings, now)
+        ) {
+          const before = attendanceAuditSnapshot(record);
+          const calculated = calculateDay({
+            date,
+            schedule: context.settings,
+            day,
+            checkInAt: null,
+            checkOutAt: null,
+            isHoliday: holiday,
+          });
+          const updated = await tx.attendanceRecord.update({
+            where: { id: record.id },
+            data: {
+              status: calculated.status as never,
+              workingMinutes: calculated.workingMinutes,
+              overtimeMinutes: calculated.overtimeMinutes,
+              lateMinutes: calculated.lateMinutes,
+            },
+          });
+          await this.audit.record(tx, {
+            companyId,
+            userId: systemUserId,
+            action: 'ATTENDANCE_GENERATED_BY_SYSTEM',
+            entityType: 'attendance_record',
+            entityId: record.id,
+            oldValues: before,
+            newValues: attendanceAuditSnapshot(updated),
+          });
+          generated += 1;
         }
         continue;
       }

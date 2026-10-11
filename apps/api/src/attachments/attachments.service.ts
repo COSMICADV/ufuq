@@ -33,6 +33,7 @@ import { generateId } from '@ufuq/db';
 import type { PrismaClient, TenantClient } from '@ufuq/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import type { AuditEntry } from '../auth/audit.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { RateLimitService } from '../auth/rate-limit.service.js';
 import { AppException } from '../common/app-exception.js';
@@ -146,7 +147,9 @@ export class AttachmentsService extends TenantScopedService {
    * creates the record and its file together (a leave request whose type
    * requires an attachment — DOCUMENT 16 rule 9) calls it directly, having
    * authorized the creation itself, so the record and its file commit or roll
-   * back as one.
+   * back as one. Such a consumer may pass `postCommitAudits`: the
+   * `attachment.uploaded` entry is then added there for it to dispatch after
+   * commit (`AuditDispatcher`) instead of being written in `tx`.
    */
   async storeChecked(
     tx: TenantClient,
@@ -155,6 +158,7 @@ export class AttachmentsService extends TenantScopedService {
     relatedType: RelatedType,
     relatedId: string,
     origin: RequestOrigin,
+    postCommitAudits?: AuditEntry[],
   ): Promise<AttachmentPayload> {
     const id = generateId();
     // 256 random bits under the company's own prefix — DOCUMENT 06 §3.36
@@ -176,7 +180,7 @@ export class AttachmentsService extends TenantScopedService {
       },
       include: ATTACHMENT_INCLUDE,
     });
-    await this.audit.record(tx, {
+    const uploaded: AuditEntry = {
       companyId: ctx.companyId,
       userId: ctx.userId,
       action: 'ATTACHMENT_UPLOADED',
@@ -185,7 +189,12 @@ export class AttachmentsService extends TenantScopedService {
       newValues: attachmentAuditSnapshot(row),
       ipAddress: origin.ipAddress,
       userAgent: origin.userAgent,
-    });
+    };
+    if (postCommitAudits === undefined) {
+      await this.audit.record(tx, uploaded);
+    } else {
+      postCommitAudits.push(uploaded);
+    }
     await this.storage.put({
       key: storedPath,
       body: checked.buffer,

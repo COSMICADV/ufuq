@@ -231,3 +231,31 @@ export function scheduledEndInstant(
   }
   return instantAt(date, day.endMinutes, schedule.timezone);
 }
+
+/**
+ * A day that approved leave no longer covers — DOCUMENT 16 rule 15, as
+ * corrected after Phase 10: the leave's attendance row is never deleted, it
+ * is reconciled in place to the state the day would have had without the
+ * leave.
+ *
+ *  - **A day before today** gets exactly what the nightly job would have
+ *    written for it: `absent` on a working day, `holiday` / `weekend` from the
+ *    calendar.
+ *  - **Today or a later day**, with no check-in, on a holiday or rest day gets
+ *    its calendar status. On a working day it is `pending`: the day has not
+ *    happened, so it is not an absence yet. Checking in converts it, the same
+ *    way checking in converts any generated row. If nobody checks in, the
+ *    nightly job turns it into `absent` once the day has ended (a decision
+ *    approved in the Phase 10 corrective pass).
+ *  - **Real check-in/check-out times are kept** and drive the status, as they
+ *    do everywhere else.
+ */
+export function dayWithoutLeave(
+  input: DayCalculationInput & { readonly beforeToday: boolean },
+): DayCalculation {
+  const calculated = calculateDay(input);
+  if (!input.beforeToday && input.checkInAt === null && calculated.status === 'absent') {
+    return { status: 'pending', workingMinutes: null, overtimeMinutes: null, lateMinutes: null };
+  }
+  return calculated;
+}

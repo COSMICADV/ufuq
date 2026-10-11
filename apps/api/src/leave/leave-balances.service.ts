@@ -26,7 +26,8 @@ import type { Decimal } from '@ufuq/money';
 
 import { calendarDateIn } from '../attendance/zoned-time.js';
 import type { CalendarDate } from '../attendance/zoned-time.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import type { AuditEntry } from '../auth/audit.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import type { RequestOrigin } from '../common/request-context.js';
@@ -78,7 +79,7 @@ export function employeeWhereFor(scope: EmployeeOwnedWhere): Prisma.EmployeeWher
 export class LeaveBalancesService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {
     super(prisma);
   }
@@ -280,7 +281,8 @@ export class LeaveBalancesService extends TenantScopedService {
     if (dto.total_days === undefined && dto.carried_over_days === undefined) {
       throw fieldError({ total_days: ['required'] });
     }
-    return this.tenant(ctx, async (tx) => {
+    const audits: AuditEntry[] = [];
+    const adjusted = await this.tenant(ctx, async (tx) => {
       const found = await tx.leaveBalance.findFirst({ where: { id }, select: { id: true } });
       if (found === null) {
         throw notFound();
@@ -330,7 +332,7 @@ export class LeaveBalancesService extends TenantScopedService {
         include: LEAVE_BALANCE_INCLUDE,
       });
       if (changed.length > 0) {
-        await this.audit.record(tx, {
+        audits.push({
           companyId: ctx.companyId,
           userId: ctx.userId,
           action: 'LEAVE_BALANCE_ADJUSTED',
@@ -349,5 +351,7 @@ export class LeaveBalancesService extends TenantScopedService {
       }
       return leaveBalancePayload(row as LeaveBalanceRow);
     });
+    await this.audit.dispatch(audits);
+    return adjusted;
   }
 }
