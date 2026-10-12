@@ -14,6 +14,14 @@
  *      A raw `NotFoundException` would be answered by `ErrorFilter` with the
  *      per-status default code, which is right for a 404 and wrong for
  *      everything with more than one meaning.
+ *
+ *   3. **Audit after commit** (DOCUMENT 21 §1–§3). A service that audits
+ *      passes its `AuditDispatcher` up (`super(prisma, audit)`), and `tenant`
+ *      then opens its transactions through the dispatcher. An
+ *      `audit.record(tx, …)` inside them is written once the transaction has
+ *      committed, and never if it rolls back. Recording against a transaction
+ *      the dispatcher did not open is refused, so a forgotten `super` argument
+ *      fails loudly instead of auditing silently in the wrong place.
  */
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -25,6 +33,7 @@ import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import { ERROR_CODES } from '../common/errors.js';
 import type { ErrorCode } from '../common/errors.js';
 import type { AuthContext } from '../auth/auth-context.js';
+import type { AuditDispatcher } from '../auth/audit-dispatcher.js';
 
 /**
  * The vocabulary of field-level failures this phase can report. A closed set,
@@ -61,10 +70,22 @@ export type FieldIssue =
 
 @Injectable()
 export abstract class TenantScopedService {
-  constructor(@Inject(PRISMA_CLIENT) protected readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA_CLIENT) protected readonly prisma: PrismaClient,
+    /**
+     * Passed up by every service that audits (`super(prisma, audit)`). Its
+     * transactions are then opened by the dispatcher, so `audit.record(tx, …)`
+     * inside them is written after commit (DOCUMENT 21 §1–§3). Deliberately
+     * undecorated: Nest would otherwise inherit the injection into every
+     * subclass, including the ones that never audit.
+     */
+    private readonly postCommitAudit: AuditDispatcher | null = null,
+  ) {}
 
   protected tenant<T>(ctx: AuthContext, fn: (tx: TenantClient) => Promise<T>): Promise<T> {
-    return withTenant(this.prisma, ctx.companyId, fn);
+    return this.postCommitAudit === null
+      ? withTenant(this.prisma, ctx.companyId, fn)
+      : this.postCommitAudit.withTenant(ctx.companyId, fn);
   }
 }
 

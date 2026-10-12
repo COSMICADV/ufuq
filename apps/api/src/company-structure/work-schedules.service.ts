@@ -15,7 +15,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
 import type { Prisma, PrismaClient, TenantClient } from '@ufuq/db';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import type { RequestOrigin } from '../common/request-context.js';
@@ -46,9 +46,9 @@ const DAYS_INCLUDE = {
 export class WorkSchedulesService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   async list(ctx: AuthContext, page: ResolvedPage): Promise<WorkScheduleList> {

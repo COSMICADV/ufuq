@@ -26,8 +26,9 @@
  *     stuck connections. A failed delivery never undoes the change it followed:
  *     creation reports it in `meta`, and a resend reports it as 503.
  *
- * Audit records (DOCUMENT 21 "Employees") are written inside the transaction
- * of the change they describe, so a rolled-back change leaves none;
+ * Audit records (DOCUMENT 21 "Employees") are recorded in the transaction of
+ * the change they describe and written after it commits (`AuditDispatcher`),
+ * so a rolled-back change leaves none;
  * `invitation.sent` is written only once the relay has accepted the message,
  * because until then nothing was sent.
  */
@@ -39,7 +40,7 @@ import type { AuditAction, Prisma, PrismaClient, Role, TenantClient } from '@ufu
 import { DEFAULT_LOCALE, isLocale } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { InvitationService } from '../auth/invitation.service.js';
 import { SessionService } from '../auth/session.service.js';
@@ -112,12 +113,12 @@ export class EmployeesService extends TenantScopedService {
 
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(InvitationService) private readonly invitations: InvitationService,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(InvitationMailer) private readonly mailer: InvitationMailer,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   // -- Reads -----------------------------------------------------------------

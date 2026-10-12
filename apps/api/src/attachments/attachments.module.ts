@@ -12,7 +12,7 @@
  * importing this module (and so without a module cycle — `TaskAttachmentPolicy`
  * lives with tasks, and tasks read attachments through `AttachmentsService`).
  *
- * `AuthModule` supplies `AuditService`; `RateLimitService` is provided here
+ * `AuthModule` supplies `AuditDispatcher`; `RateLimitService` is provided here
  * from the same class (it holds no state beyond the shared Redis client), so
  * `AuthModule`'s exports stay as they were.
  */

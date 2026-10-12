@@ -32,7 +32,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
 import type { PrismaClient, TenantClient } from '@ufuq/db';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import { ERROR_CODES } from '../common/errors.js';
@@ -243,9 +243,9 @@ export function parseMonth(value: string): { from: CalendarDate; to: CalendarDat
 export class AttendanceService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   // -- The caller's own day --------------------------------------------------

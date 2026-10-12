@@ -41,7 +41,7 @@ import {
   instantAt,
   parseCalendarDate,
 } from '../attendance/zoned-time.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { RequestOrigin } from '../common/request-context.js';
 import type { TaskPriorityValue } from '../tasks/task-rules.js';
 
@@ -77,7 +77,7 @@ export interface LedgerResult {
 
 @Injectable()
 export class GoalLedgerService {
-  constructor(@Inject(AuditService) private readonly audit: AuditService) {}
+  constructor(@Inject(AuditDispatcher) private readonly audit: AuditDispatcher) {}
 
   async clock(tx: TenantClient, now: Date = new Date()): Promise<CompanyClock> {
     const company = await tx.company.findFirstOrThrow({ select: { timezone: true } });

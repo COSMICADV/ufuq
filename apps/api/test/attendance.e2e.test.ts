@@ -41,6 +41,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { API_PREFIX } from '../src/api-prefix.js';
 import { AppModule } from '../src/app.module.js';
 import type { AppInfo } from '../src/app.tokens.js';
+import { AUDIT_RETRY_QUEUE, AuditDispatcher } from '../src/auth/audit-dispatcher.js';
+import type { AuditRetryQueue, QueuedAuditEntry } from '../src/auth/audit-dispatcher.js';
 import { AttendanceGenerationService } from '../src/attendance/attendance-generation.service.js';
 import { PRISMA_CLIENT } from '../src/common/db.tokens.js';
 import { ErrorFilter } from '../src/common/error.filter.js';
@@ -77,6 +79,16 @@ const ADMIN_B = { email: 'admin@b.test', password: 'admin-b-password-2026' };
 const MANAGER = { email: 'manager@a.test', password: 'manager-password-2026' };
 const WORKER = { email: 'worker@a.test', password: 'worker-password-2026' };
 const OUTSIDER = { email: 'outsider@a.test', password: 'outsider-password-2026' };
+
+/** Stands in for the BullMQ audit retry queue (no Redis here). */
+class CapturingRetryQueue implements AuditRetryQueue {
+  readonly entries: QueuedAuditEntry[] = [];
+  enqueue(entry: QueuedAuditEntry): Promise<void> {
+    this.entries.push(entry);
+    return Promise.resolve();
+  }
+}
+const retryQueue = new CapturingRetryQueue();
 
 let managerEmployeeId = '';
 let workerEmployeeId = '';
@@ -247,6 +259,8 @@ beforeAll(async () => {
     .useValue(redis)
     .overrideProvider(MAIL_TRANSPORT)
     .useValue(mail)
+    .overrideProvider(AUDIT_RETRY_QUEUE)
+    .useValue(retryQueue)
     .compile();
 
   app = moduleRef.createNestApplication();
@@ -1579,5 +1593,53 @@ describe('audit — DOCUMENT 21 "Attendance"', () => {
       tx.auditLog.findMany({ where: { entityType: { startsWith: 'attendance' } } }),
     );
     expect(JSON.stringify(all)).not.toMatch(/password|token|hash/i);
+  });
+});
+
+describe('audit after commit — DOCUMENT 21 §1–§3 (representative for Phases 6–9)', () => {
+  it('a failed check-in audit keeps the committed check-in; the queued retry lands exactly once', async () => {
+    setClock(31, 9, 0);
+    const before = (await audits(COMPANY_A, 'ATTENDANCE_CHECKED_IN')).length;
+    await prisma.$executeRawUnsafe('RESET ROLE');
+    await prisma.$executeRawUnsafe(`
+      CREATE FUNCTION test_force_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        IF NEW.action = 'attendance.checked_in' THEN RAISE EXCEPTION 'forced failure'; END IF;
+        RETURN NEW;
+      END $$`);
+    await prisma.$executeRawUnsafe(
+      'CREATE TRIGGER test_force_audit_failure BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION test_force_audit_failure()',
+    );
+    await prisma.$executeRawUnsafe('SET ROLE ufuq_app');
+    let recordId: string;
+    try {
+      const response = await (await api(OUTSIDER))
+        .post('/attendance/check-in')
+        .send({ work_mode: 'office' });
+      expect(response.status).toBe(201);
+      recordId = response.body.data.id as string;
+    } finally {
+      await prisma.$executeRawUnsafe('RESET ROLE');
+      await prisma.$executeRawUnsafe('DROP TRIGGER test_force_audit_failure ON audit_logs');
+      await prisma.$executeRawUnsafe('DROP FUNCTION test_force_audit_failure()');
+      await prisma.$executeRawUnsafe('SET ROLE ufuq_app');
+    }
+
+    // The check-in stands although its audit did not land.
+    const stored = await withTenant(prisma, COMPANY_A, (tx) =>
+      tx.attendanceRecord.findUnique({ where: { id: recordId } }),
+    );
+    expect(stored?.checkInAt).not.toBeNull();
+    expect(await audits(COMPANY_A, 'ATTENDANCE_CHECKED_IN')).toHaveLength(before);
+    const queued = retryQueue.entries.find((entry) => entry.entityId === recordId);
+    expect(queued).toMatchObject({
+      action: 'ATTENDANCE_CHECKED_IN',
+      entityType: 'attendance_record',
+    });
+
+    const dispatcher = app.get(AuditDispatcher);
+    await dispatcher.write(queued as QueuedAuditEntry);
+    await dispatcher.write(queued as QueuedAuditEntry);
+    expect(await audits(COMPANY_A, 'ATTENDANCE_CHECKED_IN')).toHaveLength(before + 1);
   });
 });

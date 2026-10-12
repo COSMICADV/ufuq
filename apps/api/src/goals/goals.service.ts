@@ -28,6 +28,7 @@ import { generateId } from '@ufuq/db';
 import type { Prisma, PrismaClient, TenantClient } from '@ufuq/db';
 import { Decimal } from '@ufuq/money';
 
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
@@ -126,8 +127,9 @@ export class GoalsService extends TenantScopedService {
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
     @Inject(GoalLedgerService) private readonly ledger: GoalLedgerService,
     @Inject(GoalEventPublisher) private readonly events: GoalEventPublisher,
+    @Inject(AuditDispatcher) audit: AuditDispatcher,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   // -- Reads -----------------------------------------------------------------

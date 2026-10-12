@@ -35,7 +35,7 @@ import { CORRECTION_INCLUDE, correctionPayload } from '../attendance/attendance-
 import type { CorrectionPayload } from '../attendance/attendance-payload.js';
 import { CorrectionsService } from '../attendance/corrections.service.js';
 import { instantAt, parseCalendarDate } from '../attendance/zoned-time.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
@@ -99,13 +99,13 @@ const LEAVE_TYPE = SPECIALISED_RELATED_TYPE.leave;
 export class RequestsService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
     @Inject(CorrectionsService) private readonly corrections: CorrectionsService,
     @Inject(RequestEventPublisher) private readonly events: RequestEventPublisher,
     @Inject(LeaveRequestsService) private readonly leave: LeaveRequestsService,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   // -- Reading -----------------------------------------------------------------

@@ -33,7 +33,7 @@ import type {
   TenantClient,
 } from '@ufuq/db';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
@@ -85,9 +85,9 @@ export interface CorrectionList {
 export class CorrectionsService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   async create(

@@ -8,11 +8,12 @@
  * (DOCUMENT 27 RULES 2 and 35).
  */
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
-import type { Prisma } from '@ufuq/db';
+import type { Prisma, PrismaClient } from '@ufuq/db';
 
 import type { AuthContext } from '../auth/auth-context.js';
+import { PRISMA_CLIENT } from '../common/db.tokens.js';
 
 import type { ResolvedPage } from './dto/pagination.dto.js';
 import type { CreatePositionDto } from './dto/position.dto.js';
@@ -27,6 +28,11 @@ export interface PositionList {
 
 @Injectable()
 export class PositionsService extends TenantScopedService {
+  /** Explicit, so Nest resolves exactly this: the base constructor's optional audit dispatcher is not injectable. This service writes no audit. */
+  constructor(@Inject(PRISMA_CLIENT) prisma: PrismaClient) {
+    super(prisma);
+  }
+
   async list(ctx: AuthContext, page: ResolvedPage): Promise<PositionList> {
     return this.tenant(ctx, async (tx) => {
       const where: Prisma.PositionWhereInput = { deletedAt: null };

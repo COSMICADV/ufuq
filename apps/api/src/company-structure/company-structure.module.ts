@@ -1,9 +1,10 @@
 /**
  * Phase 4 — company structure (DOCUMENT 25 Phase 4).
  *
- * `AuthModule` is imported for `AuditService`: DOCUMENT 21 requires the audit
- * record to be written inside the same transaction as the change it documents,
- * and that service is the one place that knows how. The alternative — a second
+ * `AuthModule` is imported for `AuditDispatcher`: DOCUMENT 21 requires the
+ * audit record to be written once the change it documents has committed, and
+ * never for one that rolled back, and that service is the one place that
+ * knows how. The alternative — a second
  * copy here — is exactly the duplication DOCUMENT 27 RULE 6 forbids, and it
  * would make "was this audited?" a question with two answers.
  */

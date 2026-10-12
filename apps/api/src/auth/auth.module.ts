@@ -25,8 +25,8 @@ import { SessionService } from './session.service.js';
   // registered application-wide in `app.module.ts` — outside this module.
   // `InvitationService` is shared with Phase 5's employee writes, which issue
   // the invitations this module accepts: one owner for the token lifecycle.
-  // `AuditDispatcher` is the post-commit path to the same writer (DOCUMENT 21
-  // §1–§3); Phase 10 Leave is its first user.
-  exports: [SessionService, AuditService, AuditDispatcher, InvitationService],
+  // Audit is written after commit, through `AuditDispatcher` only (DOCUMENT 21
+  // §1–§3). `AuditService`, the raw writer, stays inside this module.
+  exports: [SessionService, AuditDispatcher, InvitationService],
 })
 export class AuthModule {}

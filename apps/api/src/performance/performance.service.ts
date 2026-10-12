@@ -50,7 +50,7 @@ import {
   parseCalendarDate,
 } from '../attendance/zoned-time.js';
 import type { CalendarDate } from '../attendance/zoned-time.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import type { RequestOrigin } from '../common/request-context.js';
@@ -161,9 +161,9 @@ const ATTENDED = new Set(['present', 'late', 'half_day', 'pending']);
 export class PerformanceService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   // -- Configuration — DOCUMENT 08 §4.2 -------------------------------------

@@ -4,8 +4,7 @@
  * **Read-only by construction.** This service has no write method, the
  * controller has no write route, and the database already refuses UPDATE and
  * DELETE on `audit_logs` to `ufuq_app` (Phase 3 migration). Writes happen only
- * through `AuditService.record`: either inside the transaction of the change
- * they describe, or after it commits through `AuditDispatcher`.
+ * through `AuditDispatcher`, after the change they describe has committed.
  *
  * **Tenant-scoped** the same way as everything else: every query runs inside
  * `withTenant`, so row-level security keeps `audit.view` from ever crossing

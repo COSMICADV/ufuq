@@ -1,9 +1,10 @@
 /**
  * The audit read surface — DOCUMENT 21, DOCUMENT 08 §4.16.
  *
- * Reading only. Writing audit records stays with `AuditService` in
- * `AuthModule`, which every module that changes something already uses; this
- * module neither imports nor re-exports it, so nothing here can write.
+ * Reading only. Writing audit records stays with `AuthModule`: every module
+ * that changes something records through `AuditDispatcher`, which writes after
+ * commit. This module neither imports nor re-exports it, so nothing here can
+ * write.
  */
 
 import { Module } from '@nestjs/common';

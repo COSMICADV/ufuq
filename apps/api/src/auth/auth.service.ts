@@ -6,8 +6,11 @@
  * specific code (DOCUMENT 09 §1: wrong email and wrong password share one
  * message; lockout, an inactive account, and an inactive company each get
  * their own) and, wherever a real user/company is known, writes an audit
- * record in the same transaction as the state change that produced it
- * (`AuditService`, DOCUMENT 21).
+ * record (DOCUMENT 21). Where the action changes state (a login's counters,
+ * a revoked session, a new password, an accepted invitation), the record is
+ * written after that change commits (`AuditDispatcher`). A login refused
+ * before any counter moves, and a reset request, change nothing besides the
+ * audit, so those write it directly.
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -33,6 +36,7 @@ import { AppException } from '../common/app-exception.js';
 import { ERROR_CODES } from '../common/errors.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 
+import { AuditDispatcher } from './audit-dispatcher.js';
 import { AuditService } from './audit.service.js';
 
 import type { InvitationPreview } from './invitation.service.js';
@@ -82,7 +86,10 @@ export class AuthService {
     @Inject(PasswordService) private readonly passwords: PasswordService,
     @Inject(InvitationService) private readonly invitations: InvitationService,
     @Inject(RateLimitService) private readonly rateLimit: RateLimitService,
+    /** Audit-only writes (a refused login, a reset request): there is no business change to commit first. */
     @Inject(AuditService) private readonly audit: AuditService,
+    /** Every transaction that changes state audits through this, after commit (DOCUMENT 21 §1–§3). */
+    @Inject(AuditDispatcher) private readonly postCommit: AuditDispatcher,
   ) {}
 
   async login(
@@ -184,7 +191,7 @@ export class AuthService {
       throw new AppException(ERROR_CODES.COMPANY_INACTIVE, 401);
     }
 
-    return withTenant(this.prisma, candidate.companyId, async (tx) => {
+    return this.postCommit.withTenant(candidate.companyId, async (tx) => {
       await tx.user.update({
         where: { id: candidate.id },
         data: {
@@ -194,7 +201,7 @@ export class AuthService {
           lastLoginAt: new Date(),
         },
       });
-      await this.audit.record(tx, {
+      await this.postCommit.record(tx, {
         companyId: candidate.companyId,
         userId: candidate.id,
         action: 'LOGIN_SUCCESS',
@@ -227,7 +234,7 @@ export class AuthService {
     candidate: AuthLoginLookupRow,
     ctx: RequestContext,
   ): Promise<void> {
-    await withTenant(this.prisma, candidate.companyId, async (tx) => {
+    await this.postCommit.withTenant(candidate.companyId, async (tx) => {
       const now = new Date();
       const withinWindow =
         candidate.lastFailedLoginAt !== null &&
@@ -246,7 +253,7 @@ export class AuthService {
             : null,
         },
       });
-      await this.audit.record(tx, {
+      await this.postCommit.record(tx, {
         companyId: candidate.companyId,
         userId: candidate.id,
         action: shouldLock ? 'LOGIN_LOCKED' : 'LOGIN_FAILED',
@@ -299,9 +306,9 @@ export class AuthService {
     sessionId: string,
     ctx: RequestContext,
   ): Promise<void> {
-    await withTenant(this.prisma, companyId, async (tx) => {
+    await this.postCommit.withTenant(companyId, async (tx) => {
       await tx.session.update({ where: { id: sessionId }, data: { revokedAt: new Date() } });
-      await this.audit.record(tx, {
+      await this.postCommit.record(tx, {
         companyId,
         userId,
         action: 'LOGOUT',
@@ -370,12 +377,12 @@ export class AuthService {
     }
 
     const passwordHash = await this.passwords.hash(newPassword);
-    await withTenant(this.prisma, consumed.companyId, async (tx) => {
+    await this.postCommit.withTenant(consumed.companyId, async (tx) => {
       await tx.user.update({
         where: { id: consumed.userId },
         data: { passwordHash, failedLoginCount: 0, lastFailedLoginAt: null, lockedUntil: null },
       });
-      await this.audit.record(tx, {
+      await this.postCommit.record(tx, {
         companyId: consumed.companyId,
         userId: consumed.userId,
         action: 'PASSWORD_RESET_COMPLETED',
@@ -431,12 +438,12 @@ export class AuthService {
     }
 
     const passwordHash = await this.passwords.hash(password);
-    await withTenant(this.prisma, consumed.companyId, async (tx) => {
+    await this.postCommit.withTenant(consumed.companyId, async (tx) => {
       await tx.user.update({
         where: { id: consumed.userId },
         data: { passwordHash, status: 'active', emailVerifiedAt: new Date() },
       });
-      await this.audit.record(tx, {
+      await this.postCommit.record(tx, {
         companyId: consumed.companyId,
         userId: consumed.userId,
         action: 'INVITATION_ACCEPTED',
@@ -459,7 +466,7 @@ export class AuthService {
       });
     }
 
-    const passwordHash = await withTenant(this.prisma, ctx.companyId, async (tx) => {
+    const passwordHash = await this.postCommit.withTenant(ctx.companyId, async (tx) => {
       const user = await tx.user.findUniqueOrThrow({ where: { id: ctx.userId } });
       const currentOk = user.passwordHash
         ? await this.passwords.verify(user.passwordHash, currentPassword)
@@ -471,7 +478,7 @@ export class AuthService {
       }
       const hash = await this.passwords.hash(newPassword);
       await tx.user.update({ where: { id: ctx.userId }, data: { passwordHash: hash } });
-      await this.audit.record(tx, {
+      await this.postCommit.record(tx, {
         companyId: ctx.companyId,
         userId: ctx.userId,
         action: 'PASSWORD_CHANGED',

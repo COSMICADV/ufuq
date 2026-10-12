@@ -33,7 +33,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { generateId, listActiveCompanyIds, withPlatformContext, withTenant } from '@ufuq/db';
 import type { PrismaClient, TenantClient } from '@ufuq/db';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 
 import { calculateDay, scheduledEndInstant } from './calculation.js';
@@ -80,7 +80,7 @@ export class AttendanceGenerationService {
 
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(SystemActorService) private readonly systemActor: SystemActorService,
   ) {}
 
@@ -98,7 +98,7 @@ export class AttendanceGenerationService {
     to: CalendarDate,
     now: Date = new Date(),
   ): Promise<GenerationResult> {
-    return withTenant(this.prisma, companyId, async (tx) => {
+    return this.audit.withTenant(companyId, async (tx) => {
       const systemUserId = await this.systemActor.resolve(tx, companyId);
       const employees = await tx.employee.findMany({
         // A terminated employee's days are still generated up to their

@@ -14,11 +14,12 @@
  *     work the same way for `employees.manager_id`).
  */
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
-import type { Department, Prisma, TenantClient } from '@ufuq/db';
+import type { Department, Prisma, PrismaClient, TenantClient } from '@ufuq/db';
 
 import type { AuthContext } from '../auth/auth-context.js';
+import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import { ERROR_CODES } from '../common/errors.js';
 
 import type { CreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto.js';
@@ -40,6 +41,11 @@ export interface DepartmentList {
 
 @Injectable()
 export class DepartmentsService extends TenantScopedService {
+  /** Explicit, so Nest resolves exactly this: the base constructor's optional audit dispatcher is not injectable. This service writes no audit. */
+  constructor(@Inject(PRISMA_CLIENT) prisma: PrismaClient) {
+    super(prisma);
+  }
+
   async list(ctx: AuthContext, page: ResolvedPage): Promise<DepartmentList> {
     return this.tenant(ctx, async (tx) => {
       const where: Prisma.DepartmentWhereInput = { deletedAt: null };

@@ -16,11 +16,12 @@
  *   3. **Authorization**, inside the tenant transaction: the record must be
  *      visible (else 404, never confirming it exists) and the caller allowed
  *      to add to it (else 403).
- *   4. **Store, record, audit** in that one transaction: the object is written
- *      under a generated `{company_id}/{256-bit random}` key, the row records
- *      the SHA-256 and the sanitised original name as metadata only, and
- *      `attachment.uploaded` is audited with metadata (never contents). If the
- *      object write fails the row and the audit roll back with it. The cost is
+ *   4. **Store and record** in that one transaction: the object is written
+ *      under a generated `{company_id}/{256-bit random}` key, and the row
+ *      records the SHA-256 and the sanitised original name as metadata only.
+ *      `attachment.uploaded` is audited with metadata (never contents) after
+ *      the transaction commits. If the object write fails, the row rolls back
+ *      and no audit is written. The cost is
  *      that the transaction stays open for the duration of the object write,
  *      which a 10 MB ceiling bounds.
  */
@@ -32,7 +33,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
 import type { PrismaClient, TenantClient } from '@ufuq/db';
 
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuditEntry } from '../auth/audit.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { RateLimitService } from '../auth/rate-limit.service.js';
@@ -95,13 +96,13 @@ export class AttachmentsService extends TenantScopedService {
 
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(RateLimitService) private readonly rateLimit: RateLimitService,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
     @Inject(ATTACHMENT_LIMITS) private readonly limits: AttachmentLimits,
     @Inject(ATTACHMENT_POLICIES) policies: readonly AttachmentPolicy[],
   ) {
-    super(prisma);
+    super(prisma, audit);
     this.policies = new Map(policies.map((policy) => [policy.relatedType, policy]));
   }
 

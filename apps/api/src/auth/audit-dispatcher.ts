@@ -21,20 +21,29 @@
  * the pre-assigned id means an earlier attempt landed). The record also keeps
  * the moment the action committed.
  *
- * Phase 10 Leave is the first user. Earlier modules still write inside their
- * transaction; see docs/PHASE-10-STATUS.md.
+ * Two ways in, one mechanism:
+ *
+ *   - **`withTenant` + `record`**: every module's write transaction is
+ *     opened here (directly, or through `TenantScopedService.tenant`), and
+ *     `record(tx, …)` buffers the entry against that transaction. Phases 3–9
+ *     use this.
+ *   - **`dispatch(entries)`**: a caller collects its own entries and hands
+ *     them over after commit. Phase 10 Leave uses this.
+ *
+ * `AuditService.record` is the raw writer. Only this class calls it, apart
+ * from `AuthService`'s audit-only writes, which have no business change to
+ * commit first.
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { generateId, withTenant } from '@ufuq/db';
-import type { PrismaClient } from '@ufuq/db';
+import type { PrismaClient, TenantClient } from '@ufuq/db';
 import { Queue, Worker } from 'bullmq';
 import type { Redis } from 'ioredis';
 
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import { REDIS_CLIENT } from '../common/redis.tokens.js';
-import { isUniqueViolation } from '../company-structure/tenant-scoped.service.js';
 
 import { AuditService } from './audit.service.js';
 import type { AuditEntry } from './audit.service.js';
@@ -60,6 +69,16 @@ export const AUDIT_RETRY_QUEUE = Symbol('AUDIT_RETRY_QUEUE');
 function logFallback(logger: Logger, entry: QueuedAuditEntry, error: unknown): void {
   logger.error(
     `AUDIT_FALLBACK ${JSON.stringify(entry)} — ${error instanceof Error ? error.message : String(error)}`,
+  );
+}
+
+/** Prisma's unique violation (`P2002`): the pre-assigned id already landed. */
+function isDuplicate(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'P2002'
   );
 }
 
@@ -96,12 +115,55 @@ export class BullMqAuditRetryQueue implements AuditRetryQueue, OnModuleDestroy {
 @Injectable()
 export class AuditDispatcher {
   private readonly logger = new Logger(AuditDispatcher.name);
+  /** The entries each open transaction has recorded, keyed by its client. */
+  private readonly scopes = new WeakMap<TenantClient, AuditEntry[]>();
 
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(AUDIT_RETRY_QUEUE) private readonly retry: AuditRetryQueue,
   ) {}
+
+  /**
+   * `withTenant`, with every `record` made inside it written after it commits.
+   * If `fn` throws, the transaction rolls back and its entries are discarded
+   * unwritten. If it commits, they are dispatched before this returns, so a
+   * caller that publishes events after it still publishes them after the audit.
+   */
+  async withTenant<T>(companyId: string, fn: (tx: TenantClient) => Promise<T>): Promise<T> {
+    const entries: AuditEntry[] = [];
+    const result = await withTenant(this.prisma, companyId, (tx) => {
+      this.scopes.set(tx, entries);
+      return fn(tx);
+    });
+    await this.dispatch(entries);
+    return result;
+  }
+
+  /**
+   * Record an audit entry for the transaction `tx` belongs to. Nothing is
+   * written yet: the entry is written after that transaction commits. Its id
+   * and time are fixed now, so the records of one action keep their order.
+   *
+   * Refuses a `tx` this dispatcher did not open (`withTenant` above). A path
+   * that would silently audit inside its own transaction fails loudly instead.
+   */
+  record(tx: TenantClient, entry: AuditEntry): Promise<void> {
+    const scope = this.scopes.get(tx);
+    if (scope === undefined) {
+      return Promise.reject(
+        new Error(
+          `Audit ${entry.action} recorded outside a post-commit scope: open the transaction with AuditDispatcher.withTenant.`,
+        ),
+      );
+    }
+    scope.push({
+      ...entry,
+      id: entry.id ?? generateId(),
+      occurredAt: entry.occurredAt ?? new Date(),
+    });
+    return Promise.resolve();
+  }
 
   /** Call only after the business transaction has committed. Never throws. */
   async dispatch(entries: readonly AuditEntry[], occurredAt: Date = new Date()): Promise<void> {
@@ -134,7 +196,7 @@ export class AuditDispatcher {
         this.audit.record(tx, fromQueue(entry)),
       );
     } catch (error) {
-      if (isUniqueViolation(error)) return;
+      if (isDuplicate(error)) return;
       throw error;
     }
   }

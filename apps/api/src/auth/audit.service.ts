@@ -1,18 +1,16 @@
 /**
- * The single audit writer — DOCUMENT 21.
+ * The raw audit writer — DOCUMENT 21.
  *
  * `record` writes one row in the transaction it is given (`tx`, a
- * `TenantClient`). There are two ways that happens:
+ * `TenantClient`). It is private to `AuthModule`, and two callers use it:
  *
- *   - **Post-commit, through `AuditDispatcher`** (DOCUMENT 21 §1–§3). The
- *     business transaction commits first. The dispatcher then writes each
- *     entry in its own short transaction and retries any failure, so a
- *     rollback writes no audit and an audit failure never undoes a committed
- *     action. Phase 10 Leave uses this path (the Phase 10 corrective pass).
- *   - **Inside the caller's transaction**, which is how Phases 3–9 call it. A
- *     rollback still writes no audit. But an audit-write failure there rolls
- *     back the action, which is the known divergence recorded in
- *     docs/PHASE-10-STATUS.md.
+ *   - **`AuditDispatcher`**, for every audit that follows a business change.
+ *     The change commits first; the dispatcher then writes each entry in its
+ *     own short transaction and retries any failure (DOCUMENT 21 §1–§3).
+ *   - **`AuthService`'s audit-only writes**: a login refused on a locked,
+ *     unactivated, deactivated or inactive-company account, and a reset
+ *     request. These transactions contain nothing but the audit row, so no
+ *     business change can commit or roll back with it.
  */
 
 import { Injectable } from '@nestjs/common';

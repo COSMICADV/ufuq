@@ -1,7 +1,7 @@
 /**
  * Phase 6 — attendance (DOCUMENT 25 Phase 6).
  *
- * `AuthModule` is imported for `AuditService`, which every write here records
+ * `AuthModule` is imported for `AuditDispatcher`, which every write here records
  * through rather than duplicating (DOCUMENT 27 RULE 6).
  *
  * The scheduler is registered only when asked for. A test suite that boots the

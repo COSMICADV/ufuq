@@ -17,9 +17,10 @@
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { listActiveCompanyIds, withPlatformContext, withTenant } from '@ufuq/db';
+import { listActiveCompanyIds, withPlatformContext } from '@ufuq/db';
 import type { PrismaClient } from '@ufuq/db';
 
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import { dateValue } from '../attendance/attendance-query.js';
 import {
   SYSTEM_ACTOR_ROLE_KEY,
@@ -44,11 +45,12 @@ export class GoalLifecycleService {
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     @Inject(GoalLedgerService) private readonly ledger: GoalLedgerService,
     @Inject(SystemActorService) private readonly systemActor: SystemActorService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {}
 
   /** Close one company's goals whose period has ended. */
   async closeEnded(companyId: string, now: Date = new Date()): Promise<PeriodEndResult> {
-    return withTenant(this.prisma, companyId, async (tx) => {
+    return this.audit.withTenant(companyId, async (tx) => {
       const clock = await this.ledger.clock(tx, now);
       const today = parseCalendarDate(clock.today);
       if (today === null) {

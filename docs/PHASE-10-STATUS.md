@@ -160,7 +160,7 @@ The Phase 10 brief said to reuse "the existing post-commit audit infrastructure"
   - the `attendance.adjusted_by_admin` records that approval and cancellation write;
   - the `attachment.uploaded` of a file submitted with a leave request (`storeChecked` gained an optional post-commit list; `/attachments` is unchanged).
 - **Order on success:** business transaction → COMMIT → audit dispatch → event publish.
-- **Known divergence, not changed in this pass:** the modules of Phases 3–9 still audit inside their own transactions. For them, a rollback still writes no audit. But a failed audit write rolls back their action, which DOCUMENT 21's edge case does not allow. Moving them onto `AuditDispatcher` is mechanical (the same collect-then-dispatch pattern). It was left out of this pass because the brief limits it to Phase 10.
+- **Phases 3–9, normalized afterwards** (pre-Phase-11 commit `Use post-commit audit dispatch across existing modules`): every module now audits after commit through the same `AuditDispatcher`. See "Pre-Phase-11 audit normalization" below.
 
 ### 2. Attendance never hard-deleted
 
@@ -180,6 +180,58 @@ The Phase 10 brief said to reuse "the existing post-commit audit infrastructure"
 | Leave attachment's `attachment.uploaded` audit is written (post-commit)                                                                                                                                    | `leave.e2e`        |
 | `DELETE` on `attendance_records` as `ufuq_app` is refused (with and without `WHERE`); the old function no longer exists; no function in `pg_proc` deletes from it; in-place reconciliation still works     | `phase10-rls`      |
 | `dayWithoutLeave`: past → absent; today/future working → pending; holiday/rest → calendar status; real times kept                                                                                          | `calculation.test` |
+
+---
+
+## Pre-Phase-11 audit normalization
+
+Phases 3–9 wrote their audits inside the business transaction. They now use the same `AuditDispatcher` as Leave: same retry queue, same fallback, same idempotent ids. No second mechanism was added, and no action name, `old_values`/`new_values` content, tenant scope or business rule changed.
+
+**How:**
+
+- **`AuditDispatcher.withTenant(companyId, fn)`** opens the tenant transaction.
+- **`AuditDispatcher.record(tx, entry)`** buffers an entry against that transaction:
+  - the id and time are fixed at that moment, so the records of one action keep their order;
+  - the entries are dispatched once the transaction has committed, before any event is published;
+  - a rollback discards them unwritten.
+- **Wiring:**
+  - `TenantScopedService.tenant` goes through the dispatcher for every service that passes it up (`super(prisma, audit)`);
+  - jobs and `AuthService` that open their own transactions call `AuditDispatcher.withTenant` directly.
+- **Strict:** `record` refuses a transaction the dispatcher did not open. A path that would audit in the wrong place therefore fails loudly instead of silently. The full suite runs under this rule.
+- **`AuditService`**, the raw writer, is no longer exported from `AuthModule`.
+
+**Modules migrated:**
+
+| Phase | Module                | Services                                                                                                                                               |
+| ----- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 3     | Authentication        | `AuthService`: login success, failed-attempt counter (`login.failed` / `login.locked`), logout, password reset, password change, invitation acceptance |
+| 4     | Company structure     | `CompanyService`, `WorkSchedulesService`, `HolidaysService`                                                                                            |
+| 5     | Employees             | `EmployeesService` (created, updated, department/manager/role changed, deactivated, activated, `session.revoked`, `invitation.sent`)                   |
+| 6     | Attendance            | `AttendanceService`, `CorrectionsService`, `AttendanceGenerationService` (nightly job)                                                                 |
+| 7     | Tasks and attachments | `TasksService` (incl. checklists), `AttachmentsService`                                                                                                |
+| 8     | Goals and performance | `GoalsService`, `GoalLedgerService`, `GoalLifecycleService` (period-end job), `PerformanceService`                                                     |
+| 9     | Requests              | `RequestsService`                                                                                                                                      |
+
+**Left unchanged on purpose:** three `AuthService` writes are a transaction that contains only the audit row, with no business change to commit first, so they do not break the post-commit rule:
+
+- a login refused because the account is locked;
+- a login refused because the account is unactivated or deactivated, or its company is inactive;
+- `password.reset_requested` (the reset token is created and committed in its own transaction before it).
+
+They still use `AuditService` directly.
+
+**Proof:**
+
+- **Shared infrastructure** (`audit-logs.e2e`):
+  - a rollback discards recorded audits;
+  - commit-then-write, in recorded order;
+  - recording against a transaction the dispatcher did not open is refused;
+  - a retried write never duplicates.
+- **Representative modules:**
+  - company settings (Phase 4): forced rollback writes no audit; committed before dispatch, with the canonical action and old/new values; a failed audit write keeps the change, and the retry lands once;
+  - login (Phase 3): a failed `login.success` audit never fails the login, and the entry reaches the `AUDIT_FALLBACK` log with no password;
+  - attendance check-in (Phases 6–9; `attendance.e2e`): a failed audit write keeps the check-in, and the retry lands once.
+- **Action names and payloads:** every existing module suite's audit assertions pass unchanged.
 
 ---
 

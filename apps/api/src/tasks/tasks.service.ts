@@ -39,7 +39,7 @@ import { generateId } from '@ufuq/db';
 import type { AuditAction, Prisma, PrismaClient, TenantClient } from '@ufuq/db';
 
 import { AttachmentsService } from '../attachments/attachments.service.js';
-import { AuditService } from '../auth/audit.service.js';
+import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { calendarDateIn, formatCalendarDate } from '../attendance/zoned-time.js';
 import { AppException } from '../common/app-exception.js';
@@ -166,12 +166,12 @@ type TaskPermission =
 export class TasksService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
-    @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
     @Inject(GoalLedgerService) private readonly goalLedger: GoalLedgerService,
     @Inject(GoalEventPublisher) private readonly goalEvents: GoalEventPublisher,
   ) {
-    super(prisma);
+    super(prisma, audit);
   }
 
   // -- Reads -----------------------------------------------------------------

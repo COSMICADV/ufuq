@@ -11,19 +11,22 @@
 
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+import { Logger } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { hashPassword, PERMISSIONS, ROLE_PERMISSIONS, SYSTEM_ROLES } from '@ufuq/auth';
 import type { Env } from '@ufuq/config';
 import { generateId, withPlatformContext, withTenant } from '@ufuq/db';
-import type { PrismaClient } from '@ufuq/db';
+import type { AuditAction, PrismaClient, TenantClient } from '@ufuq/db';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { API_PREFIX } from '../src/api-prefix.js';
 import { AppModule } from '../src/app.module.js';
 import type { AppInfo } from '../src/app.tokens.js';
+import { AUDIT_RETRY_QUEUE, AuditDispatcher } from '../src/auth/audit-dispatcher.js';
+import type { AuditRetryQueue, QueuedAuditEntry } from '../src/auth/audit-dispatcher.js';
 import { PRISMA_CLIENT } from '../src/common/db.tokens.js';
 import { ErrorFilter } from '../src/common/error.filter.js';
 import { REDIS_CLIENT } from '../src/common/redis.tokens.js';
@@ -38,6 +41,18 @@ let pglite: PGlite;
 let socket: PGLiteSocketServer;
 let app: INestApplication;
 let prisma: PrismaClient;
+
+/** Stands in for the BullMQ retry queue (no Redis here); `failing` simulates the queue being down too. */
+class CapturingRetryQueue implements AuditRetryQueue {
+  readonly entries: QueuedAuditEntry[] = [];
+  failing = false;
+  enqueue(entry: QueuedAuditEntry): Promise<void> {
+    if (this.failing) return Promise.reject(new Error('retry queue unavailable'));
+    this.entries.push(entry);
+    return Promise.resolve();
+  }
+}
+const retryQueue = new CapturingRetryQueue();
 
 const redis = new FakeRedis();
 
@@ -174,6 +189,8 @@ beforeAll(async () => {
     .useValue(redis)
     .overrideProvider(MAIL_TRANSPORT)
     .useValue(new DiscardingMail())
+    .overrideProvider(AUDIT_RETRY_QUEUE)
+    .useValue(retryQueue)
     .compile();
 
   app = moduleRef.createNestApplication();
@@ -463,5 +480,255 @@ describe('read-only', () => {
 
     const after = await admin.get(`/audit-logs?per_page=1`);
     expect(after.body.data[0].id).toBe(id);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Audit after commit — DOCUMENT 21 "Business rules" §1–§3 and "Audit write
+// fails". The shared mechanism (`AuditDispatcher`) is proved directly. Then
+// two representative modules prove it end to end: company settings (Phase 4,
+// `TenantScopedService`) and login (Phase 3, which opens its own transaction).
+// ---------------------------------------------------------------------------
+
+describe('audit is written after commit, never for a rollback, and survives its own failure', () => {
+  async function asOwner<T>(run: () => Promise<T>): Promise<T> {
+    await prisma.$executeRawUnsafe('RESET ROLE');
+    try {
+      return await run();
+    } finally {
+      await prisma.$executeRawUnsafe('SET ROLE ufuq_app');
+    }
+  }
+
+  async function withForcedFailure(
+    table: string,
+    condition: string,
+    run: () => Promise<void>,
+  ): Promise<void> {
+    await asOwner(async () => {
+      await prisma.$executeRawUnsafe(`
+        CREATE FUNCTION test_force_failure() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+          IF ${condition} THEN RAISE EXCEPTION 'forced failure'; END IF;
+          RETURN NEW;
+        END $$`);
+      await prisma.$executeRawUnsafe(
+        `CREATE TRIGGER test_force_failure BEFORE INSERT OR UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION test_force_failure()`,
+      );
+    });
+    try {
+      await run();
+    } finally {
+      await asOwner(async () => {
+        await prisma.$executeRawUnsafe(`DROP TRIGGER test_force_failure ON ${table}`);
+        await prisma.$executeRawUnsafe('DROP FUNCTION test_force_failure()');
+      });
+    }
+  }
+
+  async function audits(where: { action?: AuditAction; entityId?: string }) {
+    return withTenant(prisma, COMPANY_A, (tx) =>
+      tx.auditLog.findMany({
+        where: {
+          ...(where.action === undefined ? {} : { action: where.action }),
+          ...(where.entityId === undefined ? {} : { entityId: where.entityId }),
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+    );
+  }
+
+  async function correctionWindow(): Promise<number> {
+    const company = await withTenant(prisma, COMPANY_A, (tx) =>
+      tx.company.findUniqueOrThrow({
+        where: { id: COMPANY_A },
+        select: { correctionWindowDays: true },
+      }),
+    );
+    return company.correctionWindowDays;
+  }
+
+  function entry(entityId: string) {
+    return {
+      companyId: COMPANY_A,
+      userId: ADMIN_A.id,
+      action: 'SETTINGS_COMPANY_UPDATED' as const,
+      entityType: 'company',
+      entityId,
+      newValues: { probe: true },
+    };
+  }
+
+  beforeEach(() => {
+    retryQueue.entries.length = 0;
+    retryQueue.failing = false;
+  });
+
+  describe('the shared dispatcher', () => {
+    it('a transaction that rolls back writes none of the audits recorded in it', async () => {
+      const dispatcher = app.get(AuditDispatcher);
+      const probe = generateId();
+      await expect(
+        dispatcher.withTenant(COMPANY_A, async (tx) => {
+          await dispatcher.record(tx, entry(probe));
+          throw new Error('business failure');
+        }),
+      ).rejects.toThrow('business failure');
+      expect(await audits({ entityId: probe })).toEqual([]);
+      expect(retryQueue.entries).toEqual([]);
+    });
+
+    it('a transaction that commits gets its audits afterwards, in the order they were recorded', async () => {
+      const dispatcher = app.get(AuditDispatcher);
+      const probe = generateId();
+      let duringTransaction: number | null = null;
+      await dispatcher.withTenant(COMPANY_A, async (tx) => {
+        await dispatcher.record(tx, { ...entry(probe), newValues: { step: 1 } });
+        await dispatcher.record(tx, { ...entry(probe), newValues: { step: 2 } });
+        duringTransaction = await tx.auditLog.count({ where: { entityId: probe } });
+      });
+      expect(duringTransaction).toBe(0);
+      expect((await audits({ entityId: probe })).map((row) => row.newValues)).toEqual([
+        { step: 1 },
+        { step: 2 },
+      ]);
+    });
+
+    it('refuses to record against a transaction it did not open', async () => {
+      const dispatcher = app.get(AuditDispatcher);
+      const probe = generateId();
+      await expect(
+        withTenant(prisma, COMPANY_A, (tx: TenantClient) => dispatcher.record(tx, entry(probe))),
+      ).rejects.toThrow(/outside a post-commit scope/);
+      expect(await audits({ entityId: probe })).toEqual([]);
+    });
+
+    it('a retried write never duplicates the record', async () => {
+      const dispatcher = app.get(AuditDispatcher);
+      const probe = generateId();
+      const queued: QueuedAuditEntry = {
+        ...entry(probe),
+        id: generateId(),
+        occurredAt: new Date().toISOString(),
+      };
+      await dispatcher.write(queued);
+      await dispatcher.write(queued);
+      const rows = await audits({ entityId: probe });
+      expect(rows.map((row) => row.id)).toEqual([queued.id]);
+    });
+  });
+
+  describe('company settings (Phase 4)', () => {
+    it('a forced business failure rolls back the change and writes no audit', async () => {
+      const before = await correctionWindow();
+      const recorded = (await audits({ action: 'SETTINGS_COMPANY_UPDATED' })).length;
+      await withForcedFailure(
+        'companies',
+        `TG_OP = 'UPDATE' AND NEW.correction_window_days = 21`,
+        async () => {
+          const response = await (await api(ADMIN_A))
+            .patch('/company')
+            .send({ correction_window_days: 21 });
+          expect(response.status).toBe(500);
+        },
+      );
+      expect(await correctionWindow()).toBe(before);
+      expect(await audits({ action: 'SETTINGS_COMPANY_UPDATED' })).toHaveLength(recorded);
+      expect(retryQueue.entries).toEqual([]);
+    });
+
+    it('the change is committed before its audit is dispatched, with the canonical action and values', async () => {
+      const before = await correctionWindow();
+      const recorded = (await audits({ action: 'SETTINGS_COMPANY_UPDATED' })).length;
+      const dispatcher = app.get(AuditDispatcher);
+      const original = dispatcher.dispatch.bind(dispatcher);
+      const seen: { window: number; audits: number }[] = [];
+      const spy = vi.spyOn(dispatcher, 'dispatch').mockImplementation(async (entries, at) => {
+        // Read from outside the business transaction: only committed state is visible.
+        seen.push({
+          window: await correctionWindow(),
+          audits: (await audits({ action: 'SETTINGS_COMPANY_UPDATED' })).length,
+        });
+        await original(entries, at);
+      });
+      try {
+        const response = await (await api(ADMIN_A))
+          .patch('/company')
+          .send({ correction_window_days: 14 });
+        expect(response.status).toBe(200);
+      } finally {
+        spy.mockRestore();
+      }
+      expect(seen).toEqual([{ window: 14, audits: recorded }]);
+      const written = await audits({ action: 'SETTINGS_COMPANY_UPDATED' });
+      expect(written).toHaveLength(recorded + 1);
+      expect(written[written.length - 1]).toMatchObject({
+        userId: ADMIN_A.id,
+        entityType: 'company',
+        entityId: COMPANY_A,
+        oldValues: { correction_window_days: before },
+        newValues: { correction_window_days: 14 },
+      });
+    });
+
+    it('a failed audit write keeps the committed change, queues the entry, and the retry lands once', async () => {
+      const recorded = (await audits({ action: 'SETTINGS_COMPANY_UPDATED' })).length;
+      await withForcedFailure('audit_logs', `NEW.action = 'settings.company_updated'`, async () => {
+        const response = await (await api(ADMIN_A))
+          .patch('/company')
+          .send({ correction_window_days: 9 });
+        expect(response.status).toBe(200);
+      });
+      expect(await correctionWindow()).toBe(9);
+      expect(await audits({ action: 'SETTINGS_COMPANY_UPDATED' })).toHaveLength(recorded);
+      expect(retryQueue.entries).toHaveLength(1);
+      const queued = retryQueue.entries[0] as QueuedAuditEntry;
+      expect(queued).toMatchObject({
+        action: 'SETTINGS_COMPANY_UPDATED',
+        entityId: COMPANY_A,
+        newValues: { correction_window_days: 9 },
+      });
+
+      const dispatcher = app.get(AuditDispatcher);
+      await dispatcher.write(queued);
+      await dispatcher.write(queued);
+      const written = await audits({ action: 'SETTINGS_COMPANY_UPDATED' });
+      expect(written).toHaveLength(recorded + 1);
+      expect(written.filter((row) => row.id === queued.id)).toHaveLength(1);
+    });
+  });
+
+  describe('login (Phase 3)', () => {
+    it('a failed login.success audit never fails the login; the entry goes to the fallback log if the queue is down', async () => {
+      retryQueue.failing = true;
+      const errors = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      const recorded = (await audits({ action: 'LOGIN_SUCCESS', entityId: ADMIN_A.id })).length;
+      try {
+        await withForcedFailure(
+          'audit_logs',
+          `NEW.action = 'login.success' AND NEW.entity_id = '${ADMIN_A.id}'::uuid`,
+          async () => {
+            redis.reset();
+            const response = await request(server())
+              .post(`/${API_PREFIX}/auth/login`)
+              .set('X-Client-Type', 'mobile')
+              .send({ email: ADMIN_A.email, password: ADMIN_A.password });
+            expect(response.status).toBe(200);
+            expect(typeof response.body.data.accessToken).toBe('string');
+          },
+        );
+        const fallback = errors.mock.calls
+          .map((call) => String(call[0]))
+          .filter((line) => line.startsWith('AUDIT_FALLBACK'));
+        expect(fallback).toHaveLength(1);
+        expect(fallback[0]).toContain('LOGIN_SUCCESS');
+        expect(fallback[0]).not.toContain(ADMIN_A.password);
+      } finally {
+        errors.mockRestore();
+      }
+      expect(await audits({ action: 'LOGIN_SUCCESS', entityId: ADMIN_A.id })).toHaveLength(
+        recorded,
+      );
+    });
   });
 });
