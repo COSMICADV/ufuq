@@ -81,6 +81,22 @@ Bonus                  +500
 Final                19,500
 ```
 
+### Decided in Phase 11 (approved)
+The rules above left eight financial points open. Each was decided before implementation; none is a default the system invented.
+
+| Point | Decision |
+|---|---|
+| Default policy | **None.** A company has no salary policy until an ADMIN saves one, and the first save states every rule. Until then salaries cannot be set and payroll cannot be generated. One policy per company in V1. |
+| Pro-rating (partial month, salary change) | **Working-day share.** Each salary segment earns `monthly_salary × scheduled working days in the segment ÷ scheduled working days in the month`, whatever the daily-wage basis. A full month is the full salary. The basis prices deductions and overtime only. `scheduled_day_wage` = `monthly_salary ÷ scheduled working days in the month`. |
+| Lateness rules (V1) | `{"type":"none"}` · `{"type":"per_minute","multiplier":"1.00"}` = late minutes × (daily wage ÷ the day's scheduled minutes) × multiplier · `{"type":"fixed_per_incident","amount":"50.00"}` = amount × late days. Tiered is deferred. |
+| Overtime | Only for a schedule whose overtime policy is `paid`: overtime minutes × (daily wage ÷ the day's scheduled minutes) × `overtime_rate`; `0` pays none. Overtime on a day with no scheduled minutes (rest day, holiday) has no rate: it is reported unpriced and the line is flagged for review. |
+| Rounding | `nearest` / `up` / `down` round the final net to a whole pound; `none` keeps piastres (0.01, half away from zero). Once, on the net only. |
+| Half-day and pending days | Count as worked (office or WFH by work mode), no automatic deduction; lateness still applies. Pending days are listed in the generation warning. A working day with no record is absent (DOCUMENT 12 rule 10) and listed. |
+| Adjusted before paid | Mark-paid is allowed from `adjusted` while `paid_at` is empty; the status stays `adjusted`. |
+| When a month can be generated | Only after its last day has passed in the company's timezone. Included: every non-deleted employee whose employment overlaps the month. The current month is the employee's provisional estimate only. |
+
+Negative net (OD-06 B) applies at generation too: an employee whose calculated net would be negative blocks generation, listed with the attempted figure.
+
 ## PAYROLL STATES
 
 ```

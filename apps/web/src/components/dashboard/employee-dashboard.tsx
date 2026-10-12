@@ -25,6 +25,7 @@ import { loadSession } from '../employees/use-session';
 import type { SessionView } from '../employees/use-session';
 import { GoalCard } from '../goals/goals-shared';
 import { LeaveBalancesCard } from '../leave/leave-balances-card';
+import { SalaryEstimateCard } from '../payroll/my-salary';
 import { ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { TaskCard } from '../tasks/tasks-admin';
@@ -35,9 +36,9 @@ import { TaskCard } from '../tasks/tasks-admin';
  * Only the components whose modules exist are rendered: the attendance card
  * (2), "My tasks" (3), "My goals" (4), from Phase 9 the requests pending
  * count (7), and from Phase 10 the leave balance (6, `GET
- * /leave-balances/me`, remaining days per type). The greeting carries today's
- * date; salary (5) arrives with Phase 11 rather than as a placeholder
- * (DOCUMENT 27 RULE 26).
+ * /leave-balances/me`, remaining days per type), and from Phase 11 the salary
+ * card (5): this month's provisional estimate, for a caller with their own
+ * salary access. The greeting carries today's date.
  *
  * C1 "Loading": the attendance card loads first and on its own — it is the
  * same card as `/app/attendance`, with its own error state and no buttons
@@ -65,6 +66,12 @@ export function EmployeeDashboard({ locale }: { readonly locale: Locale }): Reac
         <ErrorState error={session.state.error} t={t} onRetry={session.reload} />
       ) : null}
       {ready === null ? null : <MyWork locale={locale} t={t} session={ready} />}
+      {ready !== null &&
+      ready.employeeId !== null &&
+      ready.permissions.has('payroll.view') &&
+      ready.permissions.has('employee.view_salary') ? (
+        <SalaryEstimateCard locale={locale} t={t} linkToSalary />
+      ) : null}
       {ready !== null && ready.employeeId !== null ? (
         <LeaveBalancesCard locale={locale} t={t} />
       ) : null}

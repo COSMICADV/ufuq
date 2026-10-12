@@ -23,9 +23,11 @@
  *   - **Every admin adjustment is audited with old and new values and a
  *     required reason** (DOCUMENT 12 rule 11, DOCUMENT 21).
  *
- * Not here, and deliberately: DOCUMENT 12 rule 12 ("attendance in a finalized
- * payroll period cannot be changed") has nothing to check against until
- * `payroll_periods` exists in Phase 11. See docs/PHASE-6-STATUS.md.
+ *   - **A finalized payroll period freezes its attendance** (DOCUMENT 12,
+ *     DOCUMENT 15 rule 12, Phase 11): check-in, check-out and an admin
+ *     adjustment on a date inside a finalized, paid or adjusted period are
+ *     refused with 409 `PAYROLL_PERIOD_FINALIZED`; the way forward is a
+ *     payroll adjustment.
  */
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -33,6 +35,7 @@ import { generateId } from '@ufuq/db';
 import type { PrismaClient, TenantClient } from '@ufuq/db';
 
 import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import { PayrollPeriodGuard } from '../payroll/payroll-period-guard.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import { ERROR_CODES } from '../common/errors.js';
@@ -244,6 +247,7 @@ export class AttendanceService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
+    @Inject(PayrollPeriodGuard) private readonly periods: PayrollPeriodGuard,
   ) {
     super(prisma, audit);
   }
@@ -341,6 +345,7 @@ export class AttendanceService extends TenantScopedService {
       const { date, context } = await this.todayFor(tx, employee.workScheduleId, now);
       const day = dayFor(context, date, employee.workScheduleId);
       const holiday = isHolidayOn(context, date);
+      await this.periods.assertOpen(tx, [date]);
 
       // DOCUMENT 12 "ERROR STATES": a rest day is a confirmation, not a
       // refusal. Refused once so the screen can ask; allowed when confirmed.
@@ -438,6 +443,7 @@ export class AttendanceService extends TenantScopedService {
       const { date, context } = await this.todayFor(tx, employee.workScheduleId, now);
       const day = dayFor(context, date, employee.workScheduleId);
 
+      await this.periods.assertOpen(tx, [date]);
       const existing = await tx.attendanceRecord.findFirst({
         where: { employeeId: employee.id, date: dateValue(date) },
       });
@@ -724,6 +730,7 @@ export class AttendanceService extends TenantScopedService {
       }
 
       const date = calendarDateIn(existing.date, 'UTC');
+      await this.periods.assertOpen(tx, [date]);
       const context = await loadScheduleContext(tx, existing.employee.workScheduleId, date, date);
       const day = dayFor(context, date, existing.employee.workScheduleId);
       const calculated = calculateDay({

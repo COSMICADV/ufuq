@@ -257,9 +257,11 @@ export class LeaveRequestsService extends TenantScopedService {
       }
       const assessed = await this.assess(tx, employee, dto.start_date, dto.end_date);
       const range = this.range(dto.start_date, dto.end_date);
+      // A finalized payroll month is checked first: its only way forward is
+      // an adjustment, whatever else is wrong with the request.
+      await this.payroll.assertPeriodsOpen(tx, employeeId, assessed.dates);
       await this.assertNoOverlap(tx, employeeId, range.from, range.to, null);
       await this.assertNoCheckIn(tx, employeeId, assessed.dates);
-      await this.payroll.assertPeriodsOpen(tx, employeeId, assessed.dates);
 
       const notes: string[] = [];
       let excessDays = days('0');
@@ -448,9 +450,9 @@ export class LeaveRequestsService extends TenantScopedService {
       if (!sameAllocation(assessed.allocation, allocationFromJson(row.yearAllocation))) {
         throw this.conflict(ERROR_CODES.LEAVE_RANGE_CHANGED);
       }
+      await this.payroll.assertPeriodsOpen(tx, row.employeeId, assessed.dates);
       await this.assertNoOverlap(tx, row.employeeId, range.from, range.to, id);
       await this.assertNoCheckIn(tx, row.employeeId, assessed.dates);
-      await this.payroll.assertPeriodsOpen(tx, row.employeeId, assessed.dates);
 
       // Rule 3: the hold becomes use.
       if (type.isPaid) {

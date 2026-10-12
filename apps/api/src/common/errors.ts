@@ -89,6 +89,18 @@ export const ERROR_CODES = {
   LEAVE_NOT_PENDING: 'LEAVE_NOT_PENDING',
   LEAVE_RANGE_CHANGED: 'LEAVE_RANGE_CHANGED',
   LEAVE_PERIOD_FINALIZED: 'LEAVE_PERIOD_FINALIZED',
+  // Phase 11 — payroll. DOCUMENT 15 "ERROR STATES"; each names the state that
+  // blocks the action and the way forward (usually the adjustment flow).
+  SALARY_POLICY_NOT_CONFIGURED: 'SALARY_POLICY_NOT_CONFIGURED',
+  PAYROLL_PERIOD_EXISTS: 'PAYROLL_PERIOD_EXISTS',
+  PAYROLL_PERIOD_NOT_ENDED: 'PAYROLL_PERIOD_NOT_ENDED',
+  PAYROLL_PREFLIGHT_BLOCKED: 'PAYROLL_PREFLIGHT_BLOCKED',
+  PAYROLL_ATTENDANCE_INCOMPLETE: 'PAYROLL_ATTENDANCE_INCOMPLETE',
+  PAYROLL_INVALID_TRANSITION: 'PAYROLL_INVALID_TRANSITION',
+  PAYROLL_PERIOD_FINALIZED: 'PAYROLL_PERIOD_FINALIZED',
+  PAYROLL_LINE_LOCKED: 'PAYROLL_LINE_LOCKED',
+  PAYROLL_NEGATIVE_NET: 'PAYROLL_NEGATIVE_NET',
+  IDEMPOTENCY_KEY_REUSED: 'IDEMPOTENCY_KEY_REUSED',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -124,6 +136,16 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   LEAVE_NOT_PENDING: 'error.leave_not_pending',
   LEAVE_RANGE_CHANGED: 'error.leave_range_changed',
   LEAVE_PERIOD_FINALIZED: 'error.leave_period_finalized',
+  SALARY_POLICY_NOT_CONFIGURED: 'error.salary_policy_not_configured',
+  PAYROLL_PERIOD_EXISTS: 'error.payroll_period_exists',
+  PAYROLL_PERIOD_NOT_ENDED: 'error.payroll_period_not_ended',
+  PAYROLL_PREFLIGHT_BLOCKED: 'error.payroll_preflight_blocked',
+  PAYROLL_ATTENDANCE_INCOMPLETE: 'error.payroll_attendance_incomplete',
+  PAYROLL_INVALID_TRANSITION: 'error.payroll_invalid_transition',
+  PAYROLL_PERIOD_FINALIZED: 'error.payroll_period_finalized',
+  PAYROLL_LINE_LOCKED: 'error.payroll_line_locked',
+  PAYROLL_NEGATIVE_NET: 'error.payroll_negative_net',
+  IDEMPOTENCY_KEY_REUSED: 'error.idempotency_key_reused',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',

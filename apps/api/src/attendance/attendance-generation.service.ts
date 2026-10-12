@@ -34,6 +34,7 @@ import { generateId, listActiveCompanyIds, withPlatformContext, withTenant } fro
 import type { PrismaClient, TenantClient } from '@ufuq/db';
 
 import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import { PayrollPeriodGuard } from '../payroll/payroll-period-guard.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 
 import { calculateDay, scheduledEndInstant } from './calculation.js';
@@ -82,6 +83,7 @@ export class AttendanceGenerationService {
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(SystemActorService) private readonly systemActor: SystemActorService,
+    @Inject(PayrollPeriodGuard) private readonly periods: PayrollPeriodGuard,
   ) {}
 
   /**
@@ -111,6 +113,9 @@ export class AttendanceGenerationService {
       let generated = 0;
       let closed = 0;
       const skipped: string[] = [];
+      // DOCUMENT 15 rule 12: a finalized payroll period's days are frozen;
+      // the job writes nothing into them.
+      const locked = new Set(await this.periods.lockedMonths(tx, eachDay(from, to)));
 
       for (const employee of employees) {
         try {
@@ -122,6 +127,7 @@ export class AttendanceGenerationService {
             to,
             systemUserId,
             now,
+            locked,
           );
           generated += result.generated;
           closed += result.closed;
@@ -152,6 +158,7 @@ export class AttendanceGenerationService {
     to: CalendarDate,
     systemUserId: string,
     now: Date,
+    lockedMonths: ReadonlySet<string>,
   ): Promise<{ generated: number; closed: number }> {
     const context = await loadScheduleContext(tx, employee.workScheduleId, from, to);
     const joining = calendarDateIn(employee.joiningDate, 'UTC');
@@ -181,6 +188,7 @@ export class AttendanceGenerationService {
     let closed = 0;
 
     for (const date of eachDay(from, to)) {
+      if (lockedMonths.has(formatCalendarDate(date).slice(0, 7))) continue;
       // DOCUMENT 12: "employee joins mid-month" / "terminated mid-month" —
       // days outside employment are not this employee's days at all.
       if (compareDates(date, joining) < 0) continue;

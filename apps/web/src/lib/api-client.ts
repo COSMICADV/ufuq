@@ -103,6 +103,8 @@ interface RequestOptions {
   readonly body?: unknown;
   readonly query?: Readonly<Record<string, string>>;
   readonly signal?: AbortSignal;
+  /** Extra headers — `Idempotency-Key` on a financial create (DOCUMENT 08 §8). */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
@@ -144,7 +146,10 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
     // The session is a cookie (OD-02), and the API is a different origin, so
     // the request has to opt in to sending it.
     credentials: 'include',
-    headers: buildHeaders(method, options.locale, hasBody, currentCsrfToken()),
+    headers: {
+      ...options.headers,
+      ...buildHeaders(method, options.locale, hasBody, currentCsrfToken()),
+    },
     ...(hasBody ? { body: JSON.stringify(options.body) } : {}),
     ...(options.signal ? { signal: options.signal } : {}),
   });
@@ -254,6 +259,9 @@ const KNOWN_ISSUES = new Set([
   'after_termination',
   'schedule_incomplete',
   'below_committed',
+  // Phase 11 — payroll.
+  'not_after_current',
+  'mismatch',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

@@ -90,3 +90,39 @@ describe('audit action names', () => {
     }
   });
 });
+
+describe('pay actions (Phase 11)', () => {
+  it('withhold every value of a payroll, deduction, bonus or salary change from a caller without salary access', () => {
+    const deduction = {
+      ...row(
+        { net_salary: '19000.00' },
+        { amount: '500.00', reason: 'Laptop', nested: { total_net: '1' } },
+      ),
+      action: 'DEDUCTION_ADDED',
+    } as AuditLogRow;
+    const hidden = auditLogPayload(deduction, { canViewSalary: false });
+    expect(hidden.old_values).toEqual({ net_salary: REDACTED });
+    expect(hidden.new_values).toEqual({
+      amount: REDACTED,
+      reason: REDACTED,
+      nested: { total_net: REDACTED },
+    });
+    const shown = auditLogPayload(deduction, { canViewSalary: true });
+    expect(shown.new_values).toEqual({
+      amount: '500.00',
+      reason: 'Laptop',
+      nested: { total_net: '1' },
+    });
+    for (const action of [
+      'PAYROLL_FINALIZED',
+      'PAYROLL_ADJUSTMENT_CREATED',
+      'BONUS_ADDED',
+      'EMPLOYEE_SALARY_CHANGED',
+    ]) {
+      const payload = auditLogPayload({ ...row(null, { total_net: '1' }), action } as AuditLogRow, {
+        canViewSalary: false,
+      });
+      expect(payload.new_values).toEqual({ total_net: REDACTED });
+    }
+  });
+});

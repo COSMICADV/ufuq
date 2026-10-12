@@ -66,7 +66,11 @@ export type FieldIssue =
   | 'before_joining'
   | 'after_termination'
   | 'schedule_incomplete'
-  | 'below_committed';
+  | 'below_committed'
+  // Phase 11 — DOCUMENT 15: a salary change must start after the latest row
+  // (history is never re-cut); the finalization confirmation must match.
+  | 'not_after_current'
+  | 'mismatch';
 
 @Injectable()
 export abstract class TenantScopedService {

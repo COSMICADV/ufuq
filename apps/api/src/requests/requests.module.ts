@@ -16,6 +16,7 @@ import { Module } from '@nestjs/common';
 import { CorrectionsService } from '../attendance/corrections.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { LeaveCoreModule } from '../leave/leave-core.module.js';
+import { PayrollGuardModule } from '../payroll/payroll-guard.module.js';
 
 import {
   DeferredRequestEventSink,
@@ -26,7 +27,7 @@ import { RequestsController } from './requests.controller.js';
 import { RequestsService } from './requests.service.js';
 
 @Module({
-  imports: [AuthModule, LeaveCoreModule],
+  imports: [AuthModule, LeaveCoreModule, PayrollGuardModule],
   controllers: [RequestsController],
   providers: [
     RequestsService,

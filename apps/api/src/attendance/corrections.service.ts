@@ -34,6 +34,7 @@ import type {
 } from '@ufuq/db';
 
 import { AuditDispatcher } from '../auth/audit-dispatcher.js';
+import { PayrollPeriodGuard } from '../payroll/payroll-period-guard.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
@@ -86,6 +87,7 @@ export class CorrectionsService extends TenantScopedService {
   constructor(
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
+    @Inject(PayrollPeriodGuard) private readonly periods: PayrollPeriodGuard,
   ) {
     super(prisma, audit);
   }
@@ -317,6 +319,8 @@ export class CorrectionsService extends TenantScopedService {
         select: { workScheduleId: true },
       });
       const date = calendarDateIn(request.date, 'UTC');
+      // DOCUMENT 15 rule 12: a finalized payroll period freezes the day.
+      await this.periods.assertOpen(tx, [date]);
       const context = await loadScheduleContext(tx, employee.workScheduleId, date, date);
       const day = dayFor(context, date, employee.workScheduleId);
 

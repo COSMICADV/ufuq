@@ -2650,3 +2650,111 @@ a.button {
   margin: var(--space-2) 0 0;
   padding-inline-start: var(--space-5);
 }
+
+/* ===========================================================================
+   Payroll — Phase 11 (DOCUMENT 15, DOCUMENT 04 payroll and salary screens).
+   Appended; nothing above is changed. Logical properties and design tokens
+   only. Functional layout; the visual redesign comes later.
+   =========================================================================== */
+.payroll-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+}
+.payroll-figure {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.payroll-figure__label {
+  color: var(--text-secondary);
+  font-size: var(--font-small, 14px);
+}
+.payroll-figure__value {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.payroll-amount {
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+.payroll-amount.is-negative {
+  color: var(--danger-text);
+}
+.payroll-breakdown {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+.payroll-breakdown > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.payroll-breakdown dt,
+.payroll-breakdown dd {
+  margin: 0;
+}
+.payroll-breakdown__total {
+  font-weight: 700;
+}
+.payroll-payslips {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.payroll-payslips li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+/* DOCUMENT 15 "Mobile behaviour": on a tablet the run table stays a table,
+   scrolling sideways inside its own box with the employee column frozen
+   (the page itself never scrolls sideways). Phones keep the stacked cards. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  /* A grid item defaults to its content's width; without this the card
+     grows to the table's and the page scrolls instead of the table. */
+  .tasks-table.payroll-lines {
+    min-inline-size: 0;
+  }
+  .tasks-table.payroll-lines .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+  }
+  .tasks-table.payroll-lines table {
+    min-inline-size: 760px;
+    background: var(--bg-surface);
+  }
+  .tasks-table.payroll-lines thead {
+    display: table-header-group;
+  }
+  .tasks-table.payroll-lines tr {
+    display: table-row;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+  }
+  .tasks-table.payroll-lines td {
+    display: table-cell;
+    padding-inline: var(--space-3);
+    border-block-end: 1px solid var(--border-subtle);
+  }
+  .tasks-table.payroll-lines .cell-label {
+    display: none;
+  }
+  .tasks-table.payroll-lines th:first-child,
+  .tasks-table.payroll-lines td:first-child {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 1;
+    background: var(--bg-surface);
+  }
+}

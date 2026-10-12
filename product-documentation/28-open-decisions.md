@@ -50,6 +50,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Why it matters:** It is legally sensitive in most jurisdictions and it determines whether the system blocks or carries the excess forward.
 **Options:** A) Never negative; deductions cap at the net. B) Blocked with an error, forcing the admin to split the deduction across periods. C) Allowed, carried forward as a debt.
 **Recommended:** B for V1. A silently caps and loses the remainder; C requires a debt-tracking mechanism that is out of scope.
+**Decision (approved, Phase 11):** B. Net salary can never be negative. A deduction, an attendance calculation or an adjustment that would take a net below zero is refused with an error that shows the attempted figure, and nothing is applied. It is never capped and never carried forward as a debt; the Admin splits a large deduction across periods by hand.
 
 ## OD-07 — Should managers see their team's salaries?
 **Status:** Blocking — Phase 11
@@ -57,6 +58,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Why it matters:** Some companies expect managers to handle their team's compensation; others treat it as strictly confidential.
 **Options:** A) Never (V1 default). B) Configurable per company. C) Always.
 **Recommended:** A for V1, with the permission model already able to express B when a company asks for it.
+**Decision (approved, Phase 11):** A. MANAGER has no salary and no payroll access in V1, including for their own team: `employee.view_salary` is ADMIN = company, MANAGER = none, EMPLOYEE = self. It is enforced server-side.
 
 ## OD-08 — End-of-service settlement in V1?
 **Status:** Blocking — Phase 11
@@ -64,6 +66,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Why it matters:** It is legally mandated in most of the region and companies will expect it.
 **Options:** A) Out of V1; terminated employees receive a normal pro-rated final payroll and the rest is handled manually. B) Full settlement module in V1.
 **Recommended:** A. B is a significant module with jurisdiction-specific rules and belongs in V2 with proper legal input.
+**Decision (approved, Phase 11):** A. End-of-service settlement (gratuity, notice, leave encashment) is out of V1 and has no module. A terminated employee receives only the normal pro-rated payroll; any settlement is handled manually outside the system.
 
 ## OD-09 — Requests table design
 **Status:** Non-blocking — Phase 9. Default: hybrid.
@@ -143,9 +146,9 @@ Every requirement below needs a decision before or during development. Nothing h
 | OD-03 | Manager self-approval (decided: A, Phase 9) | ✅ | 9 |
 | OD-04 | Default work mode | — | 6 |
 | OD-05 | Overnight shifts | ✅ | 6 |
-| OD-06 | Negative net salary | ✅ | 11 |
-| OD-07 | Manager salary visibility | ✅ | 11 |
-| OD-08 | End-of-service settlement | ✅ | 11 |
+| OD-06 | Negative net salary (decided: B, Phase 11) | ✅ | 11 |
+| OD-07 | Manager salary visibility (decided: A, Phase 11) | ✅ | 11 |
+| OD-08 | End-of-service settlement (decided: A, Phase 11) | ✅ | 11 |
 | OD-09 | Requests table design | — | 9 |
 | OD-10 | Checklist-free task progress | — | 7 |
 | OD-11 | Half-day leave (decided: A, Phase 10) | — | 10 |

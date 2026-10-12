@@ -32,6 +32,7 @@ import { useResource } from '../settings/use-resource';
 import { EmployeeGoals } from '../goals/employee-goals';
 import { EmployeeRequests } from '../requests/employee-requests';
 import { LeaveBalancesCard } from '../leave/leave-balances-card';
+import { EmployeeSalaryTab } from '../payroll/employee-salary-tab';
 import { EmployeeTasks } from '../tasks/employee-tasks';
 import { newGoalPath } from '../../lib/goals';
 import { newTaskPath } from '../../lib/tasks';
@@ -54,7 +55,8 @@ import type { SessionView } from './use-session';
  *
  * Tabs: all seven. The Tasks tab lists this employee's tasks (Phase 7,
  * `employee-tasks.tsx`), the Goals tab their goal cards (Phase 8,
- * `employee-goals.tsx`), and the Overview carries the performance snapshot
+ * `employee-goals.tsx`), the Salary tab the salary history and payslips (Phase
+ * 11, `employee-salary-tab.tsx`, `employee.view_salary` only), and the Overview carries the performance snapshot
  * for a caller holding `report.employee_monthly` (Phase 8). DOCUMENT 25 Phase 5 allows the later-phase tabs to be
  * empty; each one shows the honest empty state for data that does not exist
  * yet, never sample data (DOCUMENT 27 RULE 26). Tab visibility follows
@@ -445,6 +447,15 @@ function ProfileBody({
             employeeId={employee.id}
             timeZone={session.timeZone}
             assignAction={assignGoal}
+          />
+        ) : tab === 'salary' ? (
+          <EmployeeSalaryTab
+            locale={locale}
+            t={t}
+            employeeId={employee.id}
+            canSet={permissions.has('employee.set_salary')}
+            canViewPayroll={permissions.has('payroll.view')}
+            currency={session.currency}
           />
         ) : tab === 'requests' ? (
           <EmployeeRequests

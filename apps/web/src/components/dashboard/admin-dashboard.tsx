@@ -9,6 +9,7 @@ import { loadSession } from '../employees/use-session';
 import { ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { GoalProgressWidget } from '../goals/goal-progress-widget';
+import { PayrollSummaryWidget } from '../payroll/payroll-summary-widget';
 import { PendingRequestsKpi, PendingRequestsWidget } from '../requests/pending-requests-widget';
 import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
 
@@ -18,8 +19,9 @@ import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
  * What exists so far: DOCUMENT 13's "tasks needing reassignment" list; from
  * Phase 8, B1 widget 6 "Goal progress"; and from Phase 9, the "Pending
  * requests" KPI (row 2) and B1 widget 7 "Pending requests" with inline
- * approve / reject, both for a caller who reviews requests. The other B1
- * widgets (the remaining KPIs, attendance and task overviews, payroll,
+ * approve / reject, both for a caller who reviews requests; and from Phase
+ * 11 the "Payroll summary" for a caller with company-wide payroll access. The
+ * other B1 widgets (the remaining KPIs, attendance and task overviews,
  * inventory, recent activity, quick actions) are not
  * rendered as placeholders (DOCUMENT 27 RULE 26). They arrive with the
  * modules that own their data, mostly Phase 12.
@@ -64,6 +66,9 @@ export function AdminDashboard({ locale }: { readonly locale: Locale }): React.J
       ) : null}
       {permissions.has('goal.view') ? (
         <GoalProgressWidget locale={locale} t={t} timeZone={session.state.value.timeZone} />
+      ) : null}
+      {permissions.has('payroll.view') && permissions.has('payroll.generate') ? (
+        <PayrollSummaryWidget locale={locale} t={t} currency={session.state.value.currency} />
       ) : null}
       {reviews ? (
         <PendingRequestsWidget

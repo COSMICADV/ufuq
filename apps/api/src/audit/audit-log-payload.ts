@@ -77,12 +77,48 @@ export function redactSalary(values: Prisma.JsonValue): Prisma.JsonValue {
   return values;
 }
 
+/**
+ * Actions whose every value is pay: a payroll run's totals, a deduction's
+ * amount, an adjustment. Their figures are not under a salary-named key, so a
+ * caller without `employee.view_salary` sees which fields changed and nothing
+ * of what they changed to (DOCUMENT 21 "Captured with care", Phase 11).
+ */
+export function isPayAction(action: string): boolean {
+  return (
+    action.startsWith('payroll.') ||
+    action === 'deduction.added' ||
+    action === 'bonus.added' ||
+    action === 'employee.salary_changed'
+  );
+}
+
+/** Every value withheld, every key kept. */
+export function redactAll(values: Prisma.JsonValue): Prisma.JsonValue {
+  if (Array.isArray(values)) {
+    return values.map(redactAll);
+  }
+  if (values !== null && typeof values === 'object') {
+    return Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key,
+        value !== null && typeof value === 'object' ? redactAll(value) : REDACTED,
+      ]),
+    );
+  }
+  return REDACTED;
+}
+
 export function auditLogPayload(
   row: AuditLogRow,
   options: { readonly canViewSalary: boolean },
 ): AuditLogPayload {
+  const pay = isPayAction(actionToWire(row.action));
   const view = (values: Prisma.JsonValue | null): Prisma.JsonValue =>
-    values === null || options.canViewSalary ? values : redactSalary(values);
+    values === null || options.canViewSalary
+      ? values
+      : pay
+        ? redactAll(values)
+        : redactSalary(values);
   const employee = row.user.employee;
   return {
     id: row.id,

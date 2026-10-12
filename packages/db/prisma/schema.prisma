@@ -221,6 +221,59 @@ enum LeaveCarryOverPolicy {
   @@map("leave_carry_over_policy")
 }
 
+/// DOCUMENT 06 §3.22.
+enum DailyWageBasis {
+  fixed_days
+  scheduled_working_days
+  calendar_days
+
+  @@map("daily_wage_basis")
+}
+
+enum UnpaidLeaveDeductionRule {
+  daily_wage
+  scheduled_day_wage
+  none
+
+  @@map("unpaid_leave_deduction_rule")
+}
+
+enum AbsenceDeductionRule {
+  daily_wage
+  none
+
+  @@map("absence_deduction_rule")
+}
+
+enum PayrollRounding {
+  none
+  nearest
+  up
+  down
+
+  @@map("payroll_rounding")
+}
+
+/// DOCUMENT 06 §3.23, DOCUMENT 15 "PAYROLL STATES".
+enum PayrollPeriodStatus {
+  draft
+  under_review
+  approved
+  finalized
+  paid
+  adjusted
+
+  @@map("payroll_period_status")
+}
+
+/// `needs_review`: DOCUMENT 15 "Employee with zero attendance … flagged for review".
+enum PayrollLineStatus {
+  calculated
+  needs_review
+
+  @@map("payroll_line_status")
+}
+
 /// DOCUMENT 06 §3.14.
 enum LeaveRequestStatus {
   pending
@@ -293,6 +346,18 @@ enum AuditAction {
   LEAVE_BALANCE_ADJUSTED               @map("leave.balance_adjusted")
   LEAVE_TYPE_CREATED                   @map("leave_type.created")
   LEAVE_TYPE_UPDATED                   @map("leave_type.updated")
+  EMPLOYEE_SALARY_CHANGED              @map("employee.salary_changed")
+  PAYROLL_GENERATED                    @map("payroll.generated")
+  PAYROLL_REGENERATED                  @map("payroll.regenerated")
+  PAYROLL_SUBMITTED_FOR_REVIEW         @map("payroll.submitted_for_review")
+  PAYROLL_APPROVED                     @map("payroll.approved")
+  PAYROLL_RETURNED_TO_DRAFT            @map("payroll.returned_to_draft")
+  PAYROLL_FINALIZED                    @map("payroll.finalized")
+  PAYROLL_MARKED_PAID                  @map("payroll.marked_paid")
+  PAYROLL_ADJUSTMENT_CREATED           @map("payroll.adjustment_created")
+  DEDUCTION_ADDED                      @map("deduction.added")
+  BONUS_ADDED                          @map("bonus.added")
+  SALARY_POLICY_CHANGED                @map("salary_policy.changed")
 
   @@map("audit_action")
 }
@@ -349,6 +414,15 @@ model Company {
   leaveTypes    LeaveType[]
   leaveBalances LeaveBalance[]
   leaveRequests LeaveRequest[]
+
+  salaryPolicies     SalaryPolicy[]
+  employeeSalaries   EmployeeSalary[]
+  payrollPeriods     PayrollPeriod[]
+  payrollLines       PayrollLine[]
+  payrollDeductions  PayrollDeduction[]
+  payrollBonuses     PayrollBonus[]
+  payrollAdjustments PayrollAdjustment[]
+  idempotencyKeys    IdempotencyKey[]
 
   @@index([status])
   @@map("companies")
@@ -556,6 +630,10 @@ model Employee {
   leaveBalances LeaveBalance[]
   leaveRequests LeaveRequest[]
 
+  salaries           EmployeeSalary[]
+  payrollLines       PayrollLine[]
+  payrollAdjustments PayrollAdjustment[]
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -681,6 +759,14 @@ model User {
   performanceConfigs  PerformanceConfig[]           @relation("performance_config_updated_by")
   requestsReviewed    Request[]                     @relation("request_reviewed_by")
   leaveReviewed       LeaveRequest[]                @relation("leave_reviewed_by")
+  salariesCreated     EmployeeSalary[]              @relation("salary_created_by")
+  payrollsGenerated   PayrollPeriod[]               @relation("payroll_generated_by")
+  payrollsFinalized   PayrollPeriod[]               @relation("payroll_finalized_by")
+  deductionsCreated   PayrollDeduction[]            @relation("deduction_created_by")
+  bonusesCreated      PayrollBonus[]                @relation("bonus_created_by")
+  adjustmentsCreated  PayrollAdjustment[]           @relation("adjustment_created_by")
+  adjustmentsApproved PayrollAdjustment[]           @relation("adjustment_approved_by")
+  idempotencyKeys     IdempotencyKey[]
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -1213,4 +1299,209 @@ model LeaveRequest {
   @@index([companyId, status])
   @@index([employeeId, startDate])
   @@map("leave_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 11 — salary and payroll (DOCUMENT 06 §3.21–3.26, DOCUMENT 15)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.22 — the configurable calculation engine. One per company
+/// in V1 (`is_default`). `lateness_rule` is one of
+/// `{"type":"none"}`, `{"type":"per_minute","multiplier":"1.00"}`,
+/// `{"type":"fixed_per_incident","amount":"50.00"}`.
+model SalaryPolicy {
+  id                   String                   @id @db.Uuid
+  companyId            String                   @map("company_id") @db.Uuid
+  name                 String                   @db.VarChar(100)
+  dailyWageBasis       DailyWageBasis           @map("daily_wage_basis")
+  fixedDaysValue       Int?                     @map("fixed_days_value") @db.SmallInt
+  unpaidLeaveDeduction UnpaidLeaveDeductionRule @map("unpaid_leave_deduction")
+  absenceDeduction     AbsenceDeductionRule     @map("absence_deduction")
+  latenessRule         Json                     @map("lateness_rule")
+  overtimeRate         Decimal                  @map("overtime_rate") @db.Decimal(5, 2)
+  rounding             PayrollRounding
+  isDefault            Boolean                  @default(true) @map("is_default")
+  createdAt            DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  salaries EmployeeSalary[]
+
+  @@map("salary_policies")
+}
+
+/// DOCUMENT 06 §3.21 — salary history. A change closes the open row and
+/// inserts a new one; an amount is never updated (database trigger).
+model EmployeeSalary {
+  id             String    @id @db.Uuid
+  companyId      String    @map("company_id") @db.Uuid
+  employeeId     String    @map("employee_id") @db.Uuid
+  monthlySalary  Decimal   @map("monthly_salary") @db.Decimal(15, 2)
+  currency       String    @db.Char(3)
+  effectiveFrom  DateTime  @map("effective_from") @db.Date
+  effectiveTo    DateTime? @map("effective_to") @db.Date
+  salaryPolicyId String    @map("salary_policy_id") @db.Uuid
+  createdBy      String    @map("created_by") @db.Uuid
+  note           String?   @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  salaryPolicy SalaryPolicy @relation(fields: [salaryPolicyId], references: [id], onDelete: Restrict)
+  creator      User         @relation("salary_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, effectiveFrom])
+  @@index([companyId])
+  @@map("employee_salaries")
+}
+
+/// DOCUMENT 06 §3.23 — one per company per month.
+model PayrollPeriod {
+  id                        String              @id @db.Uuid
+  companyId                 String              @map("company_id") @db.Uuid
+  year                      Int                 @db.SmallInt
+  month                     Int                 @db.SmallInt
+  startDate                 DateTime            @map("start_date") @db.Date
+  endDate                   DateTime            @map("end_date") @db.Date
+  status                    PayrollPeriodStatus @default(draft)
+  generatedBy               String              @map("generated_by") @db.Uuid
+  generatedAt               DateTime            @map("generated_at") @db.Timestamptz(3)
+  finalizedBy               String?             @map("finalized_by") @db.Uuid
+  finalizedAt               DateTime?           @map("finalized_at") @db.Timestamptz(3)
+  paidAt                    DateTime?           @map("paid_at") @db.Timestamptz(3)
+  totalGross                Decimal             @default(0) @map("total_gross") @db.Decimal(15, 2)
+  totalAttendanceAdjustment Decimal             @default(0) @map("total_attendance_adjustment") @db.Decimal(15, 2)
+  totalDeductions           Decimal             @default(0) @map("total_deductions") @db.Decimal(15, 2)
+  totalBonuses              Decimal             @default(0) @map("total_bonuses") @db.Decimal(15, 2)
+  totalNet                  Decimal             @default(0) @map("total_net") @db.Decimal(15, 2)
+  createdAt                 DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  generator User          @relation("payroll_generated_by", fields: [generatedBy], references: [id], onDelete: Restrict)
+  finalizer User?         @relation("payroll_finalized_by", fields: [finalizedBy], references: [id], onDelete: Restrict)
+  lines     PayrollLine[]
+
+  @@unique([companyId, year, month])
+  @@index([companyId, status])
+  @@map("payroll_periods")
+}
+
+/// DOCUMENT 06 §3.24 — one per employee per period. Locked lines are
+/// immutable in the database (trigger), not only in the application.
+model PayrollLine {
+  id                   String            @id @db.Uuid
+  payrollPeriodId      String            @map("payroll_period_id") @db.Uuid
+  companyId            String            @map("company_id") @db.Uuid
+  employeeId           String            @map("employee_id") @db.Uuid
+  baseSalary           Decimal           @map("base_salary") @db.Decimal(15, 2)
+  dailyWage            Decimal           @map("daily_wage") @db.Decimal(15, 2)
+  workingDays          Int               @map("working_days") @db.SmallInt
+  presentDays          Int               @map("present_days") @db.SmallInt
+  wfhDays              Int               @map("wfh_days") @db.SmallInt
+  absentDays           Int               @map("absent_days") @db.SmallInt
+  paidLeaveDays        Int               @map("paid_leave_days") @db.SmallInt
+  unpaidLeaveDays      Int               @map("unpaid_leave_days") @db.SmallInt
+  lateMinutesTotal     Int               @map("late_minutes_total")
+  attendanceAdjustment Decimal           @map("attendance_adjustment") @db.Decimal(15, 2)
+  totalDeductions      Decimal           @default(0) @map("total_deductions") @db.Decimal(15, 2)
+  totalBonuses         Decimal           @default(0) @map("total_bonuses") @db.Decimal(15, 2)
+  netSalary            Decimal           @map("net_salary") @db.Decimal(15, 2)
+  status               PayrollLineStatus @default(calculated)
+  snapshot             Json
+  isLocked             Boolean           @default(false) @map("is_locked")
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  period      PayrollPeriod       @relation(fields: [payrollPeriodId], references: [id], onDelete: Restrict)
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee    Employee            @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  deductions  PayrollDeduction[]
+  bonuses     PayrollBonus[]
+  adjustments PayrollAdjustment[]
+
+  @@unique([payrollPeriodId, employeeId])
+  @@index([employeeId, payrollPeriodId])
+  @@index([companyId])
+  @@map("payroll_lines")
+}
+
+/// DOCUMENT 06 §3.25 — append-only.
+model PayrollDeduction {
+  id            String   @id @db.Uuid
+  payrollLineId String   @map("payroll_line_id") @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  type          String   @db.VarChar(50)
+  amount        Decimal  @db.Decimal(15, 2)
+  reason        String   @db.Text
+  createdBy     String   @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  line    PayrollLine @relation(fields: [payrollLineId], references: [id], onDelete: Restrict)
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  creator User        @relation("deduction_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([payrollLineId])
+  @@map("payroll_deductions")
+}
+
+/// DOCUMENT 06 §3.25 — append-only.
+model PayrollBonus {
+  id            String   @id @db.Uuid
+  payrollLineId String   @map("payroll_line_id") @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  type          String   @db.VarChar(50)
+  amount        Decimal  @db.Decimal(15, 2)
+  reason        String   @db.Text
+  createdBy     String   @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  line    PayrollLine @relation(fields: [payrollLineId], references: [id], onDelete: Restrict)
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  creator User        @relation("bonus_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([payrollLineId])
+  @@map("payroll_bonuses")
+}
+
+/// DOCUMENT 06 §3.26 — the only legal path to changing a finalized outcome.
+model PayrollAdjustment {
+  id                    String    @id @db.Uuid
+  originalPayrollLineId String    @map("original_payroll_line_id") @db.Uuid
+  companyId             String    @map("company_id") @db.Uuid
+  employeeId            String    @map("employee_id") @db.Uuid
+  amount                Decimal   @db.Decimal(15, 2)
+  reason                String    @db.Text
+  createdBy             String    @map("created_by") @db.Uuid
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  approvedBy            String?   @map("approved_by") @db.Uuid
+  approvedAt            DateTime? @map("approved_at") @db.Timestamptz(3)
+
+  line     PayrollLine @relation(fields: [originalPayrollLineId], references: [id], onDelete: Restrict)
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  creator  User        @relation("adjustment_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+  approver User?       @relation("adjustment_approved_by", fields: [approvedBy], references: [id], onDelete: Restrict)
+
+  @@index([originalPayrollLineId])
+  @@index([employeeId])
+  @@map("payroll_adjustments")
+}
+
+/// DOCUMENT 08 §8 — a repeated `Idempotency-Key` replays the stored resource.
+model IdempotencyKey {
+  id          String   @id @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  scope       String   @db.VarChar(100)
+  key         String   @db.VarChar(255)
+  requestHash String   @map("request_hash") @db.Char(64)
+  resourceId  String   @map("resource_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, userId, scope, key])
+  @@map("idempotency_keys")
 }

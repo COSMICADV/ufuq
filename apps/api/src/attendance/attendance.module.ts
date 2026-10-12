@@ -16,6 +16,7 @@ import { Module } from '@nestjs/common';
 import type { DynamicModule } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
+import { PayrollGuardModule } from '../payroll/payroll-guard.module.js';
 
 import { AttendanceController } from './attendance.controller.js';
 import { AttendanceGenerationService } from './attendance-generation.service.js';
@@ -36,7 +37,7 @@ export class AttendanceModule {
   static register(options: AttendanceModuleOptions): DynamicModule {
     return {
       module: AttendanceModule,
-      imports: [AuthModule],
+      imports: [AuthModule, PayrollGuardModule],
       controllers: [AttendanceController, CorrectionsController, EmployeeAttendanceController],
       providers: [
         AttendanceService,

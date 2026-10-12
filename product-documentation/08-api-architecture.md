@@ -202,22 +202,28 @@ Validation: names required · email unique per company · `employee_code` unique
 ### 4.10 Payroll
 | Method | Endpoint | perm | Notes |
 |---|---|---|---|
-| GET | `/payroll/periods` | payroll.view | |
-| POST | `/payroll/periods` | payroll.generate | 409 if a non-draft period exists |
+| GET | `/payroll/periods` | payroll.view | company scope |
+| GET | `/payroll/periods/preflight` | payroll.generate | `?year&month` — what generation would block or warn on, without generating (Phase 11) |
+| POST | `/payroll/periods` | payroll.generate | 409 if a period for the month exists · Idempotency-Key |
 | GET | `/payroll/periods/{id}` | payroll.view | run summary + lines |
 | POST | `/payroll/periods/{id}/recalculate` | payroll.generate | draft only |
 | POST | `/payroll/periods/{id}/submit-review` | payroll.approve | |
 | POST | `/payroll/periods/{id}/approve` | payroll.approve | |
+| POST | `/payroll/periods/{id}/return-to-draft` | payroll.approve | under review → draft (DOCUMENT 15 states; added in Phase 11) |
+| POST | `/payroll/periods/{id}/return-to-review` | payroll.approve | approved → under review (DOCUMENT 15 states; added in Phase 11) |
 | POST | `/payroll/periods/{id}/finalize` | payroll.finalize | irreversible, `{ "confirm": "2026-09" }` |
-| POST | `/payroll/periods/{id}/mark-paid` | payroll.mark_paid | |
-| GET | `/payroll/lines/{id}` | payroll.view | payslip |
-| POST | `/payroll/lines/{id}/deductions` | payroll.add_deduction | 409 if locked |
-| POST | `/payroll/lines/{id}/bonuses` | payroll.add_bonus | 409 if locked |
-| POST | `/payroll/lines/{id}/adjustments` | payroll.adjust | only when finalized/paid |
-| GET | `/payroll/me` | authenticated | own current estimate |
-| GET | `/payroll/me/history` | authenticated | own payslips |
+| POST | `/payroll/periods/{id}/mark-paid` | payroll.mark_paid | finalized → paid; an adjusted period not yet paid keeps `adjusted` |
+| GET | `/payroll/lines` | payroll.view | finalized payslips; `?employee_id` (self: own only) — Phase 11 |
+| GET | `/payroll/lines/{id}` | payroll.view | payslip; self: own finalized only, else 404 |
+| POST | `/payroll/lines/{id}/deductions` | payroll.add_deduction | 409 if locked · Idempotency-Key |
+| POST | `/payroll/lines/{id}/bonuses` | payroll.add_bonus | 409 if locked · Idempotency-Key |
+| POST | `/payroll/lines/{id}/adjustments` | payroll.adjust | only when finalized/paid/adjusted · Idempotency-Key |
+| GET | `/payroll/me` | payroll.view + employee.view_salary | own current estimate (provisional) |
+| GET | `/payroll/me/history` | payroll.view + employee.view_salary | own finalized payslips |
 
 `POST /payroll/periods` returns **422 with a blocking list** if any employee lacks salary, schedule, or attendance data. It does not generate a partial run.
+
+Phase 11: the blocking list is `error.fields` keyed by employee id (`salary_missing:<date>`, `schedule_incomplete`, `negative_net:<amount>`…). Incomplete attendance (pending or missing days) is a **409 `PAYROLL_ATTENDANCE_INCOMPLETE`** listing employees and dates, unless the body carries `proceed_with_warnings: true`. A month that has not ended is 422 `PAYROLL_PERIOD_NOT_ENDED`. Reusing an `Idempotency-Key` with a different request is 422 `IDEMPOTENCY_KEY_REUSED`.
 
 ### 4.11 Warehouse & inventory
 | Method | Endpoint | perm |
