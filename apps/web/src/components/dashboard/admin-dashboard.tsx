@@ -10,6 +10,7 @@ import { ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { GoalProgressWidget } from '../goals/goal-progress-widget';
 import { PayrollSummaryWidget } from '../payroll/payroll-summary-widget';
+import { WarehouseSummaryWidget } from '../warehouse/warehouse-summary-widget';
 import { PendingRequestsKpi, PendingRequestsWidget } from '../requests/pending-requests-widget';
 import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
 
@@ -69,6 +70,9 @@ export function AdminDashboard({ locale }: { readonly locale: Locale }): React.J
       ) : null}
       {permissions.has('payroll.view') && permissions.has('payroll.generate') ? (
         <PayrollSummaryWidget locale={locale} t={t} currency={session.state.value.currency} />
+      ) : null}
+      {permissions.has('warehouse.view') && permissions.has('stock.view') ? (
+        <WarehouseSummaryWidget locale={locale} t={t} currency={session.state.value.currency} />
       ) : null}
       {reviews ? (
         <PendingRequestsWidget

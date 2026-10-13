@@ -2758,3 +2758,147 @@ a.button {
     background: var(--bg-surface);
   }
 }
+
+/* ===========================================================================
+   Warehouse — Phase 13 (DOCUMENT 17, DOCUMENT 04 B19–B21). Appended; nothing
+   above is changed. Logical properties and design tokens only. Functional
+   layout; the visual redesign comes later.
+   =========================================================================== */
+.warehouse-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+}
+.warehouse-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.warehouse-nav a.is-current {
+  border-color: var(--green-primary-600);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.warehouse-kpis {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+}
+/* A large figure wraps inside its card rather than widening the page. */
+.warehouse-kpis .kpi {
+  min-inline-size: 0;
+}
+.warehouse-kpis .kpi__value {
+  overflow-wrap: anywhere;
+}
+.warehouse-kpis .payroll-amount,
+.warehouse-kpis .warehouse-quantity {
+  white-space: normal;
+}
+.warehouse-quantity {
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+.warehouse-unit {
+  color: var(--text-tertiary);
+}
+.warehouse-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.warehouse-lines {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.warehouse-trend {
+  display: grid;
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  align-items: end;
+  gap: 2px;
+  block-size: 96px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.warehouse-trend li {
+  display: flex;
+  align-items: flex-end;
+  block-size: 100%;
+}
+.warehouse-trend__bar {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--green-primary-500);
+}
+.warehouse-transfer-lines {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.warehouse-transfer-line {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-3);
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+@media (max-width: 639px) {
+  .warehouse-transfer-line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Tablet: warehouse tables stay tables, scrolling sideways inside their own
+   box with the first column frozen (the page never scrolls sideways).
+   Phones keep the stacked cards from `.tasks-table`. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .tasks-table.warehouse-table {
+    min-inline-size: 0;
+  }
+  .tasks-table.warehouse-table .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+  }
+  .tasks-table.warehouse-table table {
+    min-inline-size: 720px;
+    background: var(--bg-surface);
+  }
+  .tasks-table.warehouse-table thead {
+    display: table-header-group;
+  }
+  .tasks-table.warehouse-table tr {
+    display: table-row;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+  }
+  .tasks-table.warehouse-table td {
+    display: table-cell;
+    padding-inline: var(--space-3);
+    border-block-end: 1px solid var(--border-subtle);
+  }
+  .tasks-table.warehouse-table .cell-label {
+    display: none;
+  }
+  .tasks-table.warehouse-table th:first-child,
+  .tasks-table.warehouse-table td:first-child {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 1;
+    background: var(--bg-surface);
+  }
+}

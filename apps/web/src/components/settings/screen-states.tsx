@@ -247,6 +247,13 @@ export function describeError(error: unknown, t: Translator): string {
       return t('error.request_self_review');
     case 'REQUEST_CATEGORY_SPECIALISED':
       return t('error.request_category_specialised');
+    // Phase 13 — warehouse.
+    case 'WAREHOUSE_HAS_STOCK':
+      return t('error.warehouse_has_stock');
+    case 'WAREHOUSE_INACTIVE':
+      return t('error.warehouse_inactive');
+    case 'STOCK_INSUFFICIENT':
+      return t('error.stock_insufficient');
     default:
       return t('state.error');
   }

@@ -130,6 +130,12 @@ Production infrastructure, backups with a **tested** restore, monitoring and ale
 
 Notifications come late deliberately: the events they respond to must exist first. Reports come after the modules that produce their data.
 
+### Execution order after Phase 11 (documented under rule 4, before Phase 13 began)
+
+The phases keep their numbers and their scope. They are **executed** in the order the dependency map above already draws: **Phase 13 Warehouse → Phase 14 Inventory → Phase 12 Reports**.
+
+Why: DOCUMENT 18's V1 company reports include inventory, warehouse and stock movements, and Phase 12's exit criterion is that every report "returns correct figures that reconcile with the source modules". Those sources are built by Phases 13 and 14. Building Reports first would mean either shipping those reports without data to reconcile against, or building them twice. The textual order (12 before 13) is a numbering order; the dependency map is the build order.
+
 ## RULES
 
 1. **Do not skip phases.** Phase 2 before feature work is what keeps the UI coherent.

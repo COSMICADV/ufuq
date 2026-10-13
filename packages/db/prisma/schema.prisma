@@ -358,6 +358,10 @@ enum AuditAction {
   DEDUCTION_ADDED                      @map("deduction.added")
   BONUS_ADDED                          @map("bonus.added")
   SALARY_POLICY_CHANGED                @map("salary_policy.changed")
+  WAREHOUSE_CREATED                    @map("warehouse.created")
+  WAREHOUSE_UPDATED                    @map("warehouse.updated")
+  WAREHOUSE_DEACTIVATED                @map("warehouse.deactivated")
+  STOCK_TRANSFER_EXECUTED              @map("stock.transfer_executed")
 
   @@map("audit_action")
 }
@@ -423,6 +427,11 @@ model Company {
   payrollBonuses     PayrollBonus[]
   payrollAdjustments PayrollAdjustment[]
   idempotencyKeys    IdempotencyKey[]
+
+  warehouses     Warehouse[]
+  products       Product[]
+  productStock   ProductStock[]
+  stockMovements StockMovement[]
 
   @@index([status])
   @@map("companies")
@@ -767,6 +776,7 @@ model User {
   adjustmentsCreated  PayrollAdjustment[]           @relation("adjustment_created_by")
   adjustmentsApproved PayrollAdjustment[]           @relation("adjustment_approved_by")
   idempotencyKeys     IdempotencyKey[]
+  stockMovements      StockMovement[]               @relation("stock_movement_created_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -1504,4 +1514,133 @@ model IdempotencyKey {
 
   @@unique([companyId, userId, scope, key])
   @@map("idempotency_keys")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 13 — warehouse (DOCUMENT 06 §3.28–3.32, DOCUMENT 17)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.28. One stock model: an online channel is `type = online`.
+enum WarehouseType {
+  main
+  branch
+  store
+  production
+  online
+
+  @@map("warehouse_type")
+}
+
+enum ProductStatus {
+  active
+  discontinued
+
+  @@map("product_status")
+}
+
+/// DOCUMENT 06 §3.32 — every type; Phase 13 writes only the two transfer legs.
+enum StockMovementType {
+  purchase
+  sale
+  transfer_in
+  transfer_out
+  adjustment
+  return
+  damage
+  manual_addition
+  manual_removal
+
+  @@map("stock_movement_type")
+}
+
+/// DOCUMENT 06 §3.28. Never hard-deleted; cannot be deactivated while it holds stock (trigger).
+model Warehouse {
+  id        String        @id @db.Uuid
+  companyId String        @map("company_id") @db.Uuid
+  nameAr    String        @map("name_ar") @db.VarChar(200)
+  nameEn    String        @map("name_en") @db.VarChar(200)
+  type      WarehouseType
+  address   String?       @db.Text
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  company   Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  stock     ProductStock[]
+  movements StockMovement[]
+
+  @@index([companyId])
+  @@map("warehouses")
+}
+
+/// DOCUMENT 06 §3.29 — the Phase 13 subset; Phase 14 adds the catalogue fields.
+model Product {
+  id        String        @id @db.Uuid
+  companyId String        @map("company_id") @db.Uuid
+  nameAr    String        @map("name_ar") @db.VarChar(200)
+  nameEn    String        @map("name_en") @db.VarChar(200)
+  sku       String        @db.VarChar(50)
+  unit      String        @db.VarChar(20)
+  status    ProductStatus @default(active)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  company   Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  stock     ProductStock[]
+  movements StockMovement[]
+
+  @@unique([companyId, sku])
+  @@map("products")
+}
+
+/// DOCUMENT 06 §3.31 — a derived cache. Its quantity must equal the latest
+/// movement's balance (trigger); only the stock ledger service writes it.
+model ProductStock {
+  id          String   @id @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  warehouseId String   @map("warehouse_id") @db.Uuid
+  quantity    Decimal  @default(0) @db.Decimal(15, 3)
+  averageCost Decimal  @default(0) @map("average_cost") @db.Decimal(15, 2)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, warehouseId])
+  @@index([warehouseId])
+  @@index([companyId])
+  @@map("product_stock")
+}
+
+/// DOCUMENT 06 §3.32 — the source of truth. Immutable (trigger + no grants).
+model StockMovement {
+  id              String            @id @db.Uuid
+  companyId       String            @map("company_id") @db.Uuid
+  productId       String            @map("product_id") @db.Uuid
+  warehouseId     String            @map("warehouse_id") @db.Uuid
+  type            StockMovementType
+  quantity        Decimal           @db.Decimal(15, 3)
+  unitCost        Decimal?          @map("unit_cost") @db.Decimal(15, 2)
+  balanceAfter    Decimal           @map("balance_after") @db.Decimal(15, 3)
+  referenceType   String?           @map("reference_type") @db.VarChar(50)
+  referenceId     String?           @map("reference_id") @db.Uuid
+  transferGroupId String?           @map("transfer_group_id") @db.Uuid
+  reason          String?           @db.Text
+  createdBy       String            @map("created_by") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  creator   User      @relation("stock_movement_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([companyId, productId, createdAt])
+  @@index([warehouseId, createdAt])
+  @@index([transferGroupId])
+  @@index([productId, warehouseId, createdAt, id], map: "stock_movements_product_warehouse_idx")
+  @@map("stock_movements")
 }

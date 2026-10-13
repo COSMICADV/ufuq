@@ -262,6 +262,9 @@ const KNOWN_ISSUES = new Set([
   // Phase 11 — payroll.
   'not_after_current',
   'mismatch',
+  // Phase 13 — warehouse transfers.
+  'same_location',
+  'duplicate_product',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

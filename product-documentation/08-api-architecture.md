@@ -245,6 +245,8 @@ Phase 11: the blocking list is `error.fields` keyed by employee id (`salary_miss
 
 There is **no** `PATCH /products/{id}/quantity`. Quantity changes only through `POST /stock-movements`. Any proposal to add such an endpoint must be rejected.
 
+Phase 13 (amendment, read-only additions): `GET /warehouses/transfers` (stock.view · paginated list of transfers, each with both locations, its lines and value) and `GET /warehouses/transfers/{transfer_group_id}` (stock.view · one transfer) were added so DOCUMENT 04 B21 can list transfers; they read the paired movements and write nothing. `GET /stock-movements` is implemented read-only in Phase 13; `POST /stock-movements` and every product endpoint remain Phase 14. `POST /warehouses/transfers` takes `{ source_warehouse_id, destination_warehouse_id, lines: [{ product_id, quantity }] (1–100), note? }` with an optional `Idempotency-Key`; it refuses the same location (422 `destination_warehouse_id: same_location`), a repeated product (`lines.N.product_id: duplicate_product`), a quantity that is not a positive DECIMAL(15,3) string (`lines.N.quantity: invalid`), an unknown or other-company warehouse or product (422 `not_found`, never revealing the other tenant), an inactive location (409 `WAREHOUSE_INACTIVE`), and more than the source holds (422 `STOCK_INSUFFICIENT` with `product_id`, `warehouse_id`, `available`, `requested`). Deactivating a location that still holds stock is 409 `WAREHOUSE_HAS_STOCK`.
+
 ### 4.12 Reports
 | Method | Endpoint | perm |
 |---|---|---|

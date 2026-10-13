@@ -101,6 +101,10 @@ export const ERROR_CODES = {
   PAYROLL_LINE_LOCKED: 'PAYROLL_LINE_LOCKED',
   PAYROLL_NEGATIVE_NET: 'PAYROLL_NEGATIVE_NET',
   IDEMPOTENCY_KEY_REUSED: 'IDEMPOTENCY_KEY_REUSED',
+  // Phase 13 — warehouse. DOCUMENT 17 "Error states" and "Edge cases".
+  WAREHOUSE_HAS_STOCK: 'WAREHOUSE_HAS_STOCK',
+  WAREHOUSE_INACTIVE: 'WAREHOUSE_INACTIVE',
+  STOCK_INSUFFICIENT: 'STOCK_INSUFFICIENT',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -146,6 +150,9 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   PAYROLL_LINE_LOCKED: 'error.payroll_line_locked',
   PAYROLL_NEGATIVE_NET: 'error.payroll_negative_net',
   IDEMPOTENCY_KEY_REUSED: 'error.idempotency_key_reused',
+  WAREHOUSE_HAS_STOCK: 'error.warehouse_has_stock',
+  WAREHOUSE_INACTIVE: 'error.warehouse_inactive',
+  STOCK_INSUFFICIENT: 'error.stock_insufficient',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',
