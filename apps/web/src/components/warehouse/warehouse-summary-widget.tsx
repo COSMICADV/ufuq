@@ -14,8 +14,8 @@ import { useResource } from '../settings/use-resource';
 import { Amount, Quantity } from './warehouse-shared';
 
 /**
- * The admin dashboard's way into the warehouse: locations, units and value in
- * stock, straight from `GET /warehouses/dashboard`. Loads, fails and retries
+ * The admin dashboard's way into the warehouse: locations, units, low and
+ * out-of-stock counts and value in stock, straight from `GET /warehouses/dashboard`. Loads, fails and retries
  * on its own. Rendered only for an ADMIN (warehouse and stock access).
  */
 export function WarehouseSummaryWidget({
@@ -55,6 +55,12 @@ export function WarehouseSummaryWidget({
           </Figure>
           <Figure label={t('warehouse.kpi_units')}>
             <Quantity value={resource.state.value.kpis.total_stock_units} />
+          </Figure>
+          <Figure label={t('warehouse.kpi_low_stock')}>
+            <span dir="ltr">{resource.state.value.kpis.low_stock_count}</span>
+          </Figure>
+          <Figure label={t('warehouse.kpi_out_of_stock')}>
+            <span dir="ltr">{resource.state.value.kpis.out_of_stock_count}</span>
           </Figure>
           <Figure label={t('warehouse.kpi_value')}>
             <Amount

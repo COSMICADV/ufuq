@@ -35,6 +35,8 @@ export interface CompanyPayload {
   readonly default_locale: string;
   readonly fiscal_month_start_day: number;
   readonly correction_window_days: number;
+  /** DOCUMENT 17 rule 5 — false by default: outbound beyond the balance is blocked. */
+  readonly allow_negative_stock: boolean;
   readonly status: string;
 }
 
@@ -56,6 +58,7 @@ export function companyPayload(row: Company): CompanyPayload {
     default_locale: row.defaultLocale.trim(),
     fiscal_month_start_day: row.fiscalMonthStartDay,
     correction_window_days: row.correctionWindowDays,
+    allow_negative_stock: row.allowNegativeStock,
     status: row.status,
   };
 }

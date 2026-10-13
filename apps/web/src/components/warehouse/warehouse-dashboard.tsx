@@ -6,23 +6,24 @@ import { createTranslator, formatDate } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { fetchOne } from '../../lib/api-client';
+import { inventoryPath, productPath, stockTone } from '../../lib/inventory';
 import { localName, warehousePath } from '../../lib/warehouse';
 import type { Movement, WarehouseDashboard as Dashboard } from '../../lib/warehouse';
-import { Alert, Card, DataTable, EmptyState } from '../design-system';
+import { Alert, Badge, Card, DataTable, EmptyState } from '../design-system';
 import { loadSession } from '../employees/use-session';
 import { Cell, ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { ActiveBadge, Amount, MovementBadge, Quantity, TypeBadge, When } from './warehouse-shared';
 
 /**
- * `/admin/warehouse` — DOCUMENT 04 B19, the parts Phase 13 can show truthfully:
+ * `/admin/warehouse` — DOCUMENT 04 B19:
  * locations, units and value in stock (at average cost), stock by location,
  * recent movements and the 30-day movement trend.
  *
- * Total products, the low-stock and out-of-stock counts and the low-stock
- * table need Phase 14's product catalogue (minimum stock levels); the API
- * names them in `deferred` and this screen says so instead of showing a
- * number it cannot know.
+ * Phase 14 completed it: total products, the low-stock and out-of-stock
+ * counts (on each product's total across locations) and the low-stock
+ * table. `deferred` is empty; the notice for it shows only if the API ever
+ * names something it cannot answer yet.
  */
 export function WarehouseDashboard({ locale }: { readonly locale: Locale }): React.JSX.Element {
   const t = createTranslator(locale);
@@ -60,9 +61,24 @@ export function WarehouseDashboard({ locale }: { readonly locale: Locale }): Rea
           </span>
         </Card>
         <Card className="kpi">
-          <span className="kpi__label">{t('warehouse.kpi_products_in_stock')}</span>
+          <span className="kpi__label">{t('warehouse.kpi_total_products')}</span>
           <strong className="kpi__value" dir="ltr">
-            {kpis.products_in_stock}
+            {kpis.total_products}
+          </strong>
+          <span className="kpi__delta">
+            {t('warehouse.kpi_in_stock_count', { count: String(kpis.products_in_stock) })}
+          </span>
+        </Card>
+        <Card className="kpi">
+          <span className="kpi__label">{t('warehouse.kpi_low_stock')}</span>
+          <strong className="kpi__value" dir="ltr">
+            {kpis.low_stock_count}
+          </strong>
+        </Card>
+        <Card className="kpi">
+          <span className="kpi__label">{t('warehouse.kpi_out_of_stock')}</span>
+          <strong className="kpi__value" dir="ltr">
+            {kpis.out_of_stock_count}
           </strong>
         </Card>
         <Card className="kpi">
@@ -89,6 +105,26 @@ export function WarehouseDashboard({ locale }: { readonly locale: Locale }): Rea
           {t('warehouse.deferred')}
         </Alert>
       ) : null}
+
+      <Card
+        title={t('warehouse.low_stock_table')}
+        className="tasks-table warehouse-table"
+        action={
+          <Link className="tasks-back" href={inventoryPath(locale)}>
+            {t('inventory.open_inventory')}
+          </Link>
+        }
+      >
+        {dashboard.low_stock.length === 0 ? (
+          <EmptyState
+            title={t('warehouse.no_low_stock_title')}
+            description={t('warehouse.no_low_stock')}
+            action={null}
+          />
+        ) : (
+          <LowStockTable locale={locale} t={t} rows={dashboard.low_stock} />
+        )}
+      </Card>
 
       <Card title={t('warehouse.by_location')} className="tasks-table warehouse-table">
         {dashboard.by_location.length === 0 ? (
@@ -141,6 +177,50 @@ export function WarehouseDashboard({ locale }: { readonly locale: Locale }): Rea
         )}
       </Card>
     </>
+  );
+}
+
+function LowStockTable({
+  locale,
+  t,
+  rows,
+}: {
+  readonly locale: Locale;
+  readonly t: Translator;
+  readonly rows: Dashboard['low_stock'];
+}): React.JSX.Element {
+  const headers = [
+    t('warehouse.col_product'),
+    t('warehouse.col_sku'),
+    t('inventory.col_total'),
+    t('inventory.min_stock'),
+    t('inventory.stock_status_label'),
+  ];
+  return (
+    <DataTable
+      headers={headers}
+      rows={rows.map((row) => [
+        <Cell key="name" label={headers[0] as string}>
+          <Link href={productPath(locale, row.product.id)}>
+            <span dir="auto">{localName(row.product, locale)}</span>
+          </Link>
+        </Cell>,
+        <Cell key="sku" label={headers[1] as string}>
+          <span dir="ltr">{row.product.sku}</span>
+        </Cell>,
+        <Cell key="total" label={headers[2] as string}>
+          <Quantity value={row.total_quantity} unit={row.product.unit} />
+        </Cell>,
+        <Cell key="min" label={headers[3] as string}>
+          <Quantity value={row.min_stock} />
+        </Cell>,
+        <Cell key="status" label={headers[4] as string}>
+          <Badge tone={stockTone(row.stock_status)}>
+            {t(`inventory.stock_status.${row.stock_status}`)}
+          </Badge>
+        </Cell>,
+      ])}
+    />
   );
 }
 

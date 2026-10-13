@@ -36,7 +36,9 @@ These record the lifecycle of the Requests Centre's own categories (Salary, Task
 `payroll.generated` · `payroll.regenerated` · `payroll.submitted_for_review` · `payroll.approved` · `payroll.returned_to_draft` · `payroll.finalized` · `payroll.marked_paid` · `payroll.adjustment_created` · `deduction.added` · `bonus.added` · `salary_policy.changed`
 
 ### Inventory
-`product.created` · `product.updated` · `product.deactivated` · `stock.movement_created` · `stock.transfer_executed` · `stock.reconciliation_run` · `warehouse.created` · `warehouse.updated` · `warehouse.deactivated` · `supplier.created` · `supplier.updated`
+`product.created` · `product.updated` · `product.deactivated` · `stock.movement_created` · `stock.transfer_executed` · `stock.reconciliation_run` · `warehouse.created` · `warehouse.updated` · `warehouse.deactivated` · `supplier.created` · `supplier.updated` · `product_category.created`
+
+`product_category.created` was added in Phase 14 (approved amendment): the list had no action for creating a product category. A stock movement that takes a location below zero under the company's negative-stock setting is recorded as `stock.movement_created` with `negative_stock: true` (DOCUMENT 17 rule 5: "always warned and recorded"); the setting itself changes under `settings.company_updated`.
 
 ### Settings & data access
 `settings.company_updated` · `settings.schedule_changed` · `settings.performance_weights_changed` · `settings.notification_changed` · `report.exported` · `attachment.uploaded` · `attachment.deleted` · `attachment.accessed` (sensitive attachments only)

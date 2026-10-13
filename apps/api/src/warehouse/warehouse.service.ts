@@ -62,6 +62,8 @@ import { money, quantity, stockValue, validateTransfer } from './warehouse-rules
 
 /** DOCUMENT 04 B19: "recent movements (last 20)". */
 export const RECENT_MOVEMENTS = 20;
+/** Rows in the dashboard's low-stock table. */
+export const LOW_STOCK_TABLE = 10;
 /** The activity trend's window, in days. */
 export const TREND_DAYS = 30;
 
@@ -149,31 +151,44 @@ export interface TransferPayload {
   readonly created_at: string;
 }
 
+export interface LowStockRow {
+  readonly product: MovementPayload['product'];
+  readonly total_quantity: string;
+  readonly min_stock: string;
+  readonly stock_status: 'low_stock' | 'out_of_stock';
+}
+
 export interface WarehouseDashboard {
   readonly kpis: {
+    /** Active catalogue products (Phase 14). */
+    readonly total_products: number;
     readonly locations_total: number;
     readonly locations_active: number;
     readonly products_in_stock: number;
     readonly total_stock_units: string;
+    readonly low_stock_count: number;
+    readonly out_of_stock_count: number;
     readonly total_inventory_value: string;
   };
+  /** DOCUMENT 04 B19 "low-stock table": the lowest first, at most {@link LOW_STOCK_TABLE}. */
+  readonly low_stock: readonly LowStockRow[];
   readonly by_location: readonly WarehousePayload[];
   readonly recent_movements: readonly MovementPayload[];
   /** Movements per day, oldest first, in the company's timezone. */
   readonly activity_trend: readonly { readonly date: string; readonly movements: number }[];
-  /** DOCUMENT 04 B19 elements that need Phase 14's catalogue (min stock, product count). */
+  /** Elements not yet available. Empty since Phase 14 brought the catalogue. */
   readonly deferred: readonly string[];
 }
 
-const MOVEMENT_INCLUDE = {
+export const MOVEMENT_INCLUDE = {
   product: { select: { id: true, sku: true, nameAr: true, nameEn: true, unit: true } },
   warehouse: { select: { id: true, nameAr: true, nameEn: true, type: true } },
   creator: { select: { id: true, email: true } },
 } as const;
 
-type MovementRow = Prisma.StockMovementGetPayload<{ include: typeof MOVEMENT_INCLUDE }>;
+export type MovementRow = Prisma.StockMovementGetPayload<{ include: typeof MOVEMENT_INCLUDE }>;
 
-function movementPayload(row: MovementRow): MovementPayload {
+export function movementPayload(row: MovementRow): MovementPayload {
   return {
     id: row.id,
     type: row.type,
@@ -505,7 +520,7 @@ export class WarehouseService extends TenantScopedService {
         tx.stockMovement.findMany({
           where,
           include: MOVEMENT_INCLUDE,
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          orderBy: [{ sequence: 'desc' }],
           skip: page.skip,
           take: page.take,
         }),
@@ -517,7 +532,7 @@ export class WarehouseService extends TenantScopedService {
 
   // -- Dashboard --------------------------------------------------------------------
 
-  /** GET /warehouses/dashboard — DOCUMENT 04 B19, the parts Phase 13's data answers. */
+  /** GET /warehouses/dashboard — DOCUMENT 04 B19, complete since Phase 14. */
   async dashboard(ctx: AuthContext, now: Date = new Date()): Promise<WarehouseDashboard> {
     requireCompany(ctx, 'warehouse.view');
     return this.tenant(ctx, async (tx) => {
@@ -540,7 +555,7 @@ export class WarehouseService extends TenantScopedService {
       }));
       const recent = await tx.stockMovement.findMany({
         include: MOVEMENT_INCLUDE,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ sequence: 'desc' }],
         take: RECENT_MOVEMENTS,
       });
       const since = new Date(now.getTime() - TREND_DAYS * 24 * 60 * 60 * 1000);
@@ -559,23 +574,66 @@ export class WarehouseService extends TenantScopedService {
         const day = formatCalendarDate(calendarDateIn(row.createdAt, company.timezone));
         if (counts.has(day)) counts.set(day, (counts.get(day) ?? 0) + 1);
       }
+      // Stock status on each product's total across locations (DOCUMENT 17
+      // rules 7–8, approved basis): out at ≤ 0, low at ≤ min_stock.
+      const products = await tx.product.findMany({
+        where: { deletedAt: null, status: 'active' },
+        select: { id: true, sku: true, nameAr: true, nameEn: true, unit: true, minStock: true },
+      });
+      const totals = new Map<string, Decimal>();
+      for (const b of balances) {
+        totals.set(
+          b.productId,
+          (totals.get(b.productId) ?? Decimal.zero(3)).add(quantity(b.quantity)),
+        );
+      }
+      const flagged = products
+        .map((p) => {
+          const total = totals.get(p.id) ?? Decimal.zero(3);
+          const min = quantity(p.minStock);
+          const status: LowStockRow['stock_status'] | null = !total.isPositive()
+            ? 'out_of_stock'
+            : total.compare(min) <= 0
+              ? 'low_stock'
+              : null;
+          return { p, total, min, status };
+        })
+        .filter((row) => row.status !== null)
+        .sort((a, b) => a.total.compare(b.total) || a.p.sku.localeCompare(b.p.sku));
       return {
         kpis: {
+          total_products: products.length,
           locations_total: warehouses.length,
           locations_active: warehouses.filter((w) => w.isActive).length,
-          products_in_stock: new Set(balances.map((b) => b.productId)).size,
+          products_in_stock: new Set(
+            balances.filter((b) => quantity(b.quantity).isPositive()).map((b) => b.productId),
+          ).size,
           total_stock_units: Decimal.sum(
             exact.map((b) => b.quantity),
             3,
           ).toString(),
+          low_stock_count: flagged.filter((row) => row.status === 'low_stock').length,
+          out_of_stock_count: flagged.filter((row) => row.status === 'out_of_stock').length,
           total_inventory_value: stockValue(exact).toString(),
         },
+        low_stock: flagged.slice(0, LOW_STOCK_TABLE).map((row) => ({
+          product: {
+            id: row.p.id,
+            sku: row.p.sku,
+            name_ar: row.p.nameAr,
+            name_en: row.p.nameEn,
+            unit: row.p.unit,
+          },
+          total_quantity: row.total.toString(),
+          min_stock: row.min.toString(),
+          stock_status: row.status as LowStockRow['stock_status'],
+        })),
         by_location: warehouses.map((w) =>
           this.payload(w, summaries.get(w.id) as WarehouseSummary),
         ),
         recent_movements: recent.map(movementPayload),
         activity_trend: [...counts].map(([date, movements]) => ({ date, movements })),
-        deferred: ['total_products', 'low_stock_count', 'out_of_stock_count', 'low_stock_table'],
+        deferred: [],
       };
     });
   }
@@ -589,7 +647,7 @@ export class WarehouseService extends TenantScopedService {
     const rows = await tx.stockMovement.findMany({
       where: { transferGroupId: groupId },
       include: MOVEMENT_INCLUDE,
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ sequence: 'asc' }],
     });
     const outs = rows.filter((row) => row.type === 'transfer_out');
     const ins = rows.filter((row) => row.type === 'transfer_in');
@@ -707,15 +765,29 @@ export class WarehouseService extends TenantScopedService {
         const productIds = dto.lines.map((line) => line.product_id);
         const products = await tx.product.findMany({
           where: { id: { in: productIds }, deletedAt: null },
-          select: { id: true },
+          select: { id: true, status: true },
         });
-        const missing = dto.lines
-          .map((line, index) => ({ line, index }))
-          .filter(({ line }) => !products.some((p) => p.id === line.product_id));
-        if (missing.length > 0) {
+        // A discontinued product keeps its stock and history but is hidden
+        // from selection and takes no new movement (DOCUMENT 17).
+        const problems = dto.lines
+          .map((line, index) => {
+            const product = products.find((p) => p.id === line.product_id);
+            const issue =
+              product === undefined
+                ? 'not_found'
+                : product.status === 'active'
+                  ? null
+                  : 'not_active';
+            return { index, issue };
+          })
+          .filter((entry) => entry.issue !== null);
+        if (problems.length > 0) {
           throw new AppException(ERROR_CODES.VALIDATION_FAILED, 422, {
             fields: Object.fromEntries(
-              missing.map(({ index }) => [`lines.${String(index)}.product_id`, ['not_found']]),
+              problems.map(({ index, issue }) => [
+                `lines.${String(index)}.product_id`,
+                [issue as string],
+              ]),
             ),
           });
         }

@@ -105,6 +105,10 @@ export const ERROR_CODES = {
   WAREHOUSE_HAS_STOCK: 'WAREHOUSE_HAS_STOCK',
   WAREHOUSE_INACTIVE: 'WAREHOUSE_INACTIVE',
   STOCK_INSUFFICIENT: 'STOCK_INSUFFICIENT',
+  // Phase 14 — DOCUMENT 17 rule 5 / FLOW 18: negative stock is enabled but
+  // the Admin has not acknowledged this movement's warning yet.
+  STOCK_NEGATIVE_WARNING: 'STOCK_NEGATIVE_WARNING',
+  IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -153,6 +157,8 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   WAREHOUSE_HAS_STOCK: 'error.warehouse_has_stock',
   WAREHOUSE_INACTIVE: 'error.warehouse_inactive',
   STOCK_INSUFFICIENT: 'error.stock_insufficient',
+  STOCK_NEGATIVE_WARNING: 'error.stock_negative_warning',
+  IDEMPOTENCY_KEY_REQUIRED: 'error.idempotency_key_required',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',

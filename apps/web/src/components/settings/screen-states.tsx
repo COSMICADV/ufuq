@@ -254,6 +254,11 @@ export function describeError(error: unknown, t: Translator): string {
       return t('error.warehouse_inactive');
     case 'STOCK_INSUFFICIENT':
       return t('error.stock_insufficient');
+    // Phase 14 — inventory.
+    case 'STOCK_NEGATIVE_WARNING':
+      return t('error.stock_negative_warning');
+    case 'IDEMPOTENCY_KEY_REQUIRED':
+      return t('error.idempotency_key_required');
     default:
       return t('state.error');
   }

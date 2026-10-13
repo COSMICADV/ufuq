@@ -6,7 +6,7 @@ import { LOCALES } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
 import { ApiError, fetchOne, issueKeys } from '../../lib/api-client';
-import { Alert, Button, Card, Field, Input, Select } from '../design-system';
+import { Alert, Button, Card, Field, Input, Select, Toggle } from '../design-system';
 import { ErrorState, LoadingState, Ltr, optionalError, SuccessNotice } from './screen-states';
 import { SettingsHeading } from './settings-shell';
 import { useResource } from './use-resource';
@@ -39,6 +39,8 @@ interface CompanyPayload {
   readonly default_locale: string;
   readonly fiscal_month_start_day: number;
   readonly correction_window_days: number;
+  /** DOCUMENT 17 rule 5 (Phase 14). */
+  readonly allow_negative_stock: boolean;
   readonly status: string;
 }
 
@@ -51,6 +53,8 @@ interface CompanyForm {
   default_locale: string;
   fiscal_month_start_day: string;
   correction_window_days: string;
+  /** 'true' | 'false' — kept as text like every other field of this form. */
+  allow_negative_stock: string;
 }
 
 function toForm(company: CompanyPayload): CompanyForm {
@@ -62,6 +66,7 @@ function toForm(company: CompanyPayload): CompanyForm {
     default_locale: company.default_locale,
     fiscal_month_start_day: String(company.fiscal_month_start_day),
     correction_window_days: String(company.correction_window_days),
+    allow_negative_stock: String(company.allow_negative_stock),
   };
 }
 
@@ -140,6 +145,7 @@ export function CompanySettings({ locale }: { readonly locale: Locale }): React.
         default_locale: values.default_locale,
         fiscal_month_start_day: values.fiscal_month_start_day,
         correction_window_days: values.correction_window_days,
+        allow_negative_stock: values.allow_negative_stock === 'true',
       },
     })
       .then((updated) => {
@@ -297,6 +303,24 @@ export function CompanySettings({ locale }: { readonly locale: Locale }): React.
                 set('correction_window_days', event.target.value);
               }}
               required
+            />
+          </Field>
+
+          {/* DOCUMENT 17 rule 5: off by default. When on, a movement that
+              would take a location below zero is still warned and must be
+              confirmed; transfers stay blocked either way. */}
+          <Field
+            label={t('settings.allow_negative_stock')}
+            helper={t('settings.allow_negative_stock_helper')}
+            {...optionalError(issueFor('allow_negative_stock'))}
+          >
+            <Toggle
+              name="allow_negative_stock"
+              label={t('settings.allow_negative_stock_toggle')}
+              checked={values.allow_negative_stock === 'true'}
+              onChange={(event) => {
+                set('allow_negative_stock', event.target.checked ? 'true' : 'false');
+              }}
             />
           </Field>
 

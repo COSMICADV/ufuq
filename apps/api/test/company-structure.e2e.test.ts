@@ -363,6 +363,8 @@ describe('GET /company', () => {
   it('exposes only the documented fields — no deleted_at, no created_by', async () => {
     const response = await as('adminA').get('/company');
     expect(Object.keys(response.body.data).sort()).toEqual([
+      // Phase 14 — DOCUMENT 17 rule 5's company setting.
+      'allow_negative_stock',
       'correction_window_days',
       'currency',
       'default_locale',

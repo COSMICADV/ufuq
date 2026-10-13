@@ -2902,3 +2902,111 @@ a.button {
     background: var(--bg-surface);
   }
 }
+
+/* ===========================================================================
+   Inventory — Phase 14 (DOCUMENT 17, DOCUMENT 04 B22–B24). Appended; nothing
+   above is changed. Logical properties and design tokens only. Functional
+   layout; the visual redesign comes later. Tables reuse `.warehouse-table`
+   (tablet: scroll inside the box, first column frozen; phone: cards).
+   =========================================================================== */
+.inventory-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+.inventory-filters > * {
+  min-inline-size: 0;
+}
+.inventory-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.inventory-inline > select {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+}
+.inventory-fieldset {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.inventory-fieldset legend {
+  padding-inline: var(--space-2);
+  font-weight: 600;
+}
+.inventory-image {
+  display: inline-block;
+  flex: none;
+  object-fit: cover;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-disabled);
+}
+.inventory-image--sm {
+  inline-size: 36px;
+  block-size: 36px;
+}
+.inventory-image--lg {
+  inline-size: 96px;
+  block-size: 96px;
+}
+.inventory-product-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  min-inline-size: 0;
+}
+.inventory-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: center;
+  margin-block-end: var(--space-3);
+}
+.inventory-header__text {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.inventory-header__text h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.inventory-header__meta,
+.inventory-header__total {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+}
+.inventory-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-4);
+}
+.inventory-sections > * {
+  min-inline-size: 0;
+}
+.inventory-subtitle {
+  margin-block: 0 var(--space-3);
+  overflow-wrap: anywhere;
+}
+.inventory-upload {
+  position: relative;
+  cursor: pointer;
+}
+.inventory-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}

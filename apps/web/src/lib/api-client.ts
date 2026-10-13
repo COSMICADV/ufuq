@@ -265,6 +265,9 @@ const KNOWN_ISSUES = new Set([
   // Phase 13 — warehouse transfers.
   'same_location',
   'duplicate_product',
+  // Phase 14 — inventory movements.
+  'use_transfer',
+  'not_allowed',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

@@ -282,11 +282,11 @@ describe('with every migration applied', () => {
         ],
         [
           { warehouse: A.main, type: 'transfer_out', qty: '1', balance: '121.500', group: A.stock },
-          /transfer_sign/,
+          /stock_movements_transfer_sign|stock_movements_direction/,
         ],
         [
           { warehouse: A.online, type: 'transfer_in', qty: '1', balance: '1', group: A.stock },
-          /transfer_in_cost/,
+          /stock_movements_transfer_in_cost|stock_movements_inbound_cost/,
         ],
       ] as const) {
         expect(await expectRejection(() => asApp(COMPANY_A, movement(COMPANY_A, o)))).toMatch(
@@ -295,7 +295,7 @@ describe('with every migration applied', () => {
       }
     });
 
-    it('stock never goes negative (no setting enables it yet)', async () => {
+    it('stock never goes negative while the company setting is off (the default)', async () => {
       expect(
         await expectRejection(() =>
           asApp(
@@ -308,7 +308,7 @@ describe('with every migration applied', () => {
             }),
           ),
         ),
-      ).toMatch(/balance_non_negative/);
+      ).toMatch(/would leave a negative balance/);
     });
   });
 

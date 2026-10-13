@@ -110,18 +110,30 @@ export interface Transfer {
   readonly created_at: string;
 }
 
+export interface LowStockRow {
+  readonly product: ProductRef;
+  readonly total_quantity: string;
+  readonly min_stock: string;
+  readonly stock_status: 'low_stock' | 'out_of_stock';
+}
+
 export interface WarehouseDashboard {
   readonly kpis: {
+    readonly total_products: number;
     readonly locations_total: number;
     readonly locations_active: number;
     readonly products_in_stock: number;
     readonly total_stock_units: string;
+    readonly low_stock_count: number;
+    readonly out_of_stock_count: number;
     readonly total_inventory_value: string;
   };
+  /** DOCUMENT 04 B19 "low-stock table", lowest first (Phase 14). */
+  readonly low_stock: readonly LowStockRow[];
   readonly by_location: readonly Warehouse[];
   readonly recent_movements: readonly Movement[];
   readonly activity_trend: readonly { readonly date: string; readonly movements: number }[];
-  /** What waits for Phase 14's product catalogue (minimum stock, catalogue count). */
+  /** Elements not available yet; empty since Phase 14. */
   readonly deferred: readonly string[];
 }
 

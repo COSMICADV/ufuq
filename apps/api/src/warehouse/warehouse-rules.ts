@@ -7,12 +7,14 @@
  *
  *   - **Quantities** are DECIMAL(15,3), money DECIMAL(15,2), always through
  *     `@ufuq/money` / exact fractions, never a JavaScript number.
- *   - **Weighted average cost** (DOCUMENT 17 rule 11, the V1 assumption —
- *     OD-13 itself is decided in Phase 14) recalculates on an inbound
+ *   - **Weighted average cost** (DOCUMENT 17 rule 11; OD-13 decided A in
+ *     Phase 14) recalculates on an inbound
  *     movement: `((old_qty × old_avg) + (in_qty × in_cost)) ÷ (old_qty +
  *     in_qty)`, computed exactly and rounded **once** to 0.01, half away from
  *     zero (approved decision). An outbound movement leaves the average as it
- *     is.
+ *     is. When the location held nothing — or, with negative stock enabled,
+ *     less than nothing — the arriving stock defines the average: the
+ *     formula's old term describes stock that is not there to be valued.
  *   - **A transfer** moves stock at the source's stored average cost: the
  *     same `unit_cost` on both legs, so the value leaving the source is the
  *     value arriving at the destination.
@@ -58,17 +60,20 @@ export function money(value: { toString(): string }): Decimal {
   return Decimal.parse(value.toString(), MONEY_SCALE);
 }
 
-/** DOCUMENT 17 rule 11 — the new average after an inbound movement, rounded once to 0.01. */
+/**
+ * DOCUMENT 17 rule 11 — the new average after an inbound movement, rounded
+ * once to 0.01. An empty or negative balance takes the inbound cost.
+ */
 export function weightedAverage(input: {
   readonly oldQuantity: Decimal;
   readonly oldAverage: Decimal;
   readonly inQuantity: Decimal;
   readonly inCost: Decimal;
 }): Decimal {
+  if (!input.oldQuantity.isPositive()) return input.inCost;
   const oldQty = Fraction.fromDecimal(input.oldQuantity);
   const inQty = Fraction.fromDecimal(input.inQuantity);
   const total = oldQty.add(inQty);
-  if (total.isZero()) return input.inCost;
   const value = oldQty
     .multiply(Fraction.fromDecimal(input.oldAverage))
     .add(inQty.multiply(Fraction.fromDecimal(input.inCost)));
@@ -116,7 +121,7 @@ export function validateTransfer(input: {
   return { issues, quantities };
 }
 
-/** DOCUMENT 17 rule 5: outbound beyond what is there is refused (no negative-stock setting exists). */
+/** DOCUMENT 17 rule 5: whether `requested` can leave `available` without going below zero. */
 export function isSufficient(available: Decimal, requested: Decimal): boolean {
   return requested.compare(available) <= 0;
 }

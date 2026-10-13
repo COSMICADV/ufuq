@@ -102,6 +102,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Why it matters:** FIFO and LIFO require lot-level tracking, which is a materially larger data model. Changing later means re-architecting the movement table.
 **Options:** A) Weighted average (V1 assumption). B) FIFO with lot tracking. C) Configurable.
 **Recommended:** A for V1. It is the common practice for SMEs in this market, and lot tracking is already on the future list where FIFO belongs.
+**Decision (approved, Phase 14):** A — weighted average cost. `average_cost` per (product, location) recalculates on every inbound movement as ((old_qty × old_avg) + (in_qty × in_cost)) ÷ (old_qty + in_qty), exact, rounded once to 0.01 half away from zero. Historical movements keep their own `unit_cost`; a transfer moves stock at the source location's average. FIFO, LIFO and lot-level valuation remain out of V1.
 
 ## OD-14 — Data retention periods
 **Status:** Blocking — before launch
@@ -153,7 +154,7 @@ Every requirement below needs a decision before or during development. Nothing h
 | OD-10 | Checklist-free task progress | — | 7 |
 | OD-11 | Half-day leave (decided: A, Phase 10) | — | 10 |
 | OD-12 | Primary key type | ✅ | 1 |
-| OD-13 | Valuation method | ✅ | 14 |
+| OD-13 | Valuation method (decided: A, Phase 14) | ✅ | 14 |
 | OD-14 | Retention periods | ✅ | pre-launch |
 | OD-15 | Pricing model | ✅ | 16 |
 | OD-16 | Mid-year leave pro-rating (decided: A, Phase 10) | — | 10 |

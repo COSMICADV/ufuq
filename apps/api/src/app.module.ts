@@ -23,6 +23,7 @@ import { MailModule } from './mail/mail.module.js';
 import { PerformanceModule } from './performance/performance.module.js';
 import { LeaveModule } from './leave/leave.module.js';
 import { PayrollModule } from './payroll/payroll.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
 import { WarehouseModule } from './warehouse/warehouse.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
@@ -43,7 +44,8 @@ import { TasksModule } from './tasks/tasks.module.js';
  * unified Requests Centre (`RequestsModule`); Phase 10 adds leave
  * (`LeaveModule`, with its carry-over job); Phase 11 adds salary and payroll
  * (`PayrollModule`); Phase 13 adds warehouses and transfers
- * (`WarehouseModule`). The remaining business
+ * (`WarehouseModule`); Phase 14 the inventory on top of it
+ * (`InventoryModule`). The remaining business
  * modules arrive one phase at a time (DOCUMENT 25).
  *
  * The three global guards run in this order for every request:
@@ -92,6 +94,7 @@ export class AppModule {
         LeaveModule.register(env, { scheduler: options.backgroundJobs }),
         PayrollModule,
         WarehouseModule,
+        InventoryModule.register({ scheduler: options.backgroundJobs }),
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

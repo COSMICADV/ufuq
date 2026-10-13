@@ -568,7 +568,10 @@ describe('per-location stock, derived from the ledger, never written directly', 
         .status,
     ).toBe(404);
     expect((await admin.patch(`/warehouses/${w.main}`).send({ quantity: '999' })).status).toBe(422);
-    expect((await admin.post('/stock-movements').send({})).status).toBe(404);
+    // Phase 14 adds POST /stock-movements, which creates a movement; nothing edits one.
+    expect(
+      (await admin.patch(`/stock-movements/${generateId()}`).send({ quantity: '1' })).status,
+    ).toBe(404);
     expect(await balance(p.fabric as string, w.main as string)).toEqual({
       quantity: '120.500',
       average_cost: '35.00',
@@ -924,7 +927,7 @@ describe('deactivation keeps history; movements never change', () => {
 });
 
 describe('the warehouse dashboard', () => {
-  it('reports what the ledger holds, exactly, and names what waits for Phase 14', async () => {
+  it('reports what the ledger holds, exactly', async () => {
     const r = await (await api(ADMIN_A)).get('/warehouses/dashboard');
     expect(r.status).toBe(200);
     const d = r.body.data;
@@ -943,12 +946,9 @@ describe('the warehouse dashboard', () => {
     expect(
       d.activity_trend.reduce((n: number, x: { movements: number }) => n + x.movements, 0),
     ).toBe(d.recent_movements.length > 0 ? await movementCount() : 0);
-    expect(d.deferred).toEqual([
-      'total_products',
-      'low_stock_count',
-      'out_of_stock_count',
-      'low_stock_table',
-    ]);
+    // Phase 14 completed the elements Phase 13 deferred (see inventory.e2e).
+    expect(d.deferred).toEqual([]);
+    expect(d.kpis).toMatchObject({ total_products: 2, low_stock_count: 0, out_of_stock_count: 0 });
     const b = await (await api(ADMIN_B)).get('/warehouses/dashboard');
     expect(b.body.data.kpis.total_stock_units).toBe('0.000');
   });

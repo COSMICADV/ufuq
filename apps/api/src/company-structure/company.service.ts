@@ -35,6 +35,8 @@ const EDITABLE_FIELDS = [
   // DOCUMENT 12 rule 13 — the correction window is a company policy, so it is
   // configured where the company's other policies are.
   'correction_window_days',
+  // DOCUMENT 17 rule 5 (Phase 14) — the negative-stock policy, likewise.
+  'allow_negative_stock',
 ] as const;
 
 type EditableField = (typeof EDITABLE_FIELDS)[number];
@@ -47,6 +49,7 @@ const COLUMN_BY_FIELD = {
   default_locale: 'defaultLocale',
   fiscal_month_start_day: 'fiscalMonthStartDay',
   correction_window_days: 'correctionWindowDays',
+  allow_negative_stock: 'allowNegativeStock',
 } as const satisfies Record<EditableField, keyof Company>;
 
 @Injectable()

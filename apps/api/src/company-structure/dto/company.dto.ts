@@ -14,6 +14,7 @@
 
 import { LOCALES } from '@ufuq/i18n';
 import {
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -121,4 +122,13 @@ export class UpdateCompanyDto {
   @Min(CORRECTION_WINDOW_DAYS_MIN)
   @Max(CORRECTION_WINDOW_DAYS_STORAGE_MAX)
   correction_window_days?: number;
+
+  /**
+   * DOCUMENT 17 rule 5 (Phase 14): when true, an outbound movement may take a
+   * location below zero — always warned (the Admin confirms it) and recorded.
+   * Default false. Transfers are blocked when the source is short either way.
+   */
+  @IsOptional()
+  @IsBoolean()
+  allow_negative_stock?: boolean;
 }

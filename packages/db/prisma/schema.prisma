@@ -362,6 +362,14 @@ enum AuditAction {
   WAREHOUSE_UPDATED                    @map("warehouse.updated")
   WAREHOUSE_DEACTIVATED                @map("warehouse.deactivated")
   STOCK_TRANSFER_EXECUTED              @map("stock.transfer_executed")
+  PRODUCT_CREATED                      @map("product.created")
+  PRODUCT_UPDATED                      @map("product.updated")
+  PRODUCT_DEACTIVATED                  @map("product.deactivated")
+  PRODUCT_CATEGORY_CREATED             @map("product_category.created")
+  STOCK_MOVEMENT_CREATED               @map("stock.movement_created")
+  STOCK_RECONCILIATION_RUN             @map("stock.reconciliation_run")
+  SUPPLIER_CREATED                     @map("supplier.created")
+  SUPPLIER_UPDATED                     @map("supplier.updated")
 
   @@map("audit_action")
 }
@@ -386,6 +394,9 @@ model Company {
   /// a CHECK requires at least 1 and sets no maximum (see the Phase 6
   /// critical-fix migration).
   correctionWindowDays Int           @default(7) @map("correction_window_days") @db.SmallInt
+  /// DOCUMENT 17 rule 5 — outbound movements may take a location below zero
+  /// only when this is true (Phase 14). Default false: blocked.
+  allowNegativeStock   Boolean       @default(false) @map("allow_negative_stock")
   status               CompanyStatus @default(active)
   /// Nullable: Phase 3 has no registration flow yet (DOCUMENT 25 Phase 16).
   createdBy            String?       @map("created_by") @db.Uuid
@@ -428,10 +439,12 @@ model Company {
   payrollAdjustments PayrollAdjustment[]
   idempotencyKeys    IdempotencyKey[]
 
-  warehouses     Warehouse[]
-  products       Product[]
-  productStock   ProductStock[]
-  stockMovements StockMovement[]
+  warehouses        Warehouse[]
+  products          Product[]
+  productStock      ProductStock[]
+  productCategories ProductCategory[]
+  suppliers         Supplier[]
+  stockMovements    StockMovement[]
 
   @@index([status])
   @@map("companies")
@@ -1576,23 +1589,81 @@ model Warehouse {
 
 /// DOCUMENT 06 §3.29 — the Phase 13 subset; Phase 14 adds the catalogue fields.
 model Product {
-  id        String        @id @db.Uuid
-  companyId String        @map("company_id") @db.Uuid
-  nameAr    String        @map("name_ar") @db.VarChar(200)
-  nameEn    String        @map("name_en") @db.VarChar(200)
-  sku       String        @db.VarChar(50)
-  unit      String        @db.VarChar(20)
-  status    ProductStatus @default(active)
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  id           String        @id @db.Uuid
+  companyId    String        @map("company_id") @db.Uuid
+  nameAr       String        @map("name_ar") @db.VarChar(200)
+  nameEn       String        @map("name_en") @db.VarChar(200)
+  sku          String        @db.VarChar(50)
+  categoryId   String?       @map("category_id") @db.Uuid
+  unit         String        @db.VarChar(20)
+  minStock     Decimal       @default(0) @map("min_stock") @db.Decimal(15, 3)
+  costPrice    Decimal       @default(0) @map("cost_price") @db.Decimal(15, 2)
+  sellingPrice Decimal       @default(0) @map("selling_price") @db.Decimal(15, 2)
+  supplierId   String?       @map("supplier_id") @db.Uuid
+  /// The image attachment's id (related_type 'product').
+  imagePath    String?       @map("image_path") @db.VarChar(500)
+  description  String?       @db.Text
+  status       ProductStatus @default(active)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt    DateTime?     @map("deleted_at") @db.Timestamptz(3)
 
-  company   Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  category  ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier  Supplier?        @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   stock     ProductStock[]
   movements StockMovement[]
 
   @@unique([companyId, sku])
+  @@index([categoryId])
+  @@index([supplierId])
   @@map("products")
+}
+
+model ProductCategory {
+  id        String    @id @db.Uuid
+  companyId String    @map("company_id") @db.Uuid
+  nameAr    String    @map("name_ar") @db.VarChar(200)
+  nameEn    String    @map("name_en") @db.VarChar(200)
+  parentId  String?   @map("parent_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  company  Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  parent   ProductCategory?  @relation("product_category_parent", fields: [parentId], references: [id], onDelete: Restrict)
+  children ProductCategory[] @relation("product_category_parent")
+  products Product[]
+
+  @@index([companyId])
+  @@map("product_categories")
+}
+
+model Supplier {
+  id            String         @id @db.Uuid
+  companyId     String         @map("company_id") @db.Uuid
+  name          String         @db.VarChar(200)
+  contactPerson String?        @map("contact_person") @db.VarChar(200)
+  phone         String?        @db.VarChar(30)
+  email         String?        @db.VarChar(254)
+  address       String?        @db.Text
+  status        SupplierStatus @default(active)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  products Product[]
+
+  @@index([companyId])
+  @@map("suppliers")
+}
+
+enum SupplierStatus {
+  active
+  inactive
+
+  @@map("supplier_status")
 }
 
 /// DOCUMENT 06 §3.31 — a derived cache. Its quantity must equal the latest
@@ -1632,6 +1703,8 @@ model StockMovement {
   reason          String?           @db.Text
   createdBy       String            @map("created_by") @db.Uuid
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Ledger order (Phase 14): assigned at insert, under the balance's row lock.
+  sequence        BigInt            @unique @default(autoincrement())
 
   company   Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
   product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -1642,5 +1715,6 @@ model StockMovement {
   @@index([warehouseId, createdAt])
   @@index([transferGroupId])
   @@index([productId, warehouseId, createdAt, id], map: "stock_movements_product_warehouse_idx")
+  @@index([productId, warehouseId, sequence], map: "stock_movements_product_warehouse_sequence_idx")
   @@map("stock_movements")
 }
