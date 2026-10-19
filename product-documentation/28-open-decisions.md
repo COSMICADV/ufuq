@@ -131,7 +131,7 @@ Every requirement below needs a decision before or during development. Nothing h
 **Recommended:** B for the first cohort of real customers, moving to C once the onboarding path is proven.
 
 ## OD-18 — Who is notified when there are multiple eligible approvers?
-**Status:** Non-blocking — Phase 15. Default: all eligible.
+**Status:** Decided — A (Phase 15): all eligible approvers are notified; the first decision marks the notification handled for the others.
 **Unclear:** Whether every admin gets every request notification, which becomes noise in a company with four admins.
 **Options:** A) All eligible approvers. B) The employee's direct manager first, escalating to admins after a delay. C) A designated approver per category.
 **Recommended:** A for V1, with B as the natural evolution once real usage shows the noise level.
@@ -159,7 +159,7 @@ Every requirement below needs a decision before or during development. Nothing h
 | OD-15 | Pricing model | ✅ | 16 |
 | OD-16 | Mid-year leave pro-rating (decided: A, Phase 10) | — | 10 |
 | OD-17 | Registration gating | ✅ | 16 |
-| OD-18 | Multi-approver notification | — | 15 |
+| OD-18 | Multi-approver notification (decided: A, Phase 15) | — | 15 |
 
 **Eleven blocking decisions.** OD-12 blocks Phase 1, so it is the first one needed.
 

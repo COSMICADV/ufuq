@@ -373,6 +373,7 @@ enum AuditAction {
   REPORT_EXPORTED                      @map("report.exported")
   REPORT_SNAPSHOT_GENERATED            @map("report.snapshot_generated")
   REPORT_SNAPSHOT_REGENERATED          @map("report.snapshot_regenerated")
+  SETTINGS_NOTIFICATION_CHANGED        @map("settings.notification_changed")
 
   @@map("audit_action")
 }
@@ -451,6 +452,10 @@ model Company {
 
   monthlyReports MonthlyEmployeeReport[]
   reportExports  ReportExport[]
+
+  notifications           Notification[]
+  notificationEvents      NotificationEvent[]
+  notificationPreferences CompanyNotificationSetting[]
 
   @@index([status])
   @@map("companies")
@@ -800,6 +805,8 @@ model User {
   stockMovements      StockMovement[]               @relation("stock_movement_created_by")
   monthlyReports      MonthlyEmployeeReport[]       @relation("monthly_report_generated_by")
   reportExports       ReportExport[]                @relation("report_export_requested_by")
+  notifications       Notification[]
+  notificationPrefs   CompanyNotificationSetting[]  @relation("notification_setting_updated_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -1804,4 +1811,131 @@ model ReportExport {
 
   @@index([companyId, requestedBy, createdAt])
   @@map("report_exports")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications — Phase 15 (DOCUMENT 06 §3.34, DOCUMENT 19)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 19's admin / manager and employee tables, plus DOCUMENT 18's
+/// background-export completion and failure.
+enum NotificationType {
+  leave_request_submitted
+  attendance_correction_submitted
+  request_submitted
+  task_overdue
+  low_stock
+  out_of_stock
+  goal_milestone
+  payroll_ready
+  employee_missing_checkout
+  tasks_need_reassignment
+  task_assigned
+  task_deadline_approaching
+  task_updated
+  leave_approved
+  leave_rejected
+  correction_approved
+  correction_rejected
+  request_reviewed
+  salary_finalized
+  goal_assigned
+  monthly_report_ready
+  missing_checkout
+  report_export_completed
+  report_export_failed
+
+  @@map("notification_type")
+}
+
+/// DOCUMENT 19 "Channels": `in_app` is V1; `email` and `push` are the
+/// architecture's future dispatchers and are never written in V1.
+enum NotificationChannel {
+  in_app
+  email
+  push
+
+  @@map("notification_channel")
+}
+
+enum NotificationPriority {
+  high
+  medium
+  low
+
+  @@map("notification_priority")
+}
+
+/// One row per processed source event: what makes delivery idempotent and
+/// DOCUMENT 19 rule 3's "once per crossing / once per task" enforceable.
+model NotificationEvent {
+  id        String   @id @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  eventKey  String   @map("event_key") @db.VarChar(200)
+  eventType String   @map("event_type") @db.VarChar(60)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  notifications Notification[]
+
+  @@unique([companyId, eventKey])
+  @@index([companyId, createdAt])
+  @@map("notification_events")
+}
+
+/// DOCUMENT 06 §3.34. Both language variants are stored (DOCUMENT 19 "Data").
+/// A summary (`groupCount` > 1, DOCUMENT 19 rule 4) links to the list of its
+/// type; the rows it absorbed carry `groupedIntoId` and leave the feed.
+model Notification {
+  id            String               @id @db.Uuid
+  companyId     String               @map("company_id") @db.Uuid
+  userId        String               @map("user_id") @db.Uuid
+  type          NotificationType
+  priority      NotificationPriority
+  /// `admin` (the admin / manager table) or `employee` — which side opens it.
+  audience      String               @db.VarChar(10)
+  channel       NotificationChannel  @default(in_app)
+  titleAr       String               @map("title_ar") @db.VarChar(300)
+  titleEn       String               @map("title_en") @db.VarChar(300)
+  bodyAr        String               @map("body_ar") @db.VarChar(1000)
+  bodyEn        String               @map("body_en") @db.VarChar(1000)
+  relatedType   String               @map("related_type") @db.VarChar(40)
+  relatedId     String?              @map("related_id") @db.Uuid
+  eventId       String?              @map("event_id") @db.Uuid
+  groupCount    Int                  @default(1) @map("group_count")
+  groupedIntoId String?              @map("grouped_into_id") @db.Uuid
+  handledAt     DateTime?            @map("handled_at") @db.Timestamptz(3)
+  readAt        DateTime?            @map("read_at") @db.Timestamptz(3)
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  user        User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  event       NotificationEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  groupedInto Notification?      @relation("notification_group", fields: [groupedIntoId], references: [id], onDelete: Cascade)
+  grouped     Notification[]     @relation("notification_group")
+
+  @@index([userId, readAt, createdAt])
+  @@index([userId, type, createdAt])
+  @@index([companyId, relatedType, relatedId])
+  @@index([companyId, createdAt])
+  @@index([groupedIntoId])
+  @@map("notifications")
+}
+
+/// DOCUMENT 19 rule 10 — per-event channel preferences in company settings.
+/// No row means the default: enabled.
+model CompanyNotificationSetting {
+  companyId String              @map("company_id") @db.Uuid
+  type      NotificationType
+  channel   NotificationChannel
+  enabled   Boolean
+  updatedBy String              @map("updated_by") @db.Uuid
+  updatedAt DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  updater User    @relation("notification_setting_updated_by", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@id([companyId, type, channel])
+  @@map("company_notification_settings")
 }

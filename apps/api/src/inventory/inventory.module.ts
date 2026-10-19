@@ -2,9 +2,9 @@
  * Phase 14 — inventory (DOCUMENT 25 Phase 14, DOCUMENT 17).
  *
  * Built on Phase 13's warehouse module: the ledger (`StockLedgerService`) is
- * imported, never duplicated. `INVENTORY_EVENT_SINK` is the Phase 15 seam:
- * notifications replace the deferred sink here, and nothing that detects a
- * crossing changes. The daily reconciliation job is registered only when
+ * imported, never duplicated. `INVENTORY_EVENT_SINK` is provided by the
+ * global notifications module (Phase 15): nothing that detects a crossing
+ * knows who is told. The daily reconciliation job is registered only when
  * background jobs are, exactly as for attendance, goals and leave.
  */
 
@@ -24,11 +24,7 @@ import {
   ProductsController,
   SuppliersController,
 } from './inventory.controller.js';
-import {
-  DeferredInventoryEventSink,
-  INVENTORY_EVENT_SINK,
-  InventoryEventPublisher,
-} from './inventory-events.js';
+import { InventoryEventPublisher } from './inventory-events.js';
 import { ProductsService } from './products.service.js';
 import { ReconciliationRunner, ReconciliationScheduler } from './reconciliation-jobs.js';
 import { ReconciliationService } from './reconciliation.service.js';
@@ -60,7 +56,6 @@ export class InventoryModule {
         SystemActorService,
         IdempotencyService,
         InventoryEventPublisher,
-        { provide: INVENTORY_EVENT_SINK, useClass: DeferredInventoryEventSink },
         ...(options.scheduler ? [ReconciliationScheduler] : []),
       ],
       exports: [ReconciliationService, ReconciliationRunner],

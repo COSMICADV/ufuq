@@ -4,16 +4,13 @@
  *
  * Phase 8 owns **detection**: every write that changes a goal's value works
  * out which of 25 / 50 / 75 / 100% it crossed (`milestonesCrossed`), and the
- * event says so. **Delivery** — `goal_milestone` notifications to the owner
- * and the creator — is DOCUMENT 19's notification pipeline, which DOCUMENT 25
- * schedules for Phase 15. Building a notifications table now would be that
- * phase built early.
+ * event says so. **Delivery** — `goal_milestone` notifications to the owner,
+ * the creator and the owner's manager, and `goal_assigned` to the owner of a
+ * new goal — is DOCUMENT 19's notification pipeline (Phase 15,
+ * `notifications/`), which implements {@link GoalEventSink}.
  *
- * So the boundary is a port. Events are handed to a {@link GoalEventSink}
- * **after the transaction commits** (DOCUMENT 19 rule 2: "No notification for
- * a rolled-back transaction"); Phase 15 replaces the sink with one that
- * resolves recipients and dispatches. Until then the deferred sink records
- * that delivery is pending and does nothing else.
+ * Events are handed to the sink **after the transaction commits** (DOCUMENT 19
+ * rule 2: "No notification for a rolled-back transaction").
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -31,32 +28,28 @@ export interface GoalMilestoneEvent {
   readonly milestone: Milestone;
   /** The true progress after the change that crossed it. */
   readonly progressPercent: string;
+  /** Who made the change that crossed it (DOCUMENT 19: no self-notification). */
+  readonly actorUserId: string;
   readonly occurredAt: Date;
 }
 
+/** DOCUMENT 19 `goal_assigned` — a new goal for its owner. */
+export interface GoalAssignedEvent {
+  readonly type: 'goal_assigned';
+  readonly companyId: string;
+  readonly goalId: string;
+  readonly employeeId: string;
+  readonly actorUserId: string;
+  readonly occurredAt: Date;
+}
+
+export type GoalEvent = GoalMilestoneEvent | GoalAssignedEvent;
+
 export interface GoalEventSink {
-  milestonesReached(events: readonly GoalMilestoneEvent[]): Promise<void>;
+  handle(events: readonly GoalEvent[]): Promise<void>;
 }
 
 export const GOAL_EVENT_SINK = Symbol('GOAL_EVENT_SINK');
-
-/**
- * The sink until Phase 15. It does not pretend to notify anybody: it records,
- * at debug level, that a milestone was detected and that delivery is deferred.
- */
-@Injectable()
-export class DeferredGoalEventSink implements GoalEventSink {
-  private readonly logger = new Logger('GoalMilestones');
-
-  milestonesReached(events: readonly GoalMilestoneEvent[]): Promise<void> {
-    for (const event of events) {
-      this.logger.debug(
-        `Goal ${event.goalId} crossed ${String(event.milestone)}% — notification delivery is Phase 15.`,
-      );
-    }
-    return Promise.resolve();
-  }
-}
 
 /**
  * Hands committed events to the sink. A sink failure is logged and swallowed:
@@ -69,12 +62,12 @@ export class GoalEventPublisher {
 
   constructor(@Inject(GOAL_EVENT_SINK) private readonly sink: GoalEventSink) {}
 
-  async publish(events: readonly GoalMilestoneEvent[]): Promise<void> {
+  async publish(events: readonly GoalEvent[]): Promise<void> {
     if (events.length === 0) {
       return;
     }
     try {
-      await this.sink.milestonesReached(events);
+      await this.sink.handle(events);
     } catch (error) {
       this.logger.error(
         `Goal milestone events could not be handed on: ${error instanceof Error ? error.message : String(error)}`,

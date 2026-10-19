@@ -60,6 +60,7 @@ import type { FieldIssue } from '../company-structure/tenant-scoped.service.js';
 import { parseCalendarDate } from '../company-structure/validation.js';
 import { InvitationMailer } from '../mail/invitation-mailer.js';
 import type { InvitationDelivery } from '../mail/invitation-mailer.js';
+import { OPEN_STATUSES } from '../tasks/task-rules.js';
 
 import type {
   CreateEmployeeDto,
@@ -73,6 +74,7 @@ import {
   employeeAuditSnapshot,
   employeePayload,
 } from './employee-payload.js';
+import { EmployeeEventPublisher } from './employee-events.js';
 import type { EmployeePayload, EmployeeRow } from './employee-payload.js';
 import { employeeScopeWhere, forbidden, listWhere, orderByFor } from './employee-query.js';
 
@@ -117,6 +119,7 @@ export class EmployeesService extends TenantScopedService {
     @Inject(InvitationService) private readonly invitations: InvitationService,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(InvitationMailer) private readonly mailer: InvitationMailer,
+    @Inject(EmployeeEventPublisher) private readonly events: EmployeeEventPublisher,
   ) {
     super(prisma, audit);
   }
@@ -330,7 +333,8 @@ export class EmployeesService extends TenantScopedService {
     dto: DeactivateEmployeeDto,
     origin: RequestOrigin,
   ): Promise<EmployeePayload> {
-    return this.tenant(ctx, async (tx) => {
+    let openTasks = 0;
+    const payload = await this.tenant(ctx, async (tx) => {
       const before = await this.loadForWrite(tx, ctx, id, 'employee.deactivate');
       if (before.status === 'inactive') {
         throw conflict(ERROR_CODES.EMPLOYEE_ALREADY_INACTIVE);
@@ -343,6 +347,15 @@ export class EmployeesService extends TenantScopedService {
       }
 
       await tx.employee.update({ where: { id: before.id }, data: { status: 'inactive' } });
+      // DOCUMENT 19 `tasks_need_reassignment`: DOCUMENT 13's open tasks the
+      // employee still holds, counted in this transaction.
+      openTasks = await tx.task.count({
+        where: {
+          assigneeEmployeeId: before.id,
+          deletedAt: null,
+          status: { in: [...OPEN_STATUSES] },
+        },
+      });
       let revokedSessions = 0;
       if (before.user) {
         await tx.user.update({ where: { id: before.user.id }, data: { status: 'deactivated' } });
@@ -375,6 +388,19 @@ export class EmployeesService extends TenantScopedService {
 
       return employeePayload(await this.reload(tx, before.id));
     });
+    if (openTasks > 0) {
+      await this.events.publish([
+        {
+          type: 'tasks_need_reassignment',
+          companyId: ctx.companyId,
+          employeeId: payload.id,
+          openTasks,
+          actorUserId: ctx.userId,
+          occurredAt: new Date(),
+        },
+      ]);
+    }
+    return payload;
   }
 
   async activate(

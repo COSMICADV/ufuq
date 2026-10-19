@@ -7,33 +7,25 @@
  * than holding a second copy of its rules. `AttachmentsService` comes from the
  * global attachments module.
  *
- * `REQUEST_EVENT_SINK` is the Phase 15 seam: notifications replace the
- * deferred sink here, and nothing that submits or decides a request changes.
+ * `REQUEST_EVENT_SINK` is provided by the global notifications module
+ * (Phase 15): nothing that submits or decides a request knows who is told.
  */
 
 import { Module } from '@nestjs/common';
 
+import { AttendanceEventPublisher } from '../attendance/attendance-events.js';
 import { CorrectionsService } from '../attendance/corrections.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { LeaveCoreModule } from '../leave/leave-core.module.js';
 import { PayrollGuardModule } from '../payroll/payroll-guard.module.js';
 
-import {
-  DeferredRequestEventSink,
-  REQUEST_EVENT_SINK,
-  RequestEventPublisher,
-} from './request-events.js';
+import { RequestEventPublisher } from './request-events.js';
 import { RequestsController } from './requests.controller.js';
 import { RequestsService } from './requests.service.js';
 
 @Module({
   imports: [AuthModule, LeaveCoreModule, PayrollGuardModule],
   controllers: [RequestsController],
-  providers: [
-    RequestsService,
-    CorrectionsService,
-    RequestEventPublisher,
-    { provide: REQUEST_EVENT_SINK, useClass: DeferredRequestEventSink },
-  ],
+  providers: [RequestsService, CorrectionsService, AttendanceEventPublisher, RequestEventPublisher],
 })
 export class RequestsModule {}

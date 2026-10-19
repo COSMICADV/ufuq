@@ -2,11 +2,11 @@
  * The settings section list — DOCUMENT 03 §3's `/admin/settings/*` subtree.
  *
  * The four sections Phase 4 owns, leave types (Phase 10, DOCUMENT 16), the
- * salary policy (Phase 11, DOCUMENT 15), performance (Phase 8, DOCUMENT 14)
- * and the audit log (DOCUMENT 21 "UI"). DOCUMENT 03 lists two more (roles,
- * notifications); each belongs to the phase that builds it, and listing them
- * now as disabled links would be exactly the "coming soon" panel DOCUMENT 27
- * RULE 26 forbids.
+ * salary policy (Phase 11, DOCUMENT 15), performance (Phase 8, DOCUMENT 14),
+ * notifications (Phase 15, DOCUMENT 19 rule 10) and the audit log (DOCUMENT
+ * 21 "UI"). DOCUMENT 03 lists one more (roles); it belongs to the phase that
+ * builds it, and listing it now as a disabled link would be exactly the
+ * "coming soon" panel DOCUMENT 27 RULE 26 forbids.
  */
 
 export const SETTINGS_SECTIONS = [
@@ -17,6 +17,7 @@ export const SETTINGS_SECTIONS = [
   'leave-types',
   'salary-policy',
   'performance',
+  'notifications',
   'audit-log',
 ] as const;
 

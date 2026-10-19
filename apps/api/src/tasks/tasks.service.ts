@@ -107,6 +107,8 @@ import {
   transitionRequiresReason,
 } from './task-rules.js';
 import type { TaskStatusValue } from './task-rules.js';
+import { TaskEventPublisher } from './task-events.js';
+import type { TaskEvent } from './task-events.js';
 
 export interface TaskList {
   readonly items: readonly TaskPayload[];
@@ -170,6 +172,7 @@ export class TasksService extends TenantScopedService {
     @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
     @Inject(GoalLedgerService) private readonly goalLedger: GoalLedgerService,
     @Inject(GoalEventPublisher) private readonly goalEvents: GoalEventPublisher,
+    @Inject(TaskEventPublisher) private readonly taskEvents: TaskEventPublisher,
   ) {
     super(prisma, audit);
   }
@@ -287,7 +290,7 @@ export class TasksService extends TenantScopedService {
     assertDateOrder(dto.start_date ?? null, dto.deadline ?? null);
     const checklist = dto.checklist ?? [];
 
-    return this.tenant(ctx, async (tx) => {
+    const created = await this.tenant(ctx, async (tx) => {
       const assignee = await this.requireAssignee(tx, ctx, dto.assignee_employee_id, 'task.create');
       const departmentId =
         dto.department_id === undefined ? assignee.departmentId : dto.department_id;
@@ -344,6 +347,18 @@ export class TasksService extends TenantScopedService {
         warnings: goalWarnings(goal, dto.deadline ?? null),
       };
     });
+    // DOCUMENT 19 `task_assigned`, after commit (FLOW 09: 🔔 assignee).
+    await this.taskEvents.publish([
+      {
+        type: 'task_assigned',
+        companyId: ctx.companyId,
+        taskId: created.id,
+        assigneeEmployeeId: dto.assignee_employee_id,
+        actorUserId: ctx.userId,
+        occurredAt: now,
+      },
+    ]);
+    return created;
   }
 
   async update(
@@ -354,6 +369,7 @@ export class TasksService extends TenantScopedService {
     now = new Date(),
   ): Promise<TaskWritePayload> {
     const events: GoalMilestoneEvent[] = [];
+    const taskEvents: TaskEvent[] = [];
     const result = await this.tenant(ctx, async (tx) => {
       const before = await this.loadForWrite(tx, ctx, id, 'task.update');
 
@@ -426,12 +442,30 @@ export class TasksService extends TenantScopedService {
         events.push(...(await this.syncGoals(tx, ctx, origin, now, [before.goalId, after.goalId])));
       }
 
+      // DOCUMENT 19: a reassignment is `task_assigned` for the new assignee
+      // (the previous one can no longer open the task, so is not told); any
+      // other edit is `task_updated` for the assignee.
+      const reassigned = after.assigneeEmployeeId !== before.assigneeEmployeeId;
+      const edited =
+        Object.keys(diffSnapshots(old, next, [...GENERAL_FIELDS, 'deadline']).newValues).length > 0;
+      if (reassigned || edited) {
+        taskEvents.push({
+          type: reassigned ? 'task_assigned' : 'task_updated',
+          companyId: ctx.companyId,
+          taskId: id,
+          assigneeEmployeeId: after.assigneeEmployeeId,
+          actorUserId: ctx.userId,
+          occurredAt: now,
+        });
+      }
+
       return {
         ...taskDetailPayload(after, await this.today(tx, now)),
         warnings: goalWarnings(goal, deadline),
       };
     });
     await this.goalEvents.publish(events);
+    await this.taskEvents.publish(taskEvents);
     return result;
   }
 
@@ -521,6 +555,18 @@ export class TasksService extends TenantScopedService {
       return taskDetailPayload(after, await this.today(tx, now));
     });
     await this.goalEvents.publish(events);
+    // A status set by someone else is an edit of the assignee's task
+    // (DOCUMENT 19 `task_updated`); the assignee's own change is suppressed.
+    await this.taskEvents.publish([
+      {
+        type: 'task_updated',
+        companyId: ctx.companyId,
+        taskId: id,
+        assigneeEmployeeId: result.assignee.id,
+        actorUserId: ctx.userId,
+        occurredAt: now,
+      },
+    ]);
     return result;
   }
 

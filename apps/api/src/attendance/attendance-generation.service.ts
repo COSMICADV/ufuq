@@ -37,6 +37,8 @@ import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import { PayrollPeriodGuard } from '../payroll/payroll-period-guard.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 
+import { AttendanceEventPublisher } from './attendance-events.js';
+import type { AttendanceEvent } from './attendance-events.js';
 import { calculateDay, scheduledEndInstant } from './calculation.js';
 import type { ScheduleDay, ScheduleSettings } from './calculation.js';
 import { dateValue } from './attendance-query.js';
@@ -84,6 +86,7 @@ export class AttendanceGenerationService {
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(SystemActorService) private readonly systemActor: SystemActorService,
     @Inject(PayrollPeriodGuard) private readonly periods: PayrollPeriodGuard,
+    @Inject(AttendanceEventPublisher) private readonly events: AttendanceEventPublisher,
   ) {}
 
   /**
@@ -100,7 +103,8 @@ export class AttendanceGenerationService {
     to: CalendarDate,
     now: Date = new Date(),
   ): Promise<GenerationResult> {
-    return this.audit.withTenant(companyId, async (tx) => {
+    const missingCheckouts: AttendanceEvent[] = [];
+    const result = await this.audit.withTenant(companyId, async (tx) => {
       const systemUserId = await this.systemActor.resolve(tx, companyId);
       const employees = await tx.employee.findMany({
         // A terminated employee's days are still generated up to their
@@ -130,7 +134,18 @@ export class AttendanceGenerationService {
             locked,
           );
           generated += result.generated;
-          closed += result.closed;
+          closed += result.closed.length;
+          // DOCUMENT 19 `missing_checkout` / `employee_missing_checkout`.
+          for (const record of result.closed) {
+            missingCheckouts.push({
+              type: 'missing_checkout',
+              companyId,
+              attendanceRecordId: record.id,
+              employeeId: employee.id,
+              date: record.date,
+              occurredAt: now,
+            });
+          }
         } catch (error) {
           if (error instanceof ScheduleIncompleteError) {
             // DOCUMENT 27 RULE 12: a missing weekday row is a configuration
@@ -148,6 +163,10 @@ export class AttendanceGenerationService {
 
       return { generated, closed, skipped };
     });
+    // After commit, as one batch: a night with many forgotten check-outs is
+    // one summary for each manager (DOCUMENT 19 "Bulk operation").
+    await this.events.publish(missingCheckouts);
+    return result;
   }
 
   private async generateForEmployee(
@@ -159,7 +178,7 @@ export class AttendanceGenerationService {
     systemUserId: string,
     now: Date,
     lockedMonths: ReadonlySet<string>,
-  ): Promise<{ generated: number; closed: number }> {
+  ): Promise<{ generated: number; closed: { id: string; date: string }[] }> {
     const context = await loadScheduleContext(tx, employee.workScheduleId, from, to);
     const joining = calendarDateIn(employee.joiningDate, 'UTC');
     const termination =
@@ -185,7 +204,7 @@ export class AttendanceGenerationService {
     const byDate = new Map(existing.map((row) => [row.date.toISOString().slice(0, 10), row]));
 
     let generated = 0;
-    let closed = 0;
+    const closed: { id: string; date: string }[] = [];
 
     for (const date of eachDay(from, to)) {
       if (lockedMonths.has(formatCalendarDate(date).slice(0, 7))) continue;
@@ -227,7 +246,7 @@ export class AttendanceGenerationService {
               oldValues: before,
               newValues: attendanceAuditSnapshot(updated),
             });
-            closed += 1;
+            closed.push({ id: record.id, date: key });
           }
         }
         // A day cancelled leave handed back before it happened: reconciled

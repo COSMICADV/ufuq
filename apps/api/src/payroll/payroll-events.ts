@@ -5,9 +5,9 @@
  * Phase 11 owns the moments; delivery is DOCUMENT 19's pipeline (Phase 15).
  * As for leave, goals and requests, an event is handed to the sink only
  * **after the transaction commits** (DOCUMENT 19 rule 2) and after its audit
- * record has been dispatched. The deferred sink records only that delivery is
- * pending. Events carry identifiers, never amounts: a notification payload is
- * no place for a salary (DOCUMENT 20 §8).
+ * record has been dispatched. The sink is the notification pipeline
+ * (`notifications/`). Events carry identifiers, never amounts: a notification
+ * payload is no place for a salary (DOCUMENT 20 §8).
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -32,18 +32,6 @@ export interface PayrollEventSink {
 }
 
 export const PAYROLL_EVENT_SINK = Symbol('PAYROLL_EVENT_SINK');
-
-@Injectable()
-export class DeferredPayrollEventSink implements PayrollEventSink {
-  private readonly logger = new Logger('PayrollEvents');
-
-  handle(event: PayrollEvent): Promise<void> {
-    this.logger.debug(
-      `${event.type} for period ${event.periodId} — notification delivery is Phase 15.`,
-    );
-    return Promise.resolve();
-  }
-}
 
 /** Hands committed events on; a sink failure is logged, never reported as the change failing. */
 @Injectable()

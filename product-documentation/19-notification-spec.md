@@ -97,5 +97,15 @@ Type must be a known enum value. Recipient must be an active user in the same co
 ## MOBILE BEHAVIOUR
 Bell with unread dot in the header. The notification list is grouped by day with unread items emphasised. Tapping navigates to the source and marks read. Pull to refresh. Push notifications are future work; the in-app centre is the V1 surface.
 
+## PHASE 15 IMPLEMENTATION NOTES (amendment)
+
+- **Export outcomes.** DOCUMENT 18 requires a notification when a background export completes or fails. Two types are added for the requester: `report_export_completed` (Low) and `report_export_failed` (Medium).
+- **Recipients** are resolved from the role grants (`role_permissions`) and scopes, in SQL: company-scope holders of the relevant permission, plus the subject's own manager for team-scope holders. Approvals: `leave.approve`, `attendance.approve_correction`, `request.review`. `task_overdue` and `tasks_need_reassignment`: `task.update`. `employee_missing_checkout`: `attendance.view`. `low_stock`, `out_of_stock`, `payroll_ready`: company scope only (`stock.view`, `payroll.view`). A team goal's `goal_milestone` goes to the goal's creator and the owner's manager, each only if their `goal.view` grant reaches the goal, never every admin. Employee notifications go to the employee's own active account.
+- **Deduplication** is by source-event identity: a stock crossing by the movement that crossed the line (a recovery and a new crossing is told again), an overdue or approaching task by its deadline, a goal milestone by goal and threshold (each of 25/50/75/100% once per goal).
+- **Grouping**: more than three unread notifications of one type for one user within an hour, or one operation concerning several records, become one summary that links to the list; the absorbed rows stay stored and leave the feed.
+- **Deadline approaching**: a deadline is a calendar day and a task is overdue once that day ends in the company's zone, so the 24 hours before are the deadline day itself. An hourly job reads DOCUMENT 13 rule 1's own query for overdue tasks.
+- **Reassignment** is `task_assigned` for the new assignee; the previous assignee can no longer open the task and is not told (rule 1).
+- **Retry**: a failed batch goes to a BullMQ queue (8 attempts, exponential backoff from 5 s); a batch that cannot be queued or runs out of retries is logged in full as `NOTIFICATION_FALLBACK`.
+
 ## FUTURE EXTENSIONS
 Email digests, web and mobile push, per-user channel preferences, quiet hours, in-notification actions (approve directly from the notification), WhatsApp or SMS for critical events, and escalation when a high-priority notification goes unread. None in V1.

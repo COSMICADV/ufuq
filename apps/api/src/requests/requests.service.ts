@@ -423,6 +423,16 @@ export class RequestsService extends TenantScopedService {
         userAgent: origin.userAgent,
       });
     });
+    // No one is told; the approvers' notifications stop implying it is pending.
+    await this.publish({
+      type: 'request_cancelled',
+      companyId: ctx.companyId,
+      requestId: id,
+      category: target.category,
+      employeeId: target.employeeId,
+      decision: null,
+      occurredAt: new Date(),
+    });
     return this.findOne(ctx, id);
   }
 

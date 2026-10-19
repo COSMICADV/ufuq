@@ -12,12 +12,13 @@ import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
 
+import { EmployeeEventPublisher } from './employee-events.js';
 import { EmployeesController } from './employees.controller.js';
 import { EmployeesService } from './employees.service.js';
 
 @Module({
   imports: [AuthModule],
   controllers: [EmployeesController],
-  providers: [EmployeesService],
+  providers: [EmployeesService, EmployeeEventPublisher],
 })
 export class EmployeesModule {}

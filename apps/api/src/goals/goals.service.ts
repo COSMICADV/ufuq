@@ -54,7 +54,7 @@ import type {
   UpdateGoalDto,
 } from './dto/goal.dto.js';
 import { GoalEventPublisher } from './goal-events.js';
-import type { GoalMilestoneEvent } from './goal-events.js';
+import type { GoalEvent, GoalMilestoneEvent } from './goal-events.js';
 import { GoalLedgerService } from './goal-ledger.service.js';
 import type { CompanyClock, GoalActor } from './goal-ledger.service.js';
 import {
@@ -198,7 +198,7 @@ export class GoalsService extends TenantScopedService {
     const rule = ruleFor(dto.type, dto.task_count_rule);
     assertTargetFits(dto.type, dto.target_value);
 
-    const events: GoalMilestoneEvent[] = [];
+    const events: GoalEvent[] = [];
     const result = await this.tenant(ctx, async (tx) => {
       const clock = await this.ledger.clock(tx, now);
       const owner = await this.requireOwner(tx, ctx, dto.employee_id);
@@ -230,6 +230,15 @@ export class GoalsService extends TenantScopedService {
         newValues: goalAuditSnapshot(created),
       });
       const opened = await this.ledger.open(tx, created, actor, clock);
+      // DOCUMENT 19 `goal_assigned`, then any milestone the opening value crossed.
+      events.push({
+        type: 'goal_assigned',
+        companyId: ctx.companyId,
+        goalId: id,
+        employeeId: owner,
+        actorUserId: ctx.userId,
+        occurredAt: now,
+      });
       events.push(...opened.events);
 
       return {

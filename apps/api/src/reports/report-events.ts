@@ -4,8 +4,8 @@
  * toast **plus a notification**) and "Performance" (a long-running export
  * runs as a background job **with a completion notification**).
  *
- * Phase 12 owns the moments; delivery is DOCUMENT 19's pipeline (Phase 15),
- * which replaces the deferred sink. As in every other module, an event is
+ * Phase 12 owns the moments; delivery is DOCUMENT 19's pipeline (Phase 15,
+ * `notifications/`). As in every other module, an event is
  * handed on only **after** its change has committed (DOCUMENT 19 rule 2) and
  * after its audit record has been dispatched. Events carry ids, never
  * figures.
@@ -38,16 +38,6 @@ export interface ReportEventSink {
 }
 
 export const REPORT_EVENT_SINK = Symbol('REPORT_EVENT_SINK');
-
-@Injectable()
-export class DeferredReportEventSink implements ReportEventSink {
-  private readonly logger = new Logger('ReportEvents');
-
-  handle(event: ReportEvent): Promise<void> {
-    this.logger.debug(`${event.type} — notification delivery is Phase 15.`);
-    return Promise.resolve();
-  }
-}
 
 /** Hands committed events on; a sink failure is logged, never reported as the change failing. */
 @Injectable()

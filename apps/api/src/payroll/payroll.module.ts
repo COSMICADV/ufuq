@@ -3,7 +3,7 @@
  *
  * `AuthModule` supplies `AuditDispatcher` (audit after commit).
  * `PayrollGuardModule` supplies the finalized-period check this module shares
- * with Attendance and Leave. `PAYROLL_EVENT_SINK` is the Phase 15 seam.
+ * with Attendance and Leave. `PAYROLL_EVENT_SINK` is provided by the global notifications module (Phase 15).
  */
 
 import { Module } from '@nestjs/common';
@@ -12,11 +12,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { IdempotencyService } from '../common/idempotency.js';
 
 import { EmployeeSalaryService } from './employee-salary.service.js';
-import {
-  DeferredPayrollEventSink,
-  PAYROLL_EVENT_SINK,
-  PayrollEventPublisher,
-} from './payroll-events.js';
+import { PayrollEventPublisher } from './payroll-events.js';
 import { PayrollGuardModule } from './payroll-guard.module.js';
 import {
   EmployeeSalaryController,
@@ -35,7 +31,6 @@ import { SalaryPolicyService } from './salary-policy.service.js';
     PayrollService,
     IdempotencyService,
     PayrollEventPublisher,
-    { provide: PAYROLL_EVENT_SINK, useClass: DeferredPayrollEventSink },
   ],
   exports: [PayrollService],
 })

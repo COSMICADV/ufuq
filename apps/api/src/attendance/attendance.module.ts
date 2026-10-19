@@ -19,6 +19,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { PayrollGuardModule } from '../payroll/payroll-guard.module.js';
 
 import { AttendanceController } from './attendance.controller.js';
+import { AttendanceEventPublisher } from './attendance-events.js';
 import { AttendanceGenerationService } from './attendance-generation.service.js';
 import { AttendanceScheduler } from './attendance-jobs.js';
 import { AttendanceService } from './attendance.service.js';
@@ -42,6 +43,7 @@ export class AttendanceModule {
       providers: [
         AttendanceService,
         CorrectionsService,
+        AttendanceEventPublisher,
         AttendanceGenerationService,
         SystemActorService,
         ...(options.scheduler ? [AttendanceScheduler] : []),

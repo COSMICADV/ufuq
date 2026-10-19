@@ -43,7 +43,7 @@ These record the lifecycle of the Requests Centre's own categories (Salary, Task
 ### Settings & data access
 `settings.company_updated` · `settings.schedule_changed` · `settings.performance_weights_changed` · `settings.notification_changed` · `report.exported` · `report.snapshot_generated` · `report.snapshot_regenerated` · `attachment.uploaded` · `attachment.deleted` · `attachment.accessed` (sensitive attachments only)
 
-`report.snapshot_generated` and `report.snapshot_regenerated` were added in Phase 12 (approved amendment): DOCUMENT 18 rule 2 requires regeneration to be audited and rule 8 above requires the monthly report job to leave records, and the list had no action for either. `report.exported` records the report key, format, row count, range, filters and scope; the snapshot actions record the employee, month, revision, provisional state and fingerprint, before and after.
+`settings.notification_changed` was added to the database enum in Phase 15 (catalogued here since V1, never added to the type); it records each per-event channel switch's old and new value. `report.snapshot_generated` and `report.snapshot_regenerated` were added in Phase 12 (approved amendment): DOCUMENT 18 rule 2 requires regeneration to be audited and rule 8 above requires the monthly report job to leave records, and the list had no action for either. `report.exported` records the report key, format, row count, range, filters and scope; the snapshot actions record the employee, month, revision, provisional state and fingerprint, before and after.
 
 ## RECORD CONTENT
 

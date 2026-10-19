@@ -285,6 +285,14 @@ Phase 12 (amendment):
 | POST | `/notifications/{id}/read` |
 | POST | `/notifications/read-all` |
 
+Phase 15 (amendment):
+
+- **Own notifications only.** The four endpoints need only an authenticated caller and act on the caller's own notifications; none takes a user id. Another user's notification id is 404.
+- **`GET /notifications`** — `?page`, `?per_page` (≤ 50, default 20), `?unread=true`. Newest first. A summary stands in for the rows it absorbed. Each item: `id`, `type`, `priority`, `audience` (`admin` | `employee`), `title` and `body` as `{ ar, en }` (both stored languages), `related` `{ type, id, available, meta }` (`id` null on a summary; `available` false when the source was deleted; `meta` carries the day of an attendance record, a report's month or an export's report key), `group_count`, `is_summary`, `read_at`, `handled_at`, `created_at`.
+- **`GET /notifications/unread-count`** → `{ count }`, the caller's unread feed items.
+- **`POST /notifications/{id}/read`** → the item, idempotent; reading a summary reads the rows it stands for. **`POST /notifications/read-all`** → `{ updated }`.
+- **`GET /settings/notifications`** (settings.view) and **`PATCH /settings/notifications`** (settings.update, `{ preferences: [{ type, channel: "in_app", enabled }] }`, audited `settings.notification_changed`) — DOCUMENT 19 rule 10's company preferences. Only `in_app` is accepted in V1.
+
 ### 4.14 Attachments
 | Method | Endpoint | Notes |
 |---|---|---|

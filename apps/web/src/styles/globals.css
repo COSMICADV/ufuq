@@ -3432,3 +3432,219 @@ a.button {
     text-decoration: none;
   }
 }
+
+/* ===========================================================================
+   Phase 15 — notifications (DOCUMENT 19 "Mobile behaviour", DOCUMENT 04 C14,
+   DOCUMENT 11 §7). The current design system's tokens and patterns only; the
+   header strip is the minimum every screen needs for the bell, not the
+   product navigation. Logical properties throughout, so it lays out
+   right-to-left and left-to-right alike.
+   =========================================================================== */
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: 56px;
+  padding-inline: var(--space-4);
+  background: var(--bg-surface);
+  border-block-end: 1px solid var(--border-subtle);
+}
+.app-topbar__home {
+  color: var(--green-deep-700);
+  font-weight: 700;
+  text-decoration: none;
+}
+.app-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+.app-topbar .language-switch {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+.notification-bell:hover {
+  background: var(--sage-100);
+}
+.notification-bell.has-unread {
+  color: var(--green-deep-700);
+}
+.notification-bell__badge {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 2px;
+  min-inline-size: 18px;
+  block-size: 18px;
+  padding-inline: 4px;
+  border-radius: var(--radius-full);
+  background: var(--green-primary-600);
+  color: var(--text-on-primary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.notification-center__actions {
+  flex-wrap: wrap;
+}
+.notification-filter {
+  display: inline-flex;
+  justify-self: start;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+.notification-filter button {
+  min-block-size: 36px;
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.notification-filter button.is-active {
+  background: var(--sage-100);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.notification-pull {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+.notification-day {
+  display: grid;
+  gap: var(--space-2);
+}
+.notification-day h2 {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-body-sm);
+  font-weight: 600;
+}
+.notification-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+.notification-item.is-unread {
+  border-color: var(--border-default);
+  background: var(--bg-surface-raised);
+}
+.notification-item__open {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.notification-item__dot {
+  flex: none;
+  inline-size: 8px;
+  block-size: 8px;
+  margin-block-start: 9px;
+  border-radius: var(--radius-full);
+  background: transparent;
+}
+.notification-item.is-unread .notification-item__dot {
+  background: var(--green-primary-600);
+}
+.notification-item__text {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.notification-item__title {
+  overflow-wrap: anywhere;
+}
+.notification-item.is-unread .notification-item__title {
+  font-weight: 700;
+}
+.notification-item__body {
+  color: var(--text-secondary);
+  font-size: var(--font-body-sm);
+  overflow-wrap: anywhere;
+}
+.notification-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--font-caption);
+}
+.notification-item.is-unavailable .notification-item__open {
+  cursor: default;
+}
+.notification-item__read {
+  flex: none;
+}
+@media (max-width: 599px) {
+  .notification-item {
+    flex-direction: column;
+  }
+  .notification-item__read {
+    align-self: flex-end;
+  }
+}
+
+.notification-settings {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.notification-settings li {
+  display: grid;
+  gap: var(--space-1);
+}
+.notification-settings__meta {
+  color: var(--text-tertiary);
+  font-size: var(--font-caption);
+}
+
+@media print {
+  .app-topbar {
+    display: none;
+  }
+}

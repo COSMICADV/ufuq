@@ -4,12 +4,11 @@
  * category".
  *
  * Phase 9 owns the moments; **delivery** is DOCUMENT 19's notification
- * pipeline, which DOCUMENT 25 schedules for Phase 15. As for goal milestones
- * (Phase 8), the boundary is a port: events are handed to a
- * {@link RequestEventSink} **after the transaction commits** (DOCUMENT 19
- * rule 2: no notification for a rolled-back transaction), and Phase 15
- * replaces the deferred sink with one that resolves recipients and
- * dispatches.
+ * pipeline (Phase 15, `notifications/`), which implements
+ * {@link RequestEventSink}. Events are handed to it **after the transaction
+ * commits** (DOCUMENT 19 rule 2: no notification for a rolled-back
+ * transaction). `request_cancelled` notifies nobody: it tells the pipeline
+ * that the approvers' notifications no longer describe pending work.
  *
  * Attendance corrections are not published here: their notifications are
  * DOCUMENT 19's `attendance_correction_submitted` / `correction_approved` /
@@ -21,7 +20,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { RequestCategoryValue } from './request-rules.js';
 
 export interface RequestEvent {
-  readonly type: 'request_submitted' | 'request_reviewed';
+  readonly type: 'request_submitted' | 'request_reviewed' | 'request_cancelled';
   readonly companyId: string;
   readonly requestId: string;
   readonly category: RequestCategoryValue;
@@ -37,19 +36,6 @@ export interface RequestEventSink {
 }
 
 export const REQUEST_EVENT_SINK = Symbol('REQUEST_EVENT_SINK');
-
-/** The sink until Phase 15: it records that delivery is deferred, and nothing else. */
-@Injectable()
-export class DeferredRequestEventSink implements RequestEventSink {
-  private readonly logger = new Logger('RequestEvents');
-
-  handle(event: RequestEvent): Promise<void> {
-    this.logger.debug(
-      `${event.type} for request ${event.requestId} — notification delivery is Phase 15.`,
-    );
-    return Promise.resolve();
-  }
-}
 
 /**
  * Hands committed events to the sink. A sink failure is logged and swallowed:

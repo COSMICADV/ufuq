@@ -278,6 +278,16 @@ Indexes: `(company_id, product_id, created_at)` · `(warehouse_id, created_at)` 
 `id`, `company_id`, `user_id`, `type`, `title_ar`, `title_en`, `body_ar`, `body_en`, `related_type`, `related_id`, `channel` ENUM(in_app, email, push), `read_at`, `created_at`.
 Index `(user_id, read_at, created_at)`.
 
+Phase 15 (amendment): `priority` ENUM(high, medium, low) — DOCUMENT 19's priority; `audience` (`admin` | `employee`) — which side of the product the source link opens; `event_id` → `notification_events`; `group_count` INT (1; more for a DOCUMENT 19 rule 4 summary) and `grouped_into_id` → `notifications` (the summary a row was absorbed into; such rows leave the feed); `handled_at` — set on the other approvers' copies when the first decision resolves the source (DOCUMENT 19 "Multiple approvers"); `updated_at`. `type` is ENUM `notification_type` (DOCUMENT 19's 22 types plus `report_export_completed` / `report_export_failed`). `related_type` is one of `request`, `task`, `goal`, `product`, `payroll_period`, `attendance_record`, `employee`, `monthly_report`, `report_export`; `related_id` may be null only on a summary. The database refuses a recipient who is not an active, non-system user of the same company (on insert) and any change to the recipient, type, audience, channel or source kind. Further indexes: `(user_id, type, created_at)`, `(company_id, related_type, related_id)`, `(company_id, created_at)`, `(grouped_into_id)`.
+
+### 3.34a notification_events (Phase 15)
+`id`, `company_id`, `event_key`, `event_type`, `created_at`. Unique `(company_id, event_key)`.
+One row per processed source event: what makes delivery idempotent (a retried event creates nothing twice) and DOCUMENT 19 rule 3's "once per crossing / once per task" enforceable. Never updated; purged with notifications after the retention window.
+
+### 3.34b company_notification_settings (Phase 15)
+`company_id`, `type` ENUM `notification_type`, `channel` ENUM(in_app, email, push), `enabled` BOOL, `updated_by`, `updated_at`. Primary key `(company_id, type, channel)`.
+DOCUMENT 19 rule 10's per-event channel preferences. A missing row is the default: enabled. V1 writes only `in_app`. Never deleted.
+
 ### 3.35 audit_logs
 `id`, `company_id`, `user_id`, `action`, `entity_type`, `entity_id`, `old_values` JSON, `new_values` JSON, `ip_address`, `user_agent`, `created_at`.
 **Append-only.** No UPDATE, no DELETE, no soft delete.
@@ -335,7 +345,7 @@ users 1─n notifications        users 1─n audit_logs
 | `tasks(assignee_employee_id, status)` | my-tasks list |
 | `tasks(company_id, deadline)` | overdue and approaching-deadline widgets |
 | `stock_movements(company_id, product_id, created_at)` | product movement history |
-| `notifications(user_id, read_at)` | unread badge |
+| `notifications(user_id, read_at, created_at)` | unread badge and list (Phase 15: DOCUMENT 19's index) |
 | `audit_logs(entity_type, entity_id)` | record history view |
 | `leave_requests(company_id, status)` | pending approvals |
 

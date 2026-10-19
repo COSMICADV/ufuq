@@ -10,7 +10,7 @@
  * With background jobs on, the `reports` BullMQ queue runs the hourly
  * monthly-snapshot job and the queued exports. Without them (the test suites,
  * a local stack) no worker starts and a queued export runs in this process.
- * `REPORT_EVENT_SINK` is the Phase 15 seam.
+ * `REPORT_EVENT_SINK` is provided by the global notifications module (Phase 15).
  */
 
 import { Module } from '@nestjs/common';
@@ -29,11 +29,7 @@ import {
   ReportExportRunner,
   ReportExportService,
 } from './report-exports.js';
-import {
-  DeferredReportEventSink,
-  REPORT_EVENT_SINK,
-  ReportEventPublisher,
-} from './report-events.js';
+import { ReportEventPublisher } from './report-events.js';
 import { MonthlyReportRunner, ReportJobsScheduler } from './report-jobs.js';
 import {
   DEFAULT_REPORT_RATE_LIMIT,
@@ -68,7 +64,6 @@ export class ReportsModule {
         RateLimitService,
         ReportRateLimitGuard,
         ReportEventPublisher,
-        { provide: REPORT_EVENT_SINK, useClass: DeferredReportEventSink },
         { provide: REPORT_RATE_LIMIT, useValue: DEFAULT_REPORT_RATE_LIMIT },
         { provide: REPORT_EXPORT_LIMITS, useValue: DEFAULT_EXPORT_LIMITS },
         ...(options.scheduler

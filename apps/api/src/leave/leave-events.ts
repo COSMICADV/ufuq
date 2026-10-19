@@ -5,8 +5,9 @@
  *
  * Phase 10 owns the moments; delivery is DOCUMENT 19's pipeline (Phase 15).
  * As for goals and requests, events are handed to a sink **after the
- * transaction commits** (DOCUMENT 19 rule 2), and the deferred sink only
- * records that delivery is pending.
+ * transaction commits** (DOCUMENT 19 rule 2). The sink is the notification
+ * pipeline (`notifications/`). `leave_cancelled` notifies nobody: it marks
+ * the approvers' notifications handled.
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -28,18 +29,6 @@ export interface LeaveEventSink {
 }
 
 export const LEAVE_EVENT_SINK = Symbol('LEAVE_EVENT_SINK');
-
-@Injectable()
-export class DeferredLeaveEventSink implements LeaveEventSink {
-  private readonly logger = new Logger('LeaveEvents');
-
-  handle(event: LeaveEvent): Promise<void> {
-    this.logger.debug(
-      `${event.type} for leave ${event.leaveRequestId} — notification delivery is Phase 15.`,
-    );
-    return Promise.resolve();
-  }
-}
 
 /** Hands committed events on; a sink failure is logged, never reported as the change failing. */
 @Injectable()

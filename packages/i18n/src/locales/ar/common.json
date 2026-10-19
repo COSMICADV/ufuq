@@ -412,7 +412,9 @@
     "salary_policy": "سياسة الرواتب",
     "allow_negative_stock": "المخزون السالب",
     "allow_negative_stock_helper": "مُعطّل افتراضياً. عند تفعيله، تُنبَّه أي حركة تجعل رصيد موقع أقل من صفر ويلزم تأكيدها، ثم تُسجَّل. التحويلات تُمنع دائماً إذا لم يكفِ مخزون المصدر.",
-    "allow_negative_stock_toggle": "السماح بالمخزون السالب"
+    "allow_negative_stock_toggle": "السماح بالمخزون السالب",
+    "notifications": "الإشعارات",
+    "notifications_description": "الإشعارات التي تصل إلى الشركة."
   },
   "validation": {
     "required": "هذا الحقل مطلوب",
@@ -1183,7 +1185,12 @@
     "cancel_reason": "السبب",
     "cancelled_approved_notice": "تم إلغاء الإجازة المعتمدة.",
     "holiday_affects_title": "توجد إجازات معتمدة تغطي هذه العطلة",
-    "holiday_affects_note": "لا يُعاد حساب هذه الطلبات المعتمدة. راجعها وعدّل الرصيد صراحةً إن وجب إرجاع يوم:"
+    "holiday_affects_note": "لا يُعاد حساب هذه الطلبات المعتمدة. راجعها وعدّل الرصيد صراحةً إن وجب إرجاع يوم:",
+    "col_year": "السنة",
+    "col_total": "الإجمالي",
+    "col_used": "المستخدم",
+    "col_pending": "قيد الانتظار",
+    "col_remaining": "المتبقي"
   },
   "payroll": {
     "title": "الرواتب",
@@ -1923,5 +1930,302 @@
       "open_mine": "تقريري الشهري"
     },
     "open_catalogue": "التقارير"
+  },
+  "notifications": {
+    "content": {
+      "leave_request_submitted": {
+        "title": "طلب إجازة جديد",
+        "body": "طلب {employee} إجازة ({leave_type}) من {from} إلى {to}."
+      },
+      "attendance_correction_submitted": {
+        "title": "طلب تصحيح حضور جديد",
+        "body": "طلب {employee} تصحيح الحضور ليوم {date}."
+      },
+      "request_submitted": {
+        "title": "طلب جديد ({category})",
+        "body": "قدّم {employee} طلبًا: {subject}."
+      },
+      "task_overdue": {
+        "title": "مهمة متأخرة",
+        "body": "تجاوزت المهمة «{task}» المسندة إلى {employee} موعدها النهائي ({deadline})."
+      },
+      "low_stock": {
+        "title": "مخزون منخفض",
+        "body": "وصل مخزون {product} إلى الحد الأدنى أو أقل."
+      },
+      "out_of_stock": {
+        "title": "نفاد المخزون",
+        "body": "نفد مخزون {product}."
+      },
+      "goal_milestone": {
+        "title": "تحقق إنجاز في هدفك",
+        "body": "وصل هدفك «{goal}» إلى {milestone}%."
+      },
+      "goal_milestone_team": {
+        "title": "إنجاز في هدف للفريق",
+        "body": "وصل هدف {employee} «{goal}» إلى {milestone}%."
+      },
+      "payroll_ready": {
+        "title": "الرواتب جاهزة للمراجعة",
+        "body": "تم إنشاء رواتب {period} وهي جاهزة للمراجعة."
+      },
+      "employee_missing_checkout": {
+        "title": "انصراف غير مسجّل",
+        "body": "لم يسجّل {employee} الانصراف يوم {date}."
+      },
+      "tasks_need_reassignment": {
+        "title": "مهام تحتاج إلى إعادة إسناد",
+        "body": "تم إيقاف {employee} وما زالت لديه مهام مفتوحة: {count}."
+      },
+      "task_assigned": {
+        "title": "مهمة جديدة مسندة إليك",
+        "body": "أُسندت إليك المهمة «{task}»."
+      },
+      "task_deadline_approaching": {
+        "title": "موعد مهمة يقترب",
+        "body": "موعد تسليم المهمة «{task}» هو {deadline}."
+      },
+      "task_updated": {
+        "title": "تم تحديث مهمة",
+        "body": "تم تحديث المهمة «{task}»."
+      },
+      "leave_approved": {
+        "title": "تمت الموافقة على إجازتك",
+        "body": "تمت الموافقة على إجازتك ({leave_type}) من {from} إلى {to}."
+      },
+      "leave_rejected": {
+        "title": "تم رفض طلب إجازتك",
+        "body": "تم رفض طلب إجازتك ({leave_type}) من {from} إلى {to}."
+      },
+      "correction_approved": {
+        "title": "تمت الموافقة على تصحيح الحضور",
+        "body": "تمت الموافقة على تصحيح حضورك ليوم {date}."
+      },
+      "correction_rejected": {
+        "title": "تم رفض تصحيح الحضور",
+        "body": "تم رفض تصحيح حضورك ليوم {date}."
+      },
+      "request_approved": {
+        "title": "تمت الموافقة على طلبك",
+        "body": "تمت الموافقة على طلبك «{subject}»."
+      },
+      "request_rejected": {
+        "title": "تم رفض طلبك",
+        "body": "تم رفض طلبك «{subject}»."
+      },
+      "salary_finalized": {
+        "title": "تم اعتماد راتبك",
+        "body": "تم اعتماد راتبك عن {period}."
+      },
+      "goal_assigned": {
+        "title": "هدف جديد",
+        "body": "لديك هدف جديد: «{goal}»."
+      },
+      "monthly_report_ready": {
+        "title": "تقريرك الشهري جاهز",
+        "body": "تقريرك الشهري عن {period} جاهز."
+      },
+      "missing_checkout": {
+        "title": "لم تسجّل الانصراف",
+        "body": "لم تسجّل الانصراف يوم {date}. أُغلق يومك عند نهاية دوامك المحددة؛ قدّم طلب تصحيح إن لم يكن ذلك صحيحًا."
+      },
+      "report_export_completed": {
+        "title": "التصدير جاهز",
+        "body": "ملف تصدير {report} جاهز للتنزيل."
+      },
+      "report_export_failed": {
+        "title": "تعذّر التصدير",
+        "body": "تعذّر إنشاء ملف تصدير {report}. حاول مرة أخرى من التقرير."
+      }
+    },
+    "summary": {
+      "leave_request_submitted": {
+        "title": "طلبات إجازة جديدة: {count}",
+        "body": "بانتظار المراجعة: {count} من طلبات الإجازة."
+      },
+      "attendance_correction_submitted": {
+        "title": "طلبات تصحيح حضور جديدة: {count}",
+        "body": "بانتظار المراجعة: {count} من طلبات تصحيح الحضور."
+      },
+      "request_submitted": {
+        "title": "طلبات جديدة: {count}",
+        "body": "بانتظار المراجعة: {count} من الطلبات."
+      },
+      "task_overdue": {
+        "title": "مهام متأخرة: {count}",
+        "body": "عدد المهام التي تجاوزت موعدها النهائي: {count}."
+      },
+      "low_stock": {
+        "title": "مخزون منخفض: {count}",
+        "body": "عدد المنتجات التي وصلت إلى الحد الأدنى للمخزون أو أقل: {count}."
+      },
+      "out_of_stock": {
+        "title": "نفاد المخزون: {count}",
+        "body": "عدد المنتجات التي نفد مخزونها: {count}."
+      },
+      "goal_milestone": {
+        "title": "إنجازات الأهداف: {count}",
+        "body": "عدد إنجازات الأهداف المتحققة: {count}."
+      },
+      "payroll_ready": {
+        "title": "رواتب جاهزة: {count}",
+        "body": "عدد دورات الرواتب الجاهزة للمراجعة: {count}."
+      },
+      "employee_missing_checkout": {
+        "title": "انصرافات غير مسجّلة: {count}",
+        "body": "عدد حالات الانصراف غير المسجّلة: {count}."
+      },
+      "tasks_need_reassignment": {
+        "title": "مهام تحتاج إلى إعادة إسناد: {count}",
+        "body": "عدد الموظفين الموقوفين الذين ما زالت لديهم مهام مفتوحة: {count}."
+      },
+      "task_assigned": {
+        "title": "مهام جديدة مسندة إليك: {count}",
+        "body": "عدد المهام الجديدة المسندة إليك: {count}."
+      },
+      "task_deadline_approaching": {
+        "title": "مهام يقترب موعدها: {count}",
+        "body": "عدد مهامك التي يقترب موعد تسليمها: {count}."
+      },
+      "task_updated": {
+        "title": "مهام محدّثة: {count}",
+        "body": "عدد مهامك التي تم تحديثها: {count}."
+      },
+      "leave_approved": {
+        "title": "إجازات تمت الموافقة عليها: {count}",
+        "body": "عدد طلبات إجازتك التي تمت الموافقة عليها: {count}."
+      },
+      "leave_rejected": {
+        "title": "إجازات مرفوضة: {count}",
+        "body": "عدد طلبات إجازتك المرفوضة: {count}."
+      },
+      "correction_approved": {
+        "title": "تصحيحات تمت الموافقة عليها: {count}",
+        "body": "عدد تصحيحات حضورك التي تمت الموافقة عليها: {count}."
+      },
+      "correction_rejected": {
+        "title": "تصحيحات مرفوضة: {count}",
+        "body": "عدد تصحيحات حضورك المرفوضة: {count}."
+      },
+      "request_reviewed": {
+        "title": "طلبات تمت مراجعتها: {count}",
+        "body": "عدد طلباتك التي تمت مراجعتها: {count}."
+      },
+      "salary_finalized": {
+        "title": "رواتب معتمدة: {count}",
+        "body": "عدد رواتبك التي تم اعتمادها: {count}."
+      },
+      "goal_assigned": {
+        "title": "أهداف جديدة: {count}",
+        "body": "عدد أهدافك الجديدة: {count}."
+      },
+      "monthly_report_ready": {
+        "title": "تقارير شهرية جاهزة: {count}",
+        "body": "عدد تقاريرك الشهرية الجاهزة: {count}."
+      },
+      "missing_checkout": {
+        "title": "انصرافات غير مسجّلة: {count}",
+        "body": "عدد الأيام التي لم تسجّل فيها الانصراف: {count}."
+      },
+      "report_export_completed": {
+        "title": "ملفات تصدير جاهزة: {count}",
+        "body": "عدد ملفات التصدير الجاهزة للتنزيل: {count}."
+      },
+      "report_export_failed": {
+        "title": "تصديرات تعذّر إنشاؤها: {count}",
+        "body": "عدد ملفات التصدير التي تعذّر إنشاؤها: {count}."
+      }
+    },
+    "categories": {
+      "attendance": "حضور",
+      "leave": "إجازة",
+      "salary": "راتب",
+      "task": "مهمة",
+      "general": "عام"
+    },
+    "reports": {
+      "attendance": "تقرير الحضور",
+      "performance": "تقرير الأداء",
+      "tasks": "تقرير المهام",
+      "goals": "تقرير الأهداف",
+      "payroll": "تقرير الرواتب",
+      "inventory": "تقرير المخزون",
+      "warehouse": "تقرير المخازن",
+      "stock-movements": "تقرير حركات المخزون"
+    },
+    "types": {
+      "leave_request_submitted": "تقديم طلب إجازة",
+      "attendance_correction_submitted": "تقديم طلب تصحيح حضور",
+      "request_submitted": "تقديم طلب",
+      "task_overdue": "مهمة متأخرة",
+      "low_stock": "مخزون منخفض",
+      "out_of_stock": "نفاد المخزون",
+      "goal_milestone": "إنجاز في هدف",
+      "payroll_ready": "الرواتب جاهزة",
+      "employee_missing_checkout": "موظف لم يسجّل الانصراف",
+      "tasks_need_reassignment": "مهام تحتاج إلى إعادة إسناد",
+      "task_assigned": "إسناد مهمة",
+      "task_deadline_approaching": "اقتراب موعد مهمة",
+      "task_updated": "تحديث مهمة",
+      "leave_approved": "الموافقة على إجازة",
+      "leave_rejected": "رفض إجازة",
+      "correction_approved": "الموافقة على تصحيح",
+      "correction_rejected": "رفض تصحيح",
+      "request_reviewed": "مراجعة طلب",
+      "salary_finalized": "اعتماد الراتب",
+      "goal_assigned": "إسناد هدف",
+      "monthly_report_ready": "التقرير الشهري جاهز",
+      "missing_checkout": "عدم تسجيل الانصراف",
+      "report_export_completed": "التصدير جاهز",
+      "report_export_failed": "تعذّر التصدير"
+    },
+    "ui": {
+      "title": "الإشعارات",
+      "description": "ما يحتاج إلى انتباهك، الأحدث أولًا.",
+      "bell": "الإشعارات",
+      "bell_unread": "الإشعارات، غير المقروءة: {count}",
+      "overflow": "+99",
+      "mark_all_read": "تعليم الكل كمقروء",
+      "mark_read": "تعليم كمقروء",
+      "refresh": "تحديث",
+      "pull_to_refresh": "اسحب للتحديث",
+      "release_to_refresh": "أفلت للتحديث",
+      "refreshing": "جارٍ التحديث…",
+      "loading": "جارٍ تحميل الإشعارات…",
+      "empty_title": "لا توجد إشعارات",
+      "empty_body": "عندما يحتاج شيء إلى انتباهك سيظهر هنا.",
+      "empty_unread": "لا توجد إشعارات غير مقروءة.",
+      "error": "تعذّر تحميل الإشعارات.",
+      "retry": "حاول مرة أخرى",
+      "load_more": "عرض المزيد",
+      "unavailable": "لم يعد متاحًا",
+      "handled": "تمت معالجته",
+      "unread": "غير مقروء",
+      "summary_count": "العناصر: {count}",
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "filter_label": "عرض",
+      "filter_all": "الكل",
+      "filter_unread": "غير المقروءة",
+      "action_failed": "تعذّر الحفظ. حاول مرة أخرى.",
+      "priority": {
+        "high": "أولوية عالية",
+        "medium": "أولوية متوسطة",
+        "low": "أولوية منخفضة"
+      }
+    },
+    "settings": {
+      "title": "إعدادات الإشعارات",
+      "description": "شغّل كل إشعار أو أوقفه للشركة كلها. تظهر الإشعارات داخل التطبيق؛ البريد الإلكتروني والإشعارات الفورية غير متاحة بعد.",
+      "admin_group": "إشعارات المدير والمشرف",
+      "employee_group": "إشعارات الموظف",
+      "in_app": "داخل التطبيق",
+      "priority": "الأولوية",
+      "save": "حفظ",
+      "saved": "تم حفظ إعدادات الإشعارات.",
+      "unchanged": "لا توجد تغييرات للحفظ.",
+      "error": "تعذّر تحميل إعدادات الإشعارات.",
+      "read_only": "يمكنك عرض هذه الإعدادات دون تعديلها."
+    }
   }
 }

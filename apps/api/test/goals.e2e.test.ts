@@ -39,7 +39,7 @@ import { ErrorFilter } from '../src/common/error.filter.js';
 import { REDIS_CLIENT } from '../src/common/redis.tokens.js';
 import { createValidationPipe } from '../src/common/validation-pipe.js';
 import { GOAL_EVENT_SINK } from '../src/goals/goal-events.js';
-import type { GoalEventSink, GoalMilestoneEvent } from '../src/goals/goal-events.js';
+import type { GoalEvent, GoalEventSink, GoalMilestoneEvent } from '../src/goals/goal-events.js';
 import { GoalLifecycleService } from '../src/goals/goal-lifecycle.service.js';
 import { MAIL_TRANSPORT } from '../src/mail/mail-transport.js';
 import type { MailMessage, MailTransport } from '../src/mail/mail-transport.js';
@@ -65,8 +65,10 @@ const mail = new CapturingMail();
 
 class CapturingSink implements GoalEventSink {
   readonly events: GoalMilestoneEvent[] = [];
-  milestonesReached(events: readonly GoalMilestoneEvent[]): Promise<void> {
-    this.events.push(...events);
+  handle(events: readonly GoalEvent[]): Promise<void> {
+    for (const event of events) {
+      if (event.type === 'goal_milestone') this.events.push(event);
+    }
     return Promise.resolve();
   }
 }

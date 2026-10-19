@@ -8,7 +8,7 @@
  * second time inside the requests module. `AttachmentsService` comes from the
  * global attachments module.
  *
- * `LEAVE_EVENT_SINK` is the Phase 15 seam; `LEAVE_PAYROLL_GUARD` is bound to the
+ * `LEAVE_EVENT_SINK` is provided by the global notifications module (Phase 15); `LEAVE_PAYROLL_GUARD` is bound to the
  * Phase 11 finalized-payroll check (DOCUMENT 16 rule 12).
  */
 
@@ -18,7 +18,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { PayrollGuardModule } from '../payroll/payroll-guard.module.js';
 
 import { LeaveBalancesService } from './leave-balances.service.js';
-import { DeferredLeaveEventSink, LEAVE_EVENT_SINK, LeaveEventPublisher } from './leave-events.js';
+import { LeaveEventPublisher } from './leave-events.js';
 import { FinalizedPayrollLeaveGuard, LEAVE_PAYROLL_GUARD } from './leave-payroll-guard.js';
 import { LeaveRequestsService } from './leave-requests.service.js';
 
@@ -28,7 +28,6 @@ import { LeaveRequestsService } from './leave-requests.service.js';
     LeaveBalancesService,
     LeaveRequestsService,
     LeaveEventPublisher,
-    { provide: LEAVE_EVENT_SINK, useClass: DeferredLeaveEventSink },
     { provide: LEAVE_PAYROLL_GUARD, useClass: FinalizedPayrollLeaveGuard },
   ],
   exports: [LeaveBalancesService, LeaveRequestsService],

@@ -48,6 +48,7 @@ import {
   TenantScopedService,
 } from '../company-structure/tenant-scoped.service.js';
 
+import { AttendanceEventPublisher } from './attendance-events.js';
 import { calculateDay } from './calculation.js';
 import {
   CORRECTION_INCLUDE,
@@ -88,8 +89,31 @@ export class CorrectionsService extends TenantScopedService {
     @Inject(PRISMA_CLIENT) prisma: PrismaClient,
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
     @Inject(PayrollPeriodGuard) private readonly periods: PayrollPeriodGuard,
+    @Inject(AttendanceEventPublisher) private readonly events: AttendanceEventPublisher,
   ) {
     super(prisma, audit);
+  }
+
+  /** DOCUMENT 19: the correction's moment, handed on after its transaction committed. */
+  private async published(
+    type:
+      | 'attendance_correction_submitted'
+      | 'correction_approved'
+      | 'correction_rejected'
+      | 'correction_cancelled',
+    ctx: AuthContext,
+    payload: CorrectionPayload,
+  ): Promise<CorrectionPayload> {
+    await this.events.publish([
+      {
+        type,
+        companyId: ctx.companyId,
+        correctionId: payload.id,
+        employeeId: payload.employee.id,
+        occurredAt: new Date(),
+      },
+    ]);
+    return payload;
   }
 
   async create(
@@ -100,7 +124,7 @@ export class CorrectionsService extends TenantScopedService {
   ): Promise<CorrectionPayload> {
     const date = requireDate(dto.date);
 
-    return this.tenant(ctx, async (tx) => {
+    const created = await this.tenant(ctx, async (tx) => {
       const employeeId = await this.resolveSubject(tx, ctx, dto.employee_id);
 
       const employee = await tx.employee.findFirst({
@@ -193,6 +217,7 @@ export class CorrectionsService extends TenantScopedService {
 
       return correctionPayload(row);
     });
+    return this.published('attendance_correction_submitted', ctx, created);
   }
 
   /**
@@ -311,7 +336,7 @@ export class CorrectionsService extends TenantScopedService {
     origin: RequestOrigin,
     now: Date = new Date(),
   ): Promise<CorrectionPayload> {
-    return this.tenant(ctx, async (tx) => {
+    const decided = await this.tenant(ctx, async (tx) => {
       const request = await this.requirePending(tx, ctx, id);
 
       const employee = await tx.employee.findFirstOrThrow({
@@ -401,6 +426,7 @@ export class CorrectionsService extends TenantScopedService {
 
       return correctionPayload(row);
     });
+    return this.published('correction_approved', ctx, decided);
   }
 
   async reject(
@@ -410,7 +436,7 @@ export class CorrectionsService extends TenantScopedService {
     origin: RequestOrigin,
     now: Date = new Date(),
   ): Promise<CorrectionPayload> {
-    return this.tenant(ctx, async (tx) => {
+    const decided = await this.tenant(ctx, async (tx) => {
       await this.requirePending(tx, ctx, id);
       const row = await tx.attendanceCorrectionRequest.update({
         where: { id },
@@ -436,6 +462,7 @@ export class CorrectionsService extends TenantScopedService {
 
       return correctionPayload(row);
     });
+    return this.published('correction_rejected', ctx, decided);
   }
 
   /**
@@ -448,7 +475,7 @@ export class CorrectionsService extends TenantScopedService {
     id: string,
     origin: RequestOrigin = { ipAddress: null, userAgent: null },
   ): Promise<CorrectionPayload> {
-    return this.tenant(ctx, async (tx) => {
+    const decided = await this.tenant(ctx, async (tx) => {
       const request = await tx.attendanceCorrectionRequest.findFirst({
         where: { id },
         select: { id: true, employeeId: true, status: true },
@@ -482,6 +509,7 @@ export class CorrectionsService extends TenantScopedService {
       });
       return correctionPayload(row);
     });
+    return this.published('correction_cancelled', ctx, decided);
   }
 
   private async requirePending(

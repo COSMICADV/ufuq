@@ -412,7 +412,9 @@
     "salary_policy": "Salary policy",
     "allow_negative_stock": "Negative stock",
     "allow_negative_stock_helper": "Off by default. When on, a movement that would take a location below zero is warned and must be confirmed; it is recorded. Transfers are always blocked when the source is short.",
-    "allow_negative_stock_toggle": "Allow negative stock"
+    "allow_negative_stock_toggle": "Allow negative stock",
+    "notifications": "Notifications",
+    "notifications_description": "Which notifications the company receives."
   },
   "validation": {
     "required": "This field is required",
@@ -1183,7 +1185,12 @@
     "cancel_reason": "Reason",
     "cancelled_approved_notice": "The approved leave was cancelled.",
     "holiday_affects_title": "Approved leave already covers this holiday",
-    "holiday_affects_note": "These approved requests are not recalculated. Review them and adjust a balance explicitly if a day should be returned:"
+    "holiday_affects_note": "These approved requests are not recalculated. Review them and adjust a balance explicitly if a day should be returned:",
+    "col_year": "Year",
+    "col_total": "Total",
+    "col_used": "Used",
+    "col_pending": "Pending",
+    "col_remaining": "Remaining"
   },
   "payroll": {
     "title": "Payroll",
@@ -1923,5 +1930,302 @@
       "open_mine": "My monthly report"
     },
     "open_catalogue": "Reports"
+  },
+  "notifications": {
+    "content": {
+      "leave_request_submitted": {
+        "title": "New leave request",
+        "body": "{employee} requested {leave_type} leave from {from} to {to}."
+      },
+      "attendance_correction_submitted": {
+        "title": "New attendance correction",
+        "body": "{employee} asked to correct attendance for {date}."
+      },
+      "request_submitted": {
+        "title": "New {category} request",
+        "body": "{employee} submitted a request: {subject}."
+      },
+      "task_overdue": {
+        "title": "Task overdue",
+        "body": "“{task}”, assigned to {employee}, passed its deadline ({deadline})."
+      },
+      "low_stock": {
+        "title": "Low stock",
+        "body": "{product} is at or below its minimum stock."
+      },
+      "out_of_stock": {
+        "title": "Out of stock",
+        "body": "{product} is out of stock."
+      },
+      "goal_milestone": {
+        "title": "Goal milestone reached",
+        "body": "Your goal “{goal}” reached {milestone}%."
+      },
+      "goal_milestone_team": {
+        "title": "Team goal milestone",
+        "body": "{employee}’s goal “{goal}” reached {milestone}%."
+      },
+      "payroll_ready": {
+        "title": "Payroll ready for review",
+        "body": "Payroll for {period} has been generated and is ready for review."
+      },
+      "employee_missing_checkout": {
+        "title": "Missing check-out",
+        "body": "{employee} did not check out on {date}."
+      },
+      "tasks_need_reassignment": {
+        "title": "Tasks need reassignment",
+        "body": "{employee} was deactivated with open tasks: {count}."
+      },
+      "task_assigned": {
+        "title": "New task assigned to you",
+        "body": "You have been assigned “{task}”."
+      },
+      "task_deadline_approaching": {
+        "title": "Task due soon",
+        "body": "“{task}” is due on {deadline}."
+      },
+      "task_updated": {
+        "title": "Task updated",
+        "body": "“{task}” was updated."
+      },
+      "leave_approved": {
+        "title": "Leave approved",
+        "body": "Your {leave_type} leave from {from} to {to} was approved."
+      },
+      "leave_rejected": {
+        "title": "Leave rejected",
+        "body": "Your {leave_type} leave from {from} to {to} was rejected."
+      },
+      "correction_approved": {
+        "title": "Correction approved",
+        "body": "Your attendance correction for {date} was approved."
+      },
+      "correction_rejected": {
+        "title": "Correction rejected",
+        "body": "Your attendance correction for {date} was rejected."
+      },
+      "request_approved": {
+        "title": "Request approved",
+        "body": "Your request “{subject}” was approved."
+      },
+      "request_rejected": {
+        "title": "Request rejected",
+        "body": "Your request “{subject}” was rejected."
+      },
+      "salary_finalized": {
+        "title": "Salary finalized",
+        "body": "Your salary for {period} has been finalized."
+      },
+      "goal_assigned": {
+        "title": "New goal",
+        "body": "You have a new goal: “{goal}”."
+      },
+      "monthly_report_ready": {
+        "title": "Monthly report ready",
+        "body": "Your monthly report for {period} is ready."
+      },
+      "missing_checkout": {
+        "title": "You did not check out",
+        "body": "You did not check out on {date}. The day was closed at your scheduled end time; submit a correction if that is not right."
+      },
+      "report_export_completed": {
+        "title": "Export ready",
+        "body": "Your {report} export is ready to download."
+      },
+      "report_export_failed": {
+        "title": "Export failed",
+        "body": "Your {report} export could not be produced. Try again from the report."
+      }
+    },
+    "summary": {
+      "leave_request_submitted": {
+        "title": "New leave requests: {count}",
+        "body": "{count} leave requests are waiting for review."
+      },
+      "attendance_correction_submitted": {
+        "title": "New attendance corrections: {count}",
+        "body": "{count} attendance corrections are waiting for review."
+      },
+      "request_submitted": {
+        "title": "New requests: {count}",
+        "body": "{count} requests are waiting for review."
+      },
+      "task_overdue": {
+        "title": "Overdue tasks: {count}",
+        "body": "{count} tasks passed their deadline."
+      },
+      "low_stock": {
+        "title": "Low stock: {count} products",
+        "body": "{count} products are at or below their minimum stock."
+      },
+      "out_of_stock": {
+        "title": "Out of stock: {count} products",
+        "body": "{count} products are out of stock."
+      },
+      "goal_milestone": {
+        "title": "Goal milestones: {count}",
+        "body": "{count} goal milestones were reached."
+      },
+      "payroll_ready": {
+        "title": "Payroll ready: {count}",
+        "body": "{count} payroll periods are ready for review."
+      },
+      "employee_missing_checkout": {
+        "title": "Missing check-outs: {count}",
+        "body": "{count} check-outs were not recorded."
+      },
+      "tasks_need_reassignment": {
+        "title": "Tasks need reassignment: {count} employees",
+        "body": "{count} deactivated employees still hold open tasks."
+      },
+      "task_assigned": {
+        "title": "New tasks assigned to you: {count}",
+        "body": "You have been assigned {count} tasks."
+      },
+      "task_deadline_approaching": {
+        "title": "Tasks due soon: {count}",
+        "body": "{count} of your tasks are due soon."
+      },
+      "task_updated": {
+        "title": "Tasks updated: {count}",
+        "body": "{count} of your tasks were updated."
+      },
+      "leave_approved": {
+        "title": "Leave approved: {count}",
+        "body": "{count} of your leave requests were approved."
+      },
+      "leave_rejected": {
+        "title": "Leave rejected: {count}",
+        "body": "{count} of your leave requests were rejected."
+      },
+      "correction_approved": {
+        "title": "Corrections approved: {count}",
+        "body": "{count} of your attendance corrections were approved."
+      },
+      "correction_rejected": {
+        "title": "Corrections rejected: {count}",
+        "body": "{count} of your attendance corrections were rejected."
+      },
+      "request_reviewed": {
+        "title": "Requests reviewed: {count}",
+        "body": "{count} of your requests were reviewed."
+      },
+      "salary_finalized": {
+        "title": "Salaries finalized: {count}",
+        "body": "{count} of your salaries were finalized."
+      },
+      "goal_assigned": {
+        "title": "New goals: {count}",
+        "body": "You have {count} new goals."
+      },
+      "monthly_report_ready": {
+        "title": "Monthly reports ready: {count}",
+        "body": "{count} of your monthly reports are ready."
+      },
+      "missing_checkout": {
+        "title": "Missing check-outs: {count}",
+        "body": "You did not check out on {count} days."
+      },
+      "report_export_completed": {
+        "title": "Exports ready: {count}",
+        "body": "{count} of your exports are ready to download."
+      },
+      "report_export_failed": {
+        "title": "Exports failed: {count}",
+        "body": "{count} of your exports could not be produced."
+      }
+    },
+    "categories": {
+      "attendance": "attendance",
+      "leave": "leave",
+      "salary": "salary",
+      "task": "task",
+      "general": "general"
+    },
+    "reports": {
+      "attendance": "attendance report",
+      "performance": "performance report",
+      "tasks": "tasks report",
+      "goals": "goals report",
+      "payroll": "payroll report",
+      "inventory": "inventory report",
+      "warehouse": "warehouse report",
+      "stock-movements": "stock movements report"
+    },
+    "types": {
+      "leave_request_submitted": "Leave request submitted",
+      "attendance_correction_submitted": "Attendance correction submitted",
+      "request_submitted": "Request submitted",
+      "task_overdue": "Task overdue",
+      "low_stock": "Low stock",
+      "out_of_stock": "Out of stock",
+      "goal_milestone": "Goal milestone",
+      "payroll_ready": "Payroll ready",
+      "employee_missing_checkout": "Employee missed check-out",
+      "tasks_need_reassignment": "Tasks need reassignment",
+      "task_assigned": "Task assigned",
+      "task_deadline_approaching": "Task deadline approaching",
+      "task_updated": "Task updated",
+      "leave_approved": "Leave approved",
+      "leave_rejected": "Leave rejected",
+      "correction_approved": "Correction approved",
+      "correction_rejected": "Correction rejected",
+      "request_reviewed": "Request reviewed",
+      "salary_finalized": "Salary finalized",
+      "goal_assigned": "Goal assigned",
+      "monthly_report_ready": "Monthly report ready",
+      "missing_checkout": "Missed check-out",
+      "report_export_completed": "Export ready",
+      "report_export_failed": "Export failed"
+    },
+    "ui": {
+      "title": "Notifications",
+      "description": "What needs your attention, newest first.",
+      "bell": "Notifications",
+      "bell_unread": "Notifications, {count} unread",
+      "overflow": "99+",
+      "mark_all_read": "Mark all as read",
+      "mark_read": "Mark as read",
+      "refresh": "Refresh",
+      "pull_to_refresh": "Pull to refresh",
+      "release_to_refresh": "Release to refresh",
+      "refreshing": "Refreshing…",
+      "loading": "Loading notifications…",
+      "empty_title": "No notifications",
+      "empty_body": "When something needs your attention, it will appear here.",
+      "empty_unread": "You are all caught up.",
+      "error": "Notifications could not be loaded.",
+      "retry": "Try again",
+      "load_more": "Load more",
+      "unavailable": "No longer available",
+      "handled": "Handled",
+      "unread": "Unread",
+      "summary_count": "{count} items",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "filter_label": "Show",
+      "filter_all": "All",
+      "filter_unread": "Unread",
+      "action_failed": "That could not be saved. Try again.",
+      "priority": {
+        "high": "High priority",
+        "medium": "Medium priority",
+        "low": "Low priority"
+      }
+    },
+    "settings": {
+      "title": "Notification settings",
+      "description": "Turn each notification on or off for the whole company. Notifications are shown in the app; email and push are not available yet.",
+      "admin_group": "Admin and manager notifications",
+      "employee_group": "Employee notifications",
+      "in_app": "In the app",
+      "priority": "Priority",
+      "save": "Save",
+      "saved": "Notification settings saved.",
+      "unchanged": "No changes to save.",
+      "error": "Notification settings could not be loaded.",
+      "read_only": "You can view these settings but not change them."
+    }
   }
 }

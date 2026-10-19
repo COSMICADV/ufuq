@@ -6,8 +6,9 @@
  * Phase 14 owns the moments; delivery is DOCUMENT 19's pipeline (Phase 15).
  * As for payroll, leave, goals and requests, an event is handed to the sink
  * only **after the transaction commits** (DOCUMENT 19 rule 2) and after its
- * audit record has been dispatched. The deferred sink records only that
- * delivery is pending.
+ * audit record has been dispatched. The sink is the notification pipeline
+ * (`notifications/`); `negative_stock` and `stock_reconciliation_mismatch`
+ * are not DOCUMENT 19 notification types and notify nobody.
  *
  *   - `low_stock` / `out_of_stock` fire **once per crossing** (DOCUMENT 19
  *     rule 3): the movement that takes the product's total across the line,
@@ -36,18 +37,6 @@ export interface InventoryEventSink {
 }
 
 export const INVENTORY_EVENT_SINK = Symbol('INVENTORY_EVENT_SINK');
-
-@Injectable()
-export class DeferredInventoryEventSink implements InventoryEventSink {
-  private readonly logger = new Logger('InventoryEvents');
-
-  handle(event: InventoryEvent): Promise<void> {
-    this.logger.debug(
-      `${event.type} for product ${event.productId ?? '-'} — notification delivery is Phase 15.`,
-    );
-    return Promise.resolve();
-  }
-}
 
 /** Hands committed events on; a sink failure is logged, never reported as the change failing. */
 @Injectable()

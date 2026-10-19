@@ -7,24 +7,20 @@
  * endpoints, the period-end job and its scheduler have no business being
  * instantiated a second time inside the tasks module.
  *
- * `GOAL_EVENT_SINK` is the Phase 15 seam: notifications replace the deferred
- * sink here, and nothing that detects a milestone changes.
+ * `GOAL_EVENT_SINK` is provided by the global notifications module (Phase
+ * 15): nothing that detects a milestone knows who is told.
  */
 
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
 
-import { DeferredGoalEventSink, GOAL_EVENT_SINK, GoalEventPublisher } from './goal-events.js';
+import { GoalEventPublisher } from './goal-events.js';
 import { GoalLedgerService } from './goal-ledger.service.js';
 
 @Module({
   imports: [AuthModule],
-  providers: [
-    GoalLedgerService,
-    GoalEventPublisher,
-    { provide: GOAL_EVENT_SINK, useClass: DeferredGoalEventSink },
-  ],
+  providers: [GoalLedgerService, GoalEventPublisher],
   exports: [GoalLedgerService, GoalEventPublisher],
 })
 export class GoalsCoreModule {}

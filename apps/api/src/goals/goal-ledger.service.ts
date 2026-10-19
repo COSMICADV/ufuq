@@ -388,6 +388,7 @@ export class GoalLedgerService {
       createdBy: goal.createdBy,
       milestone,
       progressPercent: after,
+      actorUserId: actor.userId,
       occurredAt,
     }));
   }
