@@ -18,6 +18,21 @@ export default function proxy(request: NextRequest): NextResponse {
   }
 
   const url = request.nextUrl.clone();
+  const publicPaths = new Set([
+    '/',
+    '/about',
+    '/features',
+    '/for-companies',
+    '/for-individuals',
+    '/pricing',
+    '/contact',
+    '/login',
+    '/register',
+  ]);
+  if (publicPaths.has(pathname)) {
+    url.pathname = pathname === '/' ? '/ar' : `/ar${pathname}`;
+    return NextResponse.rewrite(url);
+  }
   url.pathname = redirectTarget(pathname, request.headers.get('accept-language'));
   return NextResponse.redirect(url);
 }

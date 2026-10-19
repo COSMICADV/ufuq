@@ -1,18 +1,19 @@
 # أُفق (Ufuq) — ERP monorepo
 
-Arabic-first ERP for Arabic-speaking SMEs. This repository has completed
-**Phase 1 — Foundation**, **Phase 2 — Design system**, **Phase 3 —
-Authentication**, **Phase 4 — Company structure**, **Phase 5 — Employees** and
-**Phase 6 — Attendance** of DOCUMENT 25. Phase 7 (tasks) is next.
+Arabic-first ERP for Arabic-speaking SMEs. Functional phases through
+**Phase 16 — Public Website** are complete. See
+[`docs/PHASE-16-STATUS.md`](docs/PHASE-16-STATUS.md) for the current implementation,
+verification results and deployment configuration. The final visual redesign,
+Phase 17 and deployment have not started.
 
-Read the status documents in [`docs/`](docs/README.md) — `PHASE-1-STATUS.md`
-through `PHASE-6-STATUS.md` — before adding anything: they record what is
-complete, what was decided, and why. For where everything lives and why, see
-[`docs/PROJECT-STRUCTURE.md`](docs/PROJECT-STRUCTURE.md).
+Read the relevant status documents in [`docs/`](docs/README.md) before changing
+an existing module. [`docs/PROJECT-STRUCTURE.md`](docs/PROJECT-STRUCTURE.md)
+explains the repository layout.
 
-Local mail: employee invitations are sent over SMTP (approved Phase 5
-decision). `pnpm infra:up` starts Mailpit, which accepts every message and
-delivers none; read what the API sent at `http://localhost:8025`.
+Local mail: invitation/registration activation and public contact mail reuse SMTP.
+`pnpm infra:up` starts Mailpit, which accepts local messages without delivering them
+externally; inspect messages at `http://localhost:8025`. `CONTACT_TO` configures the
+contact recipient. This does not enable an email notification channel.
 
 ## Stack
 
@@ -52,16 +53,16 @@ the API now opens a real database connection at boot.
 `pnpm db:setup` seeds the DOCUMENT 02 permission catalogue and system roles
 (every environment needs these) and, outside `NODE_ENV=production`, a demo
 company with an ADMIN login — see `packages/db/prisma/seed.ts` for both the
-credentials and why this exists at all before Phase 5 (employees) and Phase 16
-(company registration) do.
+local demo credentials. Real companies now register at `/register`; production still
+seeds reference roles and permissions but never the demo company.
 
 ## Running the applications
 
-| Application | Command                          | Where it listens                                        |
-| ----------- | -------------------------------- | ------------------------------------------------------- |
-| API         | `pnpm --filter @ufuq/api dev`    | `http://localhost:4000/api/v1` (`API_PORT`)             |
-| Web         | `pnpm --filter @ufuq/web dev`    | `http://localhost:3000` — redirects `/` to `/ar`        |
-| Mobile      | `pnpm --filter @ufuq/mobile dev` | Expo dev server; open in Expo Go or a development build |
+| Application | Command                          | Where it listens                                          |
+| ----------- | -------------------------------- | --------------------------------------------------------- |
+| API         | `pnpm --filter @ufuq/api dev`    | `http://localhost:4000/api/v1` (`API_PORT`)               |
+| Web         | `pnpm --filter @ufuq/web dev`    | `http://localhost:3000` — Arabic at `/`, English at `/en` |
+| Mobile      | `pnpm --filter @ufuq/mobile dev` | Expo dev server; open in Expo Go or a development build   |
 
 `@ufuq/api` runs its compiled output, so build it once before `dev`:
 

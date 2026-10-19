@@ -387,6 +387,7 @@ enum AuditAction {
 model Company {
   id                   String        @id @db.Uuid
   name                 String        @db.VarChar(200)
+  employeeCountRange   String?       @map("employee_count_range") @db.VarChar(20)
   slug                 String        @unique @db.VarChar(100)
   logoPath             String?       @map("logo_path") @db.VarChar(500)
   timezone             String        @db.VarChar(64)
@@ -402,7 +403,7 @@ model Company {
   /// only when this is true (Phase 14). Default false: blocked.
   allowNegativeStock   Boolean       @default(false) @map("allow_negative_stock")
   status               CompanyStatus @default(active)
-  /// Nullable: Phase 3 has no registration flow yet (DOCUMENT 25 Phase 16).
+  /// Nullable for legacy/demo companies; public registration records the first ADMIN.
   createdBy            String?       @map("created_by") @db.Uuid
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -748,7 +749,9 @@ model User {
   id                String     @id @db.Uuid
   companyId         String     @map("company_id") @db.Uuid
   email             String     @db.VarChar(255)
-  /// Null until the invitation is accepted (DOCUMENT 09 §6).
+  displayName       String?    @map("display_name") @db.VarChar(200)
+  phone             String?    @db.VarChar(40)
+  /// Null for employee invitations until accepted. Registration stores a hash while invited; login still requires activation.
   passwordHash      String?    @map("password_hash") @db.VarChar(255)
   roleId            String     @map("role_id") @db.Uuid
   /// Overrides `company.defaultLocale` when set (DOCUMENT 06 §3.2).
@@ -770,7 +773,7 @@ model User {
   lastFailedLoginAt DateTime?  @map("last_failed_login_at") @db.Timestamptz(3)
   lockedUntil       DateTime?  @map("locked_until") @db.Timestamptz(3)
   emailVerifiedAt   DateTime?  @map("email_verified_at") @db.Timestamptz(3)
-  /// The admin who invited this user. Null for the seed-created first admin.
+  /// The admin who invited this user. Null for first administrators.
   createdBy         String?    @map("created_by") @db.Uuid
   createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)

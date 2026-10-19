@@ -50,6 +50,7 @@ export const ERROR_CODES = {
   LAST_ACTIVE_ADMIN: 'LAST_ACTIVE_ADMIN',
   // 503: the invitation was issued but the mail relay refused it.
   MAIL_DELIVERY_FAILED: 'MAIL_DELIVERY_FAILED',
+  CONTACT_DELIVERY_FAILED: 'CONTACT_DELIVERY_FAILED',
   // Phase 6 — attendance. DOCUMENT 12 "ERROR STATES": each says what blocked
   // the action and what to do instead, because on this screen the next step
   // is rarely "try again".
@@ -126,6 +127,7 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   ACCOUNT_ALREADY_ACTIVATED: 'error.account_already_activated',
   LAST_ACTIVE_ADMIN: 'error.last_active_admin',
   MAIL_DELIVERY_FAILED: 'error.mail_delivery_failed',
+  CONTACT_DELIVERY_FAILED: 'error.contact_delivery_failed',
   ALREADY_CHECKED_IN: 'error.already_checked_in',
   NOT_CHECKED_IN: 'error.not_checked_in',
   ALREADY_CHECKED_OUT: 'error.already_checked_out',

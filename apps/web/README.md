@@ -2,18 +2,18 @@
 
 ## What this folder is for
 
-The browser application: the admin experience and the employee experience
+The browser application: the public website, admin experience and employee experience
 (DOCUMENTS 03 and 04). Next.js App Router.
 
 ## What it contains
 
-| Path                     | Holds                                                                |
-| ------------------------ | -------------------------------------------------------------------- |
-| `src/app/[locale]/`      | Routes. Every page lives under a locale segment                      |
-| `src/components/`        | Screens, grouped by feature, plus the design system                  |
-| `src/lib/`               | Pure logic — the API client, and the parts of a screen worth testing |
-| `src/styles/globals.css` | The single stylesheet; design tokens come from `@ufuq/design-tokens` |
-| `src/proxy.ts`           | Locale prefixing. **A Next.js file convention — do not rename**      |
+| Path                     | Holds                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `src/app/[locale]/`      | Routes. Every page lives under a locale segment                                         |
+| `src/components/`        | Screens, grouped by feature, plus the design system                                     |
+| `src/lib/`               | Pure logic — the API client, and the parts of a screen worth testing                    |
+| `src/styles/globals.css` | Product stylesheet; marketing uses `public.css`; tokens come from `@ufuq/design-tokens` |
+| `src/proxy.ts`           | Locale routing and Arabic public rewrites. **Do not rename**                            |
 
 ## Which part of the system uses it
 
@@ -22,10 +22,10 @@ itself.
 
 ## Important rules and dependencies
 
-- **Every route is under `/{locale}`.** The root layout reads that segment to set `lang`
+- **Every UI route renders under `/{locale}` internally.** Arabic public URLs such as `/about` rewrite to `/ar/about`; English uses `/en/about`. The root layout reads that segment to set `lang`
   and `dir`; a route outside it would render in the wrong direction (RULE 24).
 - **Arabic and English are both first-class** (RULE 25). Every string comes from
-  `@ufuq/i18n`; the catalogue parity test fails if one language gains a key the other
+  `@ufuq/i18n` (including its bilingual `public-site.ts` content); the catalogue parity test fails if one language gains a key the other
   lacks.
 - **Logical CSS properties only** — `inset-inline-start`, never `left`. The same stylesheet
   has to lay out both directions.

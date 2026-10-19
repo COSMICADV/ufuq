@@ -27,6 +27,6 @@ import { SessionService } from './session.service.js';
   // the invitations this module accepts: one owner for the token lifecycle.
   // Audit is written after commit, through `AuditDispatcher` only (DOCUMENT 21
   // §1–§3). `AuditService`, the raw writer, stays inside this module.
-  exports: [SessionService, AuditDispatcher, InvitationService],
+  exports: [SessionService, AuditDispatcher, InvitationService, PasswordService, RateLimitService],
 })
 export class AuthModule {}

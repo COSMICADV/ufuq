@@ -31,8 +31,8 @@ export interface Env {
     readonly maxUploadBytes: number;
   };
   /**
-   * SMTP for transactional authentication mail — the invitation email
-   * DOCUMENT 09 §6 requires (approved Phase 5 decision). Not a notification
+   * SMTP for authentication and Phase 16 public contact delivery.
+   * Uses the existing transport (approved Phase 5/16 decisions). Not a notification
    * channel: DOCUMENT 24 keeps email notifications in FUTURE.
    */
   readonly mail: {
@@ -45,6 +45,8 @@ export interface Env {
     readonly smtpPassword: string | null;
     /** The `From` header, e.g. `أُفق <no-reply@example.com>`. */
     readonly from: string;
+    /** Phase 16 contact delivery; null disables submission until configured. */
+    readonly contactTo?: string | null;
   };
   readonly apiPort: number;
   readonly webPort: number;
@@ -160,7 +162,7 @@ const MAIL_ADDRESS = /^(?:[^<>]*<[^\s@<>]+@[^\s@<>]+>|[^\s@<>]+@[^\s@<>]+)$/;
 
 function requireMailAddress(raw: RawEnv, key: string, issues: string[]): string {
   const value = requireString(raw, key, issues);
-  if (value !== '' && !MAIL_ADDRESS.test(value)) {
+  if (value !== '' && (!MAIL_ADDRESS.test(value) || /[\r\n]/.test(value))) {
     issues.push(`${key} must be an email address, optionally as "Name <address>"`);
   }
   return value;
@@ -188,6 +190,10 @@ function loadMail(raw: RawEnv, issues: string[]): Env['mail'] {
     smtpUser,
     smtpPassword,
     from: requireMailAddress(raw, 'MAIL_FROM', issues),
+    contactTo:
+      optionalString(raw, 'CONTACT_TO') === null
+        ? null
+        : requireMailAddress(raw, 'CONTACT_TO', issues),
   };
 }
 

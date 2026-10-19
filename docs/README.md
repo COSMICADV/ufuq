@@ -21,6 +21,8 @@ and what is still open.
 | `PHASE-5-STATUS.md`    | Employees — CRUD, invitations, manager assignment               |
 | `PHASE-6-STATUS.md`    | Attendance — check-in/out, the calculation engine, corrections  |
 
+`PHASE-16-STATUS.md` covers the completed public website and its registration/contact flows.
+
 Phase 2 (design system) has no separate status document; its outcome is
 `packages/design-tokens` and the component set in `apps/web/src/components/design-system.tsx`.
 

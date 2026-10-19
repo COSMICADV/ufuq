@@ -111,7 +111,8 @@ Every requirement below needs a decision before or during development. Nothing h
 **Recommended:** Confirm with a local accountant or legal advisor before launch. The 7-year default in DOCUMENT 06 §9 is a placeholder based on common practice, not legal advice.
 
 ## OD-15 — Pricing model
-**Status:** Blocking — Phase 16
+**Status:** Resolved for Phase 16 — contact for pricing.
+**Decision (approved Phase 16 handoff):** No invented prices, plans or limits. Present contact-for-pricing based on employee count and needs; commercial pricing remains to be approved.
 **Unclear:** Per-employee, flat tiers, or module-based; and whether a free tier exists.
 **Why it matters:** The pricing page cannot be written without it, and it may affect whether employee-count limits need enforcing in the application.
 **Recommended:** Decide before Phase 16. If undecided, the pricing page ships with a contact form rather than invented numbers.
@@ -124,7 +125,8 @@ Every requirement below needs a decision before or during development. Nothing h
 **Decision (approved, Phase 10):** A. The joining month counts in full (joining any day of March gives 10 months), and `default_days_per_year × months ÷ 12` is rounded half away from zero to 2 decimal places (14 × 10 ÷ 12 = 11.67). No configurable pro-rating policy in V1.
 
 ## OD-17 — Company registration: self-service or invitation only?
-**Status:** Blocking — Phase 16
+**Status:** Decided — A (Phase 16).
+**Decision (approved Phase 16 handoff):** Self-service; company and first ADMIN are created transactionally. Reuse the existing invitation email verification and session flows; no access until activation.
 **Unclear:** Whether anyone can register a company from the public site, or whether registration is gated.
 **Why it matters:** Self-service invites spam and abandoned tenants; gating slows growth.
 **Options:** A) Self-service with email verification. B) Request access, manually approved. C) Self-service with a trial period and automatic suspension.

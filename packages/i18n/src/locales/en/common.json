@@ -110,6 +110,7 @@
     "account_already_activated": "This employee has already set a password, so there is no invitation to resend.",
     "last_active_admin": "This is the company's only active administrator. Give another employee the administrator role first.",
     "mail_delivery_failed": "The invitation email could not be sent. Try again in a few minutes.",
+    "contact_delivery_failed": "Your message could not be sent. Try again in a few minutes.",
     "already_checked_in": "You have already checked in today. Check out when you finish.",
     "not_checked_in": "There is no check-in recorded for today. You can submit a correction request.",
     "already_checked_out": "You have already checked out today. Submit a correction request to change it.",

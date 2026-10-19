@@ -1,0 +1,293 @@
+/* Phase 16 marketing layout. Existing tokens; no ERP layout or global redesign. */
+.public-site {
+  font-size: var(--font-body-lg);
+}
+.public-wrap {
+  max-inline-size: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--space-8);
+}
+.public-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-8);
+  border-block-end: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  background: var(--bg-surface);
+}
+.public-brand {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--green-deep-800);
+  text-decoration: none;
+}
+.public-header nav,
+.public-account,
+.public-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+.public-account {
+  margin-inline-start: auto;
+}
+.public-site a {
+  color: var(--green-primary-600);
+  text-underline-offset: 4px;
+}
+.public-site .button--primary {
+  color: var(--text-on-primary);
+}
+.public-site .button {
+  text-decoration: none;
+}
+.public-header a,
+.public-footer a,
+.public-mobile-nav summary {
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.public-intro {
+  padding-block: var(--space-16);
+  background: var(--sage-100);
+}
+.public-intro h1 {
+  font-size: var(--font-display);
+  line-height: 1.5;
+  max-inline-size: 900px;
+  margin-block: var(--space-3) var(--space-6);
+}
+.public-intro p {
+  max-inline-size: 760px;
+}
+.public-hero {
+  background: var(--green-deep-800);
+  color: var(--text-on-dark);
+}
+.public-eyebrow {
+  font-weight: 600;
+}
+.public-sections {
+  padding-block: var(--space-16);
+  display: grid;
+  gap: var(--space-16);
+}
+.public-sections section {
+  min-inline-size: 0;
+}
+.public-site h2 {
+  font-size: var(--font-h2);
+  line-height: 1.5;
+  margin-block-start: 0;
+}
+.public-site h3 {
+  font-size: var(--font-h3);
+  line-height: 1.5;
+}
+.public-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-6);
+}
+.public-grid article {
+  padding: var(--space-6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+.public-feature-number {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.public-chains {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+}
+.public-chains li {
+  padding: var(--space-4);
+  background: var(--sage-100);
+  border-radius: var(--radius-md);
+}
+.public-site figure {
+  margin: 0;
+}
+.public-site figure img {
+  inline-size: 100%;
+  block-size: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+.public-site figcaption {
+  color: var(--text-secondary);
+  padding-block: var(--space-4);
+}
+.public-steps li,
+.public-site section > ul > li {
+  padding-block: var(--space-3);
+}
+.public-final {
+  background: var(--sage-100);
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+}
+.public-footer {
+  background: var(--green-deep-800);
+  color: var(--text-on-dark);
+  padding-block: var(--space-12);
+}
+.public-footer .public-brand,
+.public-footer a {
+  color: var(--text-on-dark);
+}
+.public-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+.public-form-panel {
+  max-inline-size: 640px;
+  inline-size: 100%;
+}
+.public-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+.public-form label {
+  display: grid;
+  gap: var(--space-2);
+}
+.public-form input,
+.public-form select,
+.public-form textarea {
+  max-inline-size: 100%;
+  inline-size: 100%;
+  min-block-size: 48px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+.public-form .public-check {
+  display: flex;
+  align-items: center;
+}
+.public-check input {
+  inline-size: 24px;
+}
+.public-form [role='alert'] {
+  padding: var(--space-4);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-text);
+}
+.public-success {
+  background: var(--sage-100);
+  padding: var(--space-6);
+}
+.public-honeypot {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.public-mobile-nav {
+  display: none;
+}
+.public-skip {
+  position: absolute;
+  inset-inline-start: var(--space-4);
+  transform: translateY(-200%);
+  background: var(--bg-surface);
+  padding: var(--space-4);
+  z-index: 10;
+}
+.public-skip:focus {
+  transform: none;
+}
+.public-site :focus-visible {
+  outline: 2px solid var(--green-primary-600);
+  outline-offset: 4px;
+}
+.public-hero :focus-visible,
+.public-footer :focus-visible {
+  outline-color: var(--text-on-dark);
+}
+@media (max-width: 1023px) {
+  .public-desktop-nav {
+    display: none !important;
+  }
+  .public-mobile-nav {
+    display: block;
+    inline-size: 100%;
+  }
+  .public-mobile-nav summary {
+    cursor: pointer;
+  }
+  .public-mobile-nav nav {
+    display: grid;
+  }
+}
+@media (max-width: 600px) {
+  .public-wrap,
+  .public-header {
+    padding-inline: var(--space-4);
+  }
+  .public-intro h1 {
+    font-size: var(--font-h1);
+  }
+  .public-header {
+    gap: var(--space-3);
+  }
+  .public-account {
+    gap: var(--space-3);
+    font-size: var(--font-body);
+  }
+  .public-account .button {
+    padding-inline: var(--space-3);
+  }
+  .public-sections {
+    gap: var(--space-10);
+  }
+  .public-actions {
+    align-items: stretch;
+  }
+  .public-actions a {
+    flex: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-site * {
+    transition: none;
+    animation: none;
+    scroll-behavior: auto;
+  }
+}
+
+.public-site .button {
+  min-block-size: 48px;
+}
+.public-header a,
+.public-footer a,
+.public-mobile-nav summary {
+  min-inline-size: 44px;
+}
+@media (max-width: 1023px) {
+  .public-site a {
+    min-inline-size: 44px;
+    min-block-size: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

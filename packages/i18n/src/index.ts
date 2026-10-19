@@ -36,3 +36,5 @@ export {
   type Namespace,
   type Translator,
 } from './messages.js';
+
+export { publicCopy, publicFeatures } from './public-site.js';

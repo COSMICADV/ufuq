@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PublicSiteModule } from './public-site/public.module.js';
 import type { DynamicModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import type { Env } from '@ufuq/config';
@@ -85,6 +86,7 @@ export class AppModule {
         RedisModule.register(env),
         MailModule.register(env),
         HealthModule,
+        PublicSiteModule,
         AuthModule,
         CompanyStructureModule,
         EmployeesModule,

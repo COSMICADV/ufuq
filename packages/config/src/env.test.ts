@@ -91,6 +91,7 @@ describe('loadEnv — SMTP for invitation mail (approved Phase 5 decision)', () 
       smtpUser: null,
       smtpPassword: null,
       from: 'Ufuq <no-reply@ufuq.local>',
+      contactTo: null,
     });
   });
 
@@ -139,4 +140,21 @@ describe('redactEnv', () => {
     expect(redacted['SMTP_PASSWORD']).toBe('[redacted]');
     expect(redacted['STORAGE_BUCKET']).toBe('ufuq-local');
   });
+});
+
+describe('Phase 16 CONTACT_TO', () => {
+  it('accepts an environment-specific contact recipient', () => {
+    expect(loadEnv({ ...valid, CONTACT_TO: 'Contact <contact@test.test>' }).mail.contactTo).toBe(
+      'Contact <contact@test.test>',
+    );
+  });
+  it('disables contact submission if no recipient was configured', () => {
+    expect(loadEnv(valid).mail.contactTo).toBeNull();
+  });
+  it.each(['not-an-email', 'contact@test.test\r\nBcc: victim@test.test'])(
+    'rejects invalid CONTACT_TO %s',
+    (value) => {
+      expect(() => loadEnv({ ...valid, CONTACT_TO: value })).toThrow(EnvError);
+    },
+  );
 });

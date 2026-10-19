@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import '../../styles/globals.css';
+import '../../styles/public.css';
 
 interface LocaleParams {
   readonly locale: string;

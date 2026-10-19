@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { publicCopy, publicPath } from '../../lib/public-content';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
@@ -190,6 +192,7 @@ export function AcceptInvitation({ locale }: { readonly locale: Locale }): React
         <Alert tone="success" title={t('invitation.success_title')}>
           {t('invitation.success_body')}
         </Alert>
+        <Link href={publicPath(locale, 'login')}>{publicCopy[locale].login}</Link>
       </div>
     );
   } else if (identityError !== null) {

@@ -343,3 +343,10 @@ Read-only. There is no write, update, or delete endpoint for audit logs.
 ## 8. Idempotency
 
 `POST` endpoints that create financial or inventory records accept an `Idempotency-Key` header. Repeating a key within 24 hours returns the original result instead of creating a duplicate. Required for: payroll generation, stock movements, transfers, deductions, bonuses.
+
+## Phase 16 public writes (approved handoff)
+
+- `POST /public/register`: public, 201 after SMTP accepts activation mail. Creates company, first invited ADMIN and invitation in one tenant transaction. Reuses invitation acceptance and normal login. A mail failure is 503; an authenticated retry of an unverified registration reissues activation without duplicating the company.
+- `POST /public/contact`: public, 200 only after SMTP accepts. Configured application From, `CONTACT_TO` recipient, validated submitter Reply-To; no enquiry database or admin UI. A transport/configuration failure is generic 503. Separate transactional mail, never a notification channel.
+- Both: five attempts per IP per hour, including invalid submissions; whitelist validation, same-origin browser writes, honeypot and minimum completion time. `Retry-After` accompanies 429. No client-supplied tenant, role or recipient is accepted.
+- Deployment must configure `CONTACT_TO`, SMTP, `MAIL_FROM`, web/API origins, seed system roles, and apply the additive Phase 16 migration. See `docs/PHASE-16-STATUS.md`.
