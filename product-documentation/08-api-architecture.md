@@ -258,11 +258,24 @@ Phase 14 (amendment): `GET /suppliers/{id}` and `PATCH /suppliers/{id}` (product
 | GET | `/reports/goals` | report.company / report.team |
 | GET | `/reports/payroll` | report.company |
 | GET | `/reports/inventory` | report.company |
+| GET | `/reports/warehouse` | report.company — added in Phase 12 (DOCUMENT 18 lists the report; this table had omitted it) |
 | GET | `/reports/stock-movements` | report.company |
-| GET | `/reports/employee/{id}/monthly` | report.employee_monthly |
-| POST | `/reports/{key}/export` | report.export |
+| GET | `/reports/employee/{id}/monthly` | report.employee_monthly · `?month=YYYY-MM` |
+| POST | `/reports/employee/{id}/monthly/{year}/{month}/generate` | report.employee_monthly (company / team / self) — added in Phase 12 |
+| POST | `/reports/employee/{id}/monthly/{year}/{month}/regenerate` | report.employee_monthly at company or team scope — never self — added in Phase 12 |
+| POST | `/reports/{key}/export` | report.export **and** the read permission of `{key}` |
+| GET | `/reports/exports/{id}` | report.export · the requester only — added in Phase 12 |
+| GET | `/reports/exports/{id}/download` | report.export · the requester only — added in Phase 12 |
 
 Common filters: `from`, `to`, `department_id`, `employee_id`.
+
+Phase 12 (amendment):
+
+- **Contract.** A report answers `{ report, summary, groups, trend, rows, pagination }`. `report` states the key, the scope (`{ type: "company" }` or `{ type: "team", manager_employee_id }` — a manager's report is never presented as a company report), the range, every active filter with the names its ids refer to (`filter_labels`), the company timezone, `generated_at` and `provisional` / `provisional_reason` (`payroll_not_finalized`, `period_not_ended`, `month_not_ended`). Summaries, groups and trends cover the whole filtered set; `rows` are paged (`page`, `per_page` ≤ 100).
+- **Filters.** Each report accepts its own set — attendance: `from, to, department_id, employee_id, status, work_mode`; performance: `from, to, department_id, employee_id, status`; tasks: `… , priority`; goals: `… , goal_type`; payroll: `from, to, department_id, employee_id, status`; inventory: `warehouse_id, category_id, product_id, status, product_status` (the stock as it stands — no date range); warehouse: `from, to, warehouse_id, movement_type`; stock-movements: `from, to, product_id, warehouse_id, movement_type, user_id`. Any other field is 422 `not_allowed`; an unknown field is 422. The range defaults to the current month (company calendar); longer than 12 months is 409 `REPORT_RANGE_CONFIRMATION_REQUIRED` unless `confirm_large_range=true`. A referenced id from another company is 404; an employee outside a manager's team is 403.
+- **Export.** `POST /reports/{key}/export` takes the same filters in the body plus `format: "csv"` and `confirm_large_range?: boolean`. Up to 5,000 rows: `200 text/csv; charset=utf-8` (UTF-8 with BOM, a self-describing preamble, `Content-Disposition` with the file name). More: `202` with `{ id, status: "queued" }`; the file is produced by a background job and fetched with the two `/reports/exports/{id}` endpoints. More than 250,000 rows: 422 `REPORT_EXPORT_TOO_LARGE`. Every successful export is audited `report.exported`.
+- **Monthly reports.** `GET` returns the saved snapshot (404 `REPORT_NOT_GENERATED` when none exists) with `underlying_data_changed`. `generate` is idempotent: 201 when it created the snapshot, 200 when one existed. `regenerate` replaces an existing snapshot as its next revision (404 `REPORT_NOT_GENERATED` when there is none; 403 for a self-scoped caller). A month that has not ended is 422 `month: not_closed`; a month outside the employment is 422 `month: before_joining` / `after_termination`.
+- **Rate limit.** Every report read, export and monthly-report endpoint shares one 20-per-hour-per-user allowance (§6). An export's status and download are not counted.
 
 ### 4.13 Notifications
 | Method | Endpoint |
@@ -313,7 +326,7 @@ Read-only. There is no write, update, or delete endpoint for audit logs.
 | `/attendance/check-in`, `/check-out` | 10 per hour per user |
 | `/attachments` | 30 per hour per user |
 | General authenticated | 300 per minute per user |
-| Reports and exports | 20 per hour per user |
+| Reports and exports | 20 per hour per user — one allowance for every `/reports` read, export and monthly-report call; an export's status and download are not counted (Phase 12) |
 
 ## 7. Versioning
 

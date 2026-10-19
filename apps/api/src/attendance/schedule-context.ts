@@ -105,6 +105,24 @@ export async function loadEmployeeSchedule(
   return toSchedule(row as unknown as ScheduleRow);
 }
 
+/**
+ * Several schedules in one query, keyed by id — for a calculation over many
+ * employees (Phase 12 reports), so it does not read one schedule per person.
+ */
+export async function loadEmployeeSchedules(
+  tx: TenantClient,
+  workScheduleIds: readonly string[],
+): Promise<ReadonlyMap<string, EmployeeSchedule>> {
+  if (workScheduleIds.length === 0) {
+    return new Map();
+  }
+  const rows = await tx.workSchedule.findMany({
+    where: { id: { in: [...new Set(workScheduleIds)] } },
+    select: SCHEDULE_SELECT,
+  });
+  return new Map(rows.map((row) => [row.id, toSchedule(row as unknown as ScheduleRow)]));
+}
+
 /** Every holiday between two dates, as `YYYY-MM-DD` strings. */
 export async function loadHolidays(
   tx: TenantClient,

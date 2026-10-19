@@ -1,9 +1,9 @@
 /**
  * Phase 8 — performance (DOCUMENT 25 Phase 8, DOCUMENT 14 "Performance").
  *
- * Configuration and on-demand calculation only. The monthly report snapshot
- * that stores a month's scores with the weights in effect is DOCUMENT 18's
- * and Phase 12's.
+ * Configuration and on-demand calculation. The calculation itself
+ * (`performance-month.ts`) is shared with Phase 12's reports and monthly
+ * snapshots, which store a month's scores with the weights in effect.
  */
 
 import { Module } from '@nestjs/common';
@@ -17,5 +17,6 @@ import { PerformanceService } from './performance.service.js';
   imports: [AuthModule],
   controllers: [PerformanceController],
   providers: [PerformanceService],
+  exports: [PerformanceService],
 })
 export class PerformanceModule {}

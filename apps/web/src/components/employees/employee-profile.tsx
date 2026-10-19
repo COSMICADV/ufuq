@@ -31,6 +31,7 @@ import {
 import { useResource } from '../settings/use-resource';
 import { EmployeeGoals } from '../goals/employee-goals';
 import { EmployeeRequests } from '../requests/employee-requests';
+import { MonthlyReportsTab } from '../reports/monthly-reports-tab';
 import { LeaveBalancesCard } from '../leave/leave-balances-card';
 import { EmployeeSalaryTab } from '../payroll/employee-salary-tab';
 import { EmployeeTasks } from '../tasks/employee-tasks';
@@ -464,6 +465,8 @@ function ProfileBody({
             employeeId={employee.id}
             timeZone={session.timeZone}
           />
+        ) : tab === 'reports' ? (
+          <MonthlyReportsTab locale={locale} t={t} employeeId={employee.id} />
         ) : (
           <EmptyState
             title={t(`employees.${tab}_empty_title`)}

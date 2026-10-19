@@ -28,7 +28,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { generateId } from '@ufuq/db';
-import type { Prisma, PrismaClient, TenantClient } from '@ufuq/db';
+import type { Prisma, PrismaClient, StockMovementType, TenantClient } from '@ufuq/db';
 import { Decimal } from '@ufuq/money';
 
 import {
@@ -212,6 +212,47 @@ export function movementPayload(row: MovementRow): MovementPayload {
     reason: row.reason,
     created_by: row.creator,
     created_at: row.createdAt.toISOString(),
+  };
+}
+
+/**
+ * The ledger filters of `GET /stock-movements` — product, location, type,
+ * creator and a date range read in the company's timezone (DOCUMENT 11 §9).
+ * Shared with the Phase 12 stock-movement report, so both filter alike.
+ */
+export function movementLedgerWhere(
+  query: {
+    readonly product_id?: string | undefined;
+    readonly warehouse_id?: string | undefined;
+    readonly type?: string | undefined;
+    readonly created_by?: string | undefined;
+    readonly from?: string | undefined;
+    readonly to?: string | undefined;
+  },
+  timeZone: string,
+): Prisma.StockMovementWhereInput {
+  const dayStart = (date: string, offsetDays = 0): Date => {
+    const parsed = parseCalendarDate(date) as CalendarDate;
+    const day = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day + offsetDays));
+    return instantAt(
+      { year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate() },
+      0,
+      timeZone,
+    );
+  };
+  return {
+    ...(query.product_id === undefined ? {} : { productId: query.product_id }),
+    ...(query.warehouse_id === undefined ? {} : { warehouseId: query.warehouse_id }),
+    ...(query.type === undefined ? {} : { type: query.type as StockMovementType }),
+    ...(query.created_by === undefined ? {} : { createdBy: query.created_by }),
+    ...(query.from === undefined && query.to === undefined
+      ? {}
+      : {
+          createdAt: {
+            ...(query.from === undefined ? {} : { gte: dayStart(query.from) }),
+            ...(query.to === undefined ? {} : { lt: dayStart(query.to, 1) }),
+          },
+        }),
   };
 }
 
@@ -492,30 +533,7 @@ export class WarehouseService extends TenantScopedService {
     const page = resolvePage(query);
     return this.tenant(ctx, async (tx) => {
       const company = await tx.company.findFirstOrThrow({ select: { timezone: true } });
-      // A date filter is read in the company's timezone (DOCUMENT 11 §9).
-      const dayStart = (date: string, offsetDays = 0): Date => {
-        const parsed = parseCalendarDate(date) as CalendarDate;
-        const day = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day + offsetDays));
-        return instantAt(
-          { year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate() },
-          0,
-          company.timezone,
-        );
-      };
-      const where: Prisma.StockMovementWhereInput = {
-        ...(query.product_id === undefined ? {} : { productId: query.product_id }),
-        ...(query.warehouse_id === undefined ? {} : { warehouseId: query.warehouse_id }),
-        ...(query.type === undefined ? {} : { type: query.type }),
-        ...(query.created_by === undefined ? {} : { createdBy: query.created_by }),
-        ...(query.from === undefined && query.to === undefined
-          ? {}
-          : {
-              createdAt: {
-                ...(query.from === undefined ? {} : { gte: dayStart(query.from) }),
-                ...(query.to === undefined ? {} : { lt: dayStart(query.to, 1) }),
-              },
-            }),
-      };
+      const where = movementLedgerWhere(query, company.timezone);
       const [rows, total] = await Promise.all([
         tx.stockMovement.findMany({
           where,

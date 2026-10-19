@@ -21,6 +21,7 @@ import type { AppInfo } from './app.tokens.js';
 import { createValidationPipe } from './common/validation-pipe.js';
 import { ErrorFilter } from './common/error.filter.js';
 import { notFoundHandler } from './common/not-found.js';
+import { corsOptions } from './cors.js';
 
 export { API_PREFIX };
 
@@ -48,9 +49,9 @@ async function bootstrap(): Promise<void> {
   // against a threat (a forged cookie *value*) this design does not have.
   app.use(cookieParser());
 
-  // OD-02: the web client authenticates with cookies, so the browser origin is
-  // an allow-list of exactly one and credentials must be permitted.
-  app.enableCors({ origin: env.webOrigin, credentials: true });
+  // OD-02: one allowed origin, with credentials, and the headers a screen
+  // reads exposed (see cors.ts).
+  app.enableCors(corsOptions(env.webOrigin));
 
   // Routes are registered during init, so the fallback has to be added after
   // it — otherwise it would answer before the controllers ever ran.

@@ -70,7 +70,11 @@ export type FieldIssue =
   // Phase 11 — DOCUMENT 15: a salary change must start after the latest row
   // (history is never re-cut); the finalization confirmation must match.
   | 'not_after_current'
-  | 'mismatch';
+  | 'mismatch'
+  // Phase 12 — DOCUMENT 18: a monthly snapshot is of a closed month; a
+  // filter that does not belong to the report being asked for is refused.
+  | 'not_closed'
+  | 'not_allowed';
 
 @Injectable()
 export abstract class TenantScopedService {

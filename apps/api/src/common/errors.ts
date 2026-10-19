@@ -109,6 +109,10 @@ export const ERROR_CODES = {
   // the Admin has not acknowledged this movement's warning yet.
   STOCK_NEGATIVE_WARNING: 'STOCK_NEGATIVE_WARNING',
   IDEMPOTENCY_KEY_REQUIRED: 'IDEMPOTENCY_KEY_REQUIRED',
+  REPORT_RANGE_CONFIRMATION_REQUIRED: 'REPORT_RANGE_CONFIRMATION_REQUIRED',
+  REPORT_NOT_GENERATED: 'REPORT_NOT_GENERATED',
+  REPORT_EXPORT_TOO_LARGE: 'REPORT_EXPORT_TOO_LARGE',
+  REPORT_EXPORT_NOT_READY: 'REPORT_EXPORT_NOT_READY',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -159,6 +163,10 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   STOCK_INSUFFICIENT: 'error.stock_insufficient',
   STOCK_NEGATIVE_WARNING: 'error.stock_negative_warning',
   IDEMPOTENCY_KEY_REQUIRED: 'error.idempotency_key_required',
+  REPORT_RANGE_CONFIRMATION_REQUIRED: 'error.report_range_confirmation_required',
+  REPORT_NOT_GENERATED: 'error.report_not_generated',
+  REPORT_EXPORT_TOO_LARGE: 'error.report_export_too_large',
+  REPORT_EXPORT_NOT_READY: 'error.report_export_not_ready',
   NOT_FOUND: 'error.not_found',
   INTERNAL_ERROR: 'error.internal',
   VALIDATION_FAILED: 'error.validation_failed',

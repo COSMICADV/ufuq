@@ -240,6 +240,12 @@ The only legal way to change a finalized payroll outcome.
 `id`, `company_id`, `employee_id`, `year`, `month`, `attendance_summary` JSON, `task_summary` JSON, `goal_summary` JSON, `salary_summary` JSON, `performance_scores` JSON, `overall_score` DECIMAL(5,2), `generated_at`, `is_provisional` BOOL.
 Unique `(employee_id, year, month)`. A snapshot, regenerated only by explicit audited action.
 
+Phase 12 (amendment): `generated_by` (the user, or the company's system actor for the scheduled job), `source_fingerprint` CHAR(64) — the SHA-256 of the snapshot's content as computed from the sources, which a read recomputes to say whether the underlying data has changed (DOCUMENT 18 rule 2) — and `revision` INT (1, then +1 per regeneration). The database refuses an UPDATE that is not a regeneration (next revision, later `generated_at`, same employee and month) and refuses DELETE. `performance_scores` holds the full calculation with the configuration and weights in effect.
+
+### 3.27a report_exports (Phase 12)
+`id`, `company_id`, `requested_by`, `report_key`, `format` (`csv`), `filters` JSON, `scope` JSON, `locale`, `status` ENUM(queued, running, completed, failed), `row_count`, `storage_key`, `failure_reason`, `created_at`, `started_at`, `completed_at`.
+A background export job (DOCUMENT 18 "Performance") and where its finished file lies in private object storage. Not a reporting truth; never deleted.
+
 ### 3.28 warehouses
 `id`, `company_id`, `name_ar`, `name_en`, `type` ENUM(main, branch, store, production, online), `address`, `is_active`, `deleted_at`.
 

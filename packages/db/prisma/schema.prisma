@@ -370,6 +370,9 @@ enum AuditAction {
   STOCK_RECONCILIATION_RUN             @map("stock.reconciliation_run")
   SUPPLIER_CREATED                     @map("supplier.created")
   SUPPLIER_UPDATED                     @map("supplier.updated")
+  REPORT_EXPORTED                      @map("report.exported")
+  REPORT_SNAPSHOT_GENERATED            @map("report.snapshot_generated")
+  REPORT_SNAPSHOT_REGENERATED          @map("report.snapshot_regenerated")
 
   @@map("audit_action")
 }
@@ -445,6 +448,9 @@ model Company {
   productCategories ProductCategory[]
   suppliers         Supplier[]
   stockMovements    StockMovement[]
+
+  monthlyReports MonthlyEmployeeReport[]
+  reportExports  ReportExport[]
 
   @@index([status])
   @@map("companies")
@@ -656,6 +662,8 @@ model Employee {
   payrollLines       PayrollLine[]
   payrollAdjustments PayrollAdjustment[]
 
+  monthlyReports MonthlyEmployeeReport[]
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -790,6 +798,8 @@ model User {
   adjustmentsApproved PayrollAdjustment[]           @relation("adjustment_approved_by")
   idempotencyKeys     IdempotencyKey[]
   stockMovements      StockMovement[]               @relation("stock_movement_created_by")
+  monthlyReports      MonthlyEmployeeReport[]       @relation("monthly_report_generated_by")
+  reportExports       ReportExport[]                @relation("report_export_requested_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -1040,6 +1050,7 @@ model Task {
   @@index([assigneeEmployeeId, status])
   @@index([companyId, deadline])
   @@index([goalId, status])
+  @@index([companyId, createdAt])
   @@map("tasks")
 }
 
@@ -1716,5 +1727,81 @@ model StockMovement {
   @@index([transferGroupId])
   @@index([productId, warehouseId, createdAt, id], map: "stock_movements_product_warehouse_idx")
   @@index([productId, warehouseId, sequence], map: "stock_movements_product_warehouse_sequence_idx")
+  @@index([companyId, sequence])
+  @@index([companyId, createdAt])
   @@map("stock_movements")
+}
+
+// ---------------------------------------------------------------------------
+// Reports — Phase 12 (DOCUMENT 06 §3.27, DOCUMENT 18)
+// ---------------------------------------------------------------------------
+
+/// DOCUMENT 06 §3.27 — the only persisted reporting snapshot in V1. A snapshot,
+/// changed only by an explicit, audited regeneration: the database refuses an
+/// UPDATE that does not raise `revision` by one. `sourceFingerprint` is the
+/// SHA-256 of the content as computed from the sources, so a read can prove
+/// whether the underlying data has changed since (DOCUMENT 18 rule 2).
+model MonthlyEmployeeReport {
+  id                String   @id @db.Uuid
+  companyId         String   @map("company_id") @db.Uuid
+  employeeId        String   @map("employee_id") @db.Uuid
+  year              Int      @db.SmallInt
+  month             Int      @db.SmallInt
+  attendanceSummary Json     @map("attendance_summary")
+  taskSummary       Json     @map("task_summary")
+  goalSummary       Json     @map("goal_summary")
+  salarySummary     Json     @map("salary_summary")
+  performanceScores Json     @map("performance_scores")
+  overallScore      Decimal? @map("overall_score") @db.Decimal(5, 2)
+  generatedAt       DateTime @map("generated_at") @db.Timestamptz(3)
+  generatedBy       String   @map("generated_by") @db.Uuid
+  isProvisional     Boolean  @map("is_provisional")
+  sourceFingerprint String   @map("source_fingerprint") @db.Char(64)
+  revision          Int      @default(1)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  employee  Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  generator User     @relation("monthly_report_generated_by", fields: [generatedBy], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, year, month])
+  @@index([companyId, year, month])
+  @@map("monthly_employee_reports")
+}
+
+/// DOCUMENT 18 "Performance": long-running exports run as background jobs.
+/// A job's status and its finished file — never a reporting truth.
+enum ReportExportStatus {
+  queued
+  running
+  completed
+  failed
+
+  @@map("report_export_status")
+}
+
+model ReportExport {
+  id            String             @id @db.Uuid
+  companyId     String             @map("company_id") @db.Uuid
+  requestedBy   String             @map("requested_by") @db.Uuid
+  reportKey     String             @map("report_key") @db.VarChar(40)
+  format        String             @db.VarChar(10)
+  filters       Json
+  scope         Json
+  locale        String             @db.VarChar(5)
+  status        ReportExportStatus @default(queued)
+  rowCount      Int?               @map("row_count")
+  storageKey    String?            @map("storage_key") @db.VarChar(500)
+  failureReason String?            @map("failure_reason") @db.Text
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt     DateTime?          @map("started_at") @db.Timestamptz(3)
+  completedAt   DateTime?          @map("completed_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  requester User    @relation("report_export_requested_by", fields: [requestedBy], references: [id], onDelete: Restrict)
+
+  @@index([companyId, requestedBy, createdAt])
+  @@map("report_exports")
 }

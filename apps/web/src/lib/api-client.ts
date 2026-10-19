@@ -226,6 +226,18 @@ export async function uploadForm<T>(
   return ((await response.json()) as { data: T }).data;
 }
 
+/**
+ * The raw response, for a body that is not the JSON envelope — a CSV export
+ * (Phase 12). A non-2xx still becomes an `ApiError` with the envelope's code.
+ */
+export async function sendRaw(path: string, options: RequestOptions): Promise<Response> {
+  const response = await send(path, options);
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorBody(response));
+  }
+  return response;
+}
+
 /** A request with no response body — the 204 on `DELETE /departments/{id}`. */
 export async function sendNoContent(path: string, options: RequestOptions): Promise<void> {
   const response = await send(path, options);
@@ -268,6 +280,8 @@ const KNOWN_ISSUES = new Set([
   // Phase 14 — inventory movements.
   'use_transfer',
   'not_allowed',
+  // Phase 12 — monthly reports are of closed months.
+  'not_closed',
 ]);
 
 export function issueKeyFor(error: ApiError, field: string): string | null {

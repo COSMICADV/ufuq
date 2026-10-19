@@ -25,6 +25,7 @@ import { LeaveModule } from './leave/leave.module.js';
 import { PayrollModule } from './payroll/payroll.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { WarehouseModule } from './warehouse/warehouse.module.js';
+import { ReportsModule } from './reports/reports.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 
@@ -45,8 +46,9 @@ import { TasksModule } from './tasks/tasks.module.js';
  * (`LeaveModule`, with its carry-over job); Phase 11 adds salary and payroll
  * (`PayrollModule`); Phase 13 adds warehouses and transfers
  * (`WarehouseModule`); Phase 14 the inventory on top of it
- * (`InventoryModule`). The remaining business
- * modules arrive one phase at a time (DOCUMENT 25).
+ * (`InventoryModule`); Phase 12, executed after them, the reports that read
+ * every module (`ReportsModule`, with the monthly snapshot job). The
+ * remaining modules arrive one phase at a time (DOCUMENT 25).
  *
  * The three global guards run in this order for every request:
  *  1. `SessionAuthGuard` — DOCUMENT 09 §4 check 1, and binds tenant scope.
@@ -95,6 +97,7 @@ export class AppModule {
         PayrollModule,
         WarehouseModule,
         InventoryModule.register({ scheduler: options.backgroundJobs }),
+        ReportsModule.register({ scheduler: options.backgroundJobs }),
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

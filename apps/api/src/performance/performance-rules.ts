@@ -223,6 +223,16 @@ export function computePerformance(
   };
 }
 
+/**
+ * `part ÷ whole × 100` as the engine computes a rate — the same precision and
+ * the same single rounding — for reports that show a completion or on-time
+ * rate beside the scores (Phase 12). Null when there is nothing to divide by.
+ */
+export function percentRate(part: number, whole: number): string | null {
+  assertCounts({ part, whole });
+  return whole === 0 ? null : finish(rate(part, whole));
+}
+
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------

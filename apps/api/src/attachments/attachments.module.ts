@@ -79,7 +79,9 @@ export class AttachmentsModule {
         },
         { provide: ATTACHMENT_LIMITS, useValue: { maxUploadBytes: env.storage.maxUploadBytes } },
       ],
-      exports: [AttachmentsService],
+      // OBJECT_STORAGE is shared with Phase 12's background report exports:
+      // one private bucket for the process, not a second storage client.
+      exports: [AttachmentsService, OBJECT_STORAGE],
     };
   }
 }

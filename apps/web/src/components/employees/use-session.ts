@@ -20,10 +20,13 @@ export interface SessionView {
   readonly currency: string;
   /** The caller's own employee record, or null (the seeded first admin has none). */
   readonly employeeId: string | null;
+  /** The company's name — printed reports state whose figures they are (DOCUMENT 18 rule 7). */
+  readonly companyName: string;
 }
 
 interface MePayload {
   readonly company: {
+    readonly name: string;
     readonly timezone: string;
     readonly currency: string;
     readonly correctionWindowDays: number;
@@ -40,5 +43,6 @@ export async function loadSession(locale: Locale, signal: AbortSignal): Promise<
     correctionWindowDays: me.company.correctionWindowDays,
     currency: me.company.currency,
     employeeId: me.employee?.id ?? null,
+    companyName: me.company.name,
   };
 }

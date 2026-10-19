@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createTranslator, isLocale } from '@ufuq/i18n';
 
@@ -25,6 +26,10 @@ export default async function Page({ params }: PageProps): Promise<React.JSX.Ele
           <h1>{t('dashboard.title')}</h1>
           <p>{t('dashboard.description')}</p>
         </div>
+        {/* DOCUMENT 03 §2 item 8 — the report catalogue (B17). */}
+        <Link className="button button--secondary button--md" href={`/${locale}/admin/reports`}>
+          <span>{t('reports.open_catalogue')}</span>
+        </Link>
       </header>
       <main className="tasks-page__content">
         <AdminDashboard locale={locale} />
