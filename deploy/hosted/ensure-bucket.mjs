@@ -1,7 +1,6 @@
 /**
- * Create the staging bucket if it does not exist yet. The staging object
- * store (MinIO on a free instance) starts empty after every restart; the API
- * expects the bucket to be there (AD-02).
+ * Create the storage bucket if it does not exist yet (AD-02). The API only
+ * reads and writes objects; it expects its bucket to be there.
  */
 
 import { createRequire } from 'node:module';

@@ -1,0 +1,9 @@
+# Cloudflare Worker for the hosted staging/demo (Workers Free plan).
+name = "ufuq"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+# The Render web service URL (set once the service exists).
+ORIGIN = "https://REPLACE-WITH-RENDER-URL.onrender.com"
