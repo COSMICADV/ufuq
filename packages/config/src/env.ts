@@ -52,6 +52,12 @@ export interface Env {
   readonly webPort: number;
   /** Origin allowed to call the API with credentials. */
   readonly webOrigin: string;
+  /**
+   * Reverse-proxy hops in front of the API whose `X-Forwarded-For` entries are
+   * trusted for the client IP (rate limits, audit). `null` — the default —
+   * trusts none, which is right whenever the API is reached directly.
+   */
+  readonly trustProxyHops?: number | null;
 }
 
 export class EnvError extends Error {
@@ -226,6 +232,10 @@ export function loadEnv(raw: RawEnv = process.env): Env {
     apiPort: requirePort(raw, 'API_PORT', 4000, issues),
     webPort: requirePort(raw, 'WEB_PORT', 3000, issues),
     webOrigin: requireUrl(raw, 'WEB_ORIGIN', ['http:', 'https:'], issues),
+    trustProxyHops:
+      optionalString(raw, 'TRUST_PROXY_HOPS') === null
+        ? null
+        : requirePositiveInt(raw, 'TRUST_PROXY_HOPS', 1, issues),
   };
 
   if (issues.length > 0) {

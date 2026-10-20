@@ -13,6 +13,7 @@ import { readFile } from 'node:fs/promises';
 import cookieParser from 'cookie-parser';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { EnvError, loadEnv } from '@ufuq/config';
 
 import { AppModule } from './app.module.js';
@@ -37,7 +38,14 @@ async function bootstrap(): Promise<void> {
   const env = loadEnv();
   const info = await readAppInfo();
 
-  const app = await NestFactory.create(AppModule.register(env, info));
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(env, info));
+
+  // Behind a hosting provider's proxy (and the web app's same-origin rewrite)
+  // every request otherwise comes from the proxy's address, which would merge
+  // all clients into one login rate-limit bucket. Opt-in; see TRUST_PROXY_HOPS.
+  if (env.trustProxyHops) {
+    app.set('trust proxy', env.trustProxyHops);
+  }
 
   app.setGlobalPrefix(API_PREFIX);
   app.useGlobalFilters(new ErrorFilter());

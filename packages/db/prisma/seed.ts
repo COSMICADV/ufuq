@@ -177,6 +177,21 @@ async function ensureLocalAppRolePassword(
   console.log('Set the local-only ufuq_app role password (see prisma/seed.ts for why).');
 }
 
+// Staging has no local constant to fall back on: the hosting provider's
+// secret store supplies `UFUQ_APP_DB_PASSWORD`, and the same value builds the
+// API's `DATABASE_URL` (see deploy/render/start-api.sh). Restricted to a
+// generated-secret alphabet so it can be inlined into `ALTER ROLE` safely.
+async function ensureStagingAppRolePassword(
+  prisma: ReturnType<typeof createPrismaClient>,
+): Promise<void> {
+  const password = requireEnv('UFUQ_APP_DB_PASSWORD');
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(password)) {
+    throw new Error('UFUQ_APP_DB_PASSWORD must be 16–128 characters of [A-Za-z0-9_-].');
+  }
+  await prisma.$executeRawUnsafe(`ALTER ROLE "ufuq_app" WITH LOGIN PASSWORD '${password}'`);
+  console.log('Set the staging ufuq_app role password from UFUQ_APP_DB_PASSWORD.');
+}
+
 async function main(): Promise<void> {
   // The owner/migration role, not `DATABASE_URL` (`ufuq_app`): seeding
   // `permissions` and `role_permissions` is an operator action akin to a
@@ -192,6 +207,11 @@ async function main(): Promise<void> {
       console.log(
         'NODE_ENV=production — skipping demo company, admin user, and local role password.',
       );
+      await seedPermissionsAndRoles(prisma);
+    } else if (process.env.NODE_ENV === 'staging') {
+      // The staging demo company is seeded separately, through the running
+      // API (apps/api/scripts/demo-seed.mjs) — not the local placeholder.
+      await ensureStagingAppRolePassword(prisma);
       await seedPermissionsAndRoles(prisma);
     } else {
       await ensureLocalAppRolePassword(prisma);

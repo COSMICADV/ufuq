@@ -45,6 +45,15 @@ describe('loadEnv', () => {
     );
   });
 
+  it('trusts no proxy hops unless TRUST_PROXY_HOPS is set', () => {
+    expect(loadEnv(valid).trustProxyHops).toBeNull();
+    expect(loadEnv({ ...valid, TRUST_PROXY_HOPS: '3' }).trustProxyHops).toBe(3);
+  });
+
+  it.each(['0', '-1', 'true', '1.5'])('rejects TRUST_PROXY_HOPS=%s', (value) => {
+    expect(issuesFor({ ...valid, TRUST_PROXY_HOPS: value }).join(' ')).toMatch(/TRUST_PROXY_HOPS/);
+  });
+
   it.each(['0', '-1', '10MB', '1.5'])('rejects STORAGE_MAX_UPLOAD_BYTES=%s', (value) => {
     expect(issuesFor({ ...valid, STORAGE_MAX_UPLOAD_BYTES: value }).join(' ')).toMatch(
       /STORAGE_MAX_UPLOAD_BYTES/,

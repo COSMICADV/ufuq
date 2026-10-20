@@ -38,6 +38,9 @@ export default function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  /** Everything except Next's own assets and files with an extension. */
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+  /**
+   * Everything except Next's own assets, files with an extension, and the API
+   * path the staging rewrite in `next.config.mjs` forwards (`/api/v1`).
+   */
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|.*\\..*).*)'],
 };
