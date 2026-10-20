@@ -540,8 +540,16 @@ async function seedLeaveTypes(admin) {
       carry_over_policy: 'none',
     },
   ];
+  // A new company starts with zero-day placeholder types; the demo's
+  // configured types replace them, so retire the placeholders.
+  const placeholders = await api(admin, 'GET', '/leave-types');
   for (const { key, ...dto } of definitions) {
     types[key] = (await api(admin, 'POST', '/leave-types', dto)).id;
+  }
+  for (const placeholder of placeholders ?? []) {
+    await soft(`retire leave type ${placeholder.name_en}`, () =>
+      api(admin, 'DELETE', `/leave-types/${placeholder.id}`),
+    );
   }
   return types;
 }
