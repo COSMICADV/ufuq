@@ -1,4 +1,4 @@
-import { colors, spacing, typography } from '@ufuq/design-tokens';
+import { colors, fontFamilies, spacing, typography } from '@ufuq/design-tokens';
 import { createTranslator, DEFAULT_LOCALE, LOCALES } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 import { useState } from 'react';
@@ -27,6 +27,7 @@ import {
   Progress,
   Skeleton,
   Toggle,
+  TypographyProvider,
 } from './design-system';
 import { directionStyle, nextLocale } from './direction';
 
@@ -38,98 +39,104 @@ export function App(): React.JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false);
   const t = createTranslator(locale);
   const { direction, writingDirection } = directionStyle(locale);
-  const text = { writingDirection };
+  const text = { writingDirection, fontFamily: fontFamilies[locale] };
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={[styles.content, { direction }]}>
-        <View style={styles.language}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('language.switch')}
-            onPress={() => setLocale(nextLocale(locale, LOCALES))}
-          >
-            <Text style={[styles.languageText, text]}>
-              {t(`language.${nextLocale(locale, LOCALES)}`)}
-            </Text>
-          </Pressable>
-        </View>
-        <Text style={[styles.title, text]}>{t('showcase.title')}</Text>
-        <Text style={[styles.description, text]}>{t('showcase.description')}</Text>
-        <Section title={t('showcase.buttons')} text={text}>
-          <View style={styles.row}>
-            <Button>{t('action.save')}</Button>
-            <Button variant="secondary">{t('action.cancel')}</Button>
-            <Button variant="ghost">{t('action.retry')}</Button>
-            <Button variant="destructive">{t('action.close')}</Button>
+    <TypographyProvider locale={locale}>
+      <SafeAreaView style={styles.screen}>
+        <ScrollView contentContainerStyle={[styles.content, { direction }]}>
+          <View style={styles.language}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('language.switch')}
+              onPress={() => setLocale(nextLocale(locale, LOCALES))}
+            >
+              <Text style={[styles.languageText, text]}>
+                {t(`language.${nextLocale(locale, LOCALES)}`)}
+              </Text>
+            </Pressable>
           </View>
-        </Section>
-        <Section title={t('showcase.inputs')} text={text}>
-          <Field label={t('showcase.label_name')} required helper={t('showcase.helper_name')}>
-            <Input placeholder={t('showcase.placeholder_name')} />
-          </Field>
-          <Field label={t('showcase.label_notes')}>
-            <Input placeholder={t('showcase.label_notes')} multiline />
-          </Field>
-          <Toggle label={t('showcase.label_active')} />
-          <Choice label={t('showcase.label_notify')} />
-        </Section>
-        <Section title={t('showcase.cards')} text={text}>
-          <Card title={t('showcase.kpi_label')}>
-            <Text style={[styles.kpi, text]}>128</Text>
-            <Text style={[styles.delta, text]}>{t('showcase.kpi_delta')}</Text>
-            <Progress value={72} />
-          </Card>
-        </Section>
-        <Section title={t('showcase.table')} text={text}>
-          <DataTable
-            headers={[t('showcase.table_name'), t('showcase.status'), t('showcase.table_amount')]}
-            rows={[
-              [t('showcase.label_name'), t('showcase.status_paid'), '20,000 EGP'],
-              [t('showcase.department_hr'), t('showcase.status_pending'), '8,500 EGP'],
-            ]}
-          />
-          <View style={styles.row}>
-            <Badge tone="success">{t('showcase.status_paid')}</Badge>
-            <Badge tone="warning">{t('showcase.status_pending')}</Badge>
-            <Badge tone="danger">{t('showcase.status_absent')}</Badge>
-          </View>
-        </Section>
-        <Section title={t('showcase.states')} text={text}>
-          <Card title={t('state.loading')}>
-            <Skeleton />
-          </Card>
-          <Card title={t('state.empty')}>
-            <EmptyState
-              title={t('showcase.empty_title')}
-              description={t('showcase.empty_description')}
-              action={<Button>{t('showcase.add')}</Button>}
+          <Text style={[styles.title, text]}>{t('showcase.title')}</Text>
+          <Text style={[styles.description, text]}>{t('showcase.description')}</Text>
+          <Section title={t('showcase.buttons')} text={text}>
+            <View style={styles.row}>
+              <Button>{t('action.save')}</Button>
+              <Button variant="secondary">{t('action.cancel')}</Button>
+              <Button variant="ghost">{t('action.retry')}</Button>
+              <Button variant="destructive">{t('action.close')}</Button>
+            </View>
+          </Section>
+          <Section title={t('showcase.inputs')} text={text}>
+            <Field label={t('showcase.label_name')} required helper={t('showcase.helper_name')}>
+              <Input placeholder={t('showcase.placeholder_name')} />
+            </Field>
+            <Field label={t('showcase.label_notes')}>
+              <Input placeholder={t('showcase.label_notes')} multiline />
+            </Field>
+            <Toggle label={t('showcase.label_active')} />
+            <Choice label={t('showcase.label_notify')} />
+          </Section>
+          <Section title={t('showcase.cards')} text={text}>
+            <Card title={t('showcase.kpi_label')}>
+              <Text style={[styles.kpi, text]}>128</Text>
+              <Text style={[styles.delta, text]}>{t('showcase.kpi_delta')}</Text>
+              <Progress value={72} />
+            </Card>
+          </Section>
+          <Section title={t('showcase.table')} text={text}>
+            <DataTable
+              headers={[t('showcase.table_name'), t('showcase.status'), t('showcase.table_amount')]}
+              rows={[
+                [t('showcase.label_name'), t('showcase.status_paid'), '20,000 EGP'],
+                [t('showcase.department_hr'), t('showcase.status_pending'), '8,500 EGP'],
+              ]}
             />
-          </Card>
-          <Alert tone="success" title={t('showcase.alert_title')} body={t('showcase.alert_body')} />
-          <Alert tone="danger" title={t('state.error')} body={t('action.retry')} />
-        </Section>
-        <Section title={t('showcase.navigation')} text={text}>
-          <AppNavigation
-            items={[
-              t('showcase.nav_overview'),
-              t('showcase.nav_people'),
-              t('showcase.nav_settings'),
-            ]}
+            <View style={styles.row}>
+              <Badge tone="success">{t('showcase.status_paid')}</Badge>
+              <Badge tone="warning">{t('showcase.status_pending')}</Badge>
+              <Badge tone="danger">{t('showcase.status_absent')}</Badge>
+            </View>
+          </Section>
+          <Section title={t('showcase.states')} text={text}>
+            <Card title={t('state.loading')}>
+              <Skeleton />
+            </Card>
+            <Card title={t('state.empty')}>
+              <EmptyState
+                title={t('showcase.empty_title')}
+                description={t('showcase.empty_description')}
+                action={<Button>{t('showcase.add')}</Button>}
+              />
+            </Card>
+            <Alert
+              tone="success"
+              title={t('showcase.alert_title')}
+              body={t('showcase.alert_body')}
+            />
+            <Alert tone="danger" title={t('state.error')} body={t('action.retry')} />
+          </Section>
+          <Section title={t('showcase.navigation')} text={text}>
+            <AppNavigation
+              items={[
+                t('showcase.nav_overview'),
+                t('showcase.nav_people'),
+                t('showcase.nav_settings'),
+              ]}
+            />
+          </Section>
+          <Section title={t('showcase.modal')} text={text}>
+            <Button onPress={() => setDialogOpen(true)}>{t('showcase.open_modal')}</Button>
+          </Section>
+          <Dialog
+            visible={dialogOpen}
+            title={t('showcase.modal')}
+            body={t('showcase.modal_body')}
+            close={t('action.close')}
+            onClose={() => setDialogOpen(false)}
           />
-        </Section>
-        <Section title={t('showcase.modal')} text={text}>
-          <Button onPress={() => setDialogOpen(true)}>{t('showcase.open_modal')}</Button>
-        </Section>
-        <Dialog
-          visible={dialogOpen}
-          title={t('showcase.modal')}
-          body={t('showcase.modal_body')}
-          close={t('action.close')}
-          onClose={() => setDialogOpen(false)}
-        />
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </TypographyProvider>
   );
 }
 

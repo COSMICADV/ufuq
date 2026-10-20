@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@ufuq/i18n';
 import { PUBLIC_PAGES, features, publicCopy, publicPath } from '../../lib/public-content';
 import type { PublicPage } from '../../lib/public-content';
+import { BrandMark } from '../brand-mark';
 import { PublicForm } from './public-form';
 
 export function publicMetadata(locale: Locale, page: PublicPage): Metadata {
@@ -77,12 +78,13 @@ export function PublicSite({
     </a>
   );
   return (
-    <div className="public-site">
+    <div className={`public-site public-site--${page}`}>
       <a className="public-skip" href="#content">
         {c.skip}
       </a>
       <header className="public-header">
         <Link className="public-brand" href={publicPath(locale, 'home')}>
+          <BrandMark />
           {c.brand}
         </Link>
         <nav aria-label={c.menu} className="public-desktop-nav">
@@ -116,6 +118,19 @@ export function PublicSite({
               </div>
             ) : null}
           </div>
+          {page === 'home' ? (
+            <figure className="public-hero-product public-wrap">
+              <Image
+                src={`/product/tasks-v2-${locale}.png`}
+                alt={features[locale][2][0]}
+                width={1280}
+                height={800}
+                sizes="(max-width: 800px) 100vw, 1120px"
+                priority
+              />
+              <figcaption>{c.productCaption}</figcaption>
+            </figure>
+          ) : null}
         </section>
         <div className="public-wrap public-sections">
           {page === 'home' ? (
@@ -146,19 +161,6 @@ export function PublicSite({
                     </article>
                   ))}
                 </div>
-              </section>
-              <section>
-                <h2>{c.product}</h2>
-                <figure>
-                  <Image
-                    src={`/product/tasks-${locale}.png`}
-                    alt={features[locale][2][0]}
-                    width={1280}
-                    height={800}
-                    sizes="(max-width: 800px) 100vw, 1120px"
-                  />
-                  <figcaption>{c.productCaption}</figcaption>
-                </figure>
               </section>
               <section>
                 <h2>{c.audience}</h2>
@@ -192,7 +194,7 @@ export function PublicSite({
               <h2>{c.product}</h2>
               <figure>
                 <Image
-                  src={`/product/tasks-${locale}.png`}
+                  src={`/product/tasks-v2-${locale}.png`}
                   alt={features[locale][2][0]}
                   width={1280}
                   height={800}

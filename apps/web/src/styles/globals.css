@@ -84,9 +84,9 @@ textarea:focus-visible {
   gap: var(--space-2);
   cursor: pointer;
   transition:
-    background 120ms ease-out,
-    color 120ms ease-out,
-    border-color 120ms ease-out;
+    background 180ms ease-out,
+    color 180ms ease-out,
+    border-color 180ms ease-out;
 }
 .button:hover {
   filter: brightness(0.92);
@@ -217,7 +217,7 @@ textarea:focus-visible {
   block-size: 18px;
   border-radius: var(--radius-full);
   background: var(--bg-surface-raised);
-  transition: transform 120ms ease-out;
+  transition: transform 180ms ease-out;
 }
 .toggle input:checked + span {
   background: var(--green-primary-600);
@@ -448,7 +448,7 @@ th:last-child {
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: rgb(27 46 18 / 0.45);
+  background: rgb(23 27 56 / 0.48);
 }
 .modal {
   inline-size: min(100%, 560px);

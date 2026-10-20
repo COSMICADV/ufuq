@@ -2,8 +2,8 @@
 
 ## What this folder is for
 
-The DOCUMENT 10 design system as code: colours, spacing, radii, typography and shadows, as
-CSS custom properties. One definition, so twelve slightly different greens cannot happen.
+The UFUQ Visual Identity V2 design system as code: colours, spacing, radii, typography and shadows, as
+CSS custom properties. One definition, so every surface shares the same navy/indigo identity.
 
 ## What it contains
 
@@ -26,3 +26,5 @@ stylesheet refers to a token rather than a literal.
 Add a token when the design system genuinely gains one. Do not add a token that exists only
 for a single screen — that is a local style, and usually a sign the screen should reuse an
 existing component.
+
+The final rules are documented in `docs/FINAL-UI-UX-REDESIGN.md`. Historical green/sage token names remain compatibility aliases with V2 values. CSS and TypeScript values serve web and native consumers; font-family names refer to externally hosted/installed fonts, never bundled binaries.

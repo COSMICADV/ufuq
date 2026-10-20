@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-20",
+  "baseline": "d1f70f2",
+  "routeModules": 63,
+  "viewportWidths": [375, 800, 1440],
+  "locales": {
+    "ar": "rtl",
+    "en": "ltr"
+  },
+  "mainMatrix": {
+    "localizedRouteInstances": 164,
+    "viewportChecks": 492,
+    "axeScans": 204,
+    "overflowFailures": 0,
+    "unexpectedStatuses": 0,
+    "browserPageErrors": 0,
+    "accessibilityViolations": 0
+  },
+  "productionSmoke": {
+    "viewportChecks": 90,
+    "axeScans": 12,
+    "accessibilityViolations": 0,
+    "invitationActivation": true,
+    "coverage": [
+      "Home",
+      "Features",
+      "Pricing",
+      "Contact",
+      "Login",
+      "Register",
+      "Admin attendance/monthly",
+      "Admin settings/company",
+      "Admin tasks",
+      "Employee home",
+      "Employee attendance",
+      "Employee salary",
+      "Valid invitation",
+      "Invalid invitation",
+      "Localized 404"
+    ]
+  },
+  "keyboardAndStates": [
+    "mobile drawer: focus containment, Escape, trigger focus restoration",
+    "drawer navigation closes and reaches tasks",
+    "language switch retains task destination and changes to RTL",
+    "shared form dialog: labelled, focus contained, Escape, focus restoration, axe pass",
+    "error state has no phone overflow",
+    "loading state has no phone overflow",
+    "empty state has no phone overflow"
+  ],
+  "formStates": {
+    "validation": true,
+    "success": true,
+    "destructiveConfirmation": true,
+    "axeViolations": 0
+  },
+  "routeVariants": {
+    "public": [
+      "/",
+      "about",
+      "contact",
+      "features",
+      "for-companies",
+      "for-individuals",
+      "login",
+      "pricing",
+      "register"
+    ],
+    "admin": [
+      "/",
+      "attendance",
+      "attendance/corrections",
+      "attendance/monthly",
+      "employees",
+      "employees/[id]",
+      "employees/[id]/attendance",
+      "employees/[id]/edit",
+      "employees/[id]/goals",
+      "employees/[id]/reports",
+      "employees/[id]/requests",
+      "employees/[id]/salary",
+      "employees/[id]/tasks",
+      "employees/new",
+      "goals",
+      "goals/[id]",
+      "goals/new",
+      "inventory",
+      "inventory/[id]",
+      "inventory/[id]/movements",
+      "inventory/movements",
+      "inventory/new",
+      "inventory/suppliers",
+      "notifications",
+      "payroll",
+      "payroll/[id]",
+      "payroll/[id]/[id]",
+      "reports",
+      "reports/attendance",
+      "reports/goals",
+      "reports/inventory",
+      "reports/payroll",
+      "reports/performance",
+      "reports/stock-movements",
+      "reports/tasks",
+      "reports/warehouse",
+      "requests",
+      "requests/[id]",
+      "requests?category=leave",
+      "settings/audit-log",
+      "settings/company",
+      "settings/departments",
+      "settings/leave-types",
+      "settings/notifications",
+      "settings/performance",
+      "settings/positions",
+      "settings/salary-policy",
+      "settings/schedules",
+      "tasks",
+      "tasks/[id]",
+      "tasks/new",
+      "warehouse",
+      "warehouse/locations",
+      "warehouse/locations/[id]",
+      "warehouse/transfers"
+    ],
+    "app": [
+      "/",
+      "attendance",
+      "attendance/correction/new",
+      "attendance/history",
+      "goals",
+      "goals/[id]",
+      "notifications",
+      "reports",
+      "reports/2026-10",
+      "requests",
+      "requests/[id]",
+      "requests/new",
+      "requests?category=leave",
+      "salary",
+      "salary/[id]",
+      "salary/history",
+      "tasks",
+      "tasks/[id]"
+    ]
+  },
+  "tests": {
+    "api": 1101,
+    "db": 335,
+    "web": 282,
+    "auth": 44,
+    "money": 25,
+    "config": 24,
+    "i18n": 20,
+    "mobile": 4,
+    "total": 1835,
+    "files": 89,
+    "failures": 0
+  },
+  "gates": ["pnpm format:check", "pnpm lint", "pnpm typecheck", "pnpm test", "pnpm build"],
+  "inheritedLintWarnings": 4,
+  "gateResults": [
+    {
+      "command": "pnpm format:check",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm lint",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0
+    }
+  ],
+  "previewFixture": {
+    "longRunReachedExisting20MinuteLimitAfterBrowserChecks": true,
+    "cleanLifecycleRetestPassed": true,
+    "lifecycleTestsPassed": 1,
+    "lifecycleTestsFiltered": 38,
+    "excludedFromNormal1835TestTotal": true
+  }
+}

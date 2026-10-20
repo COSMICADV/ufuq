@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { isLocale } from '@ufuq/i18n';
 import type { ReactNode } from 'react';
 
-import { AppTopbar } from '../../../components/notifications/app-topbar';
+import { ProductShell } from '../../../components/product-shell';
 
 interface LayoutProps {
   readonly children: ReactNode;
@@ -22,9 +22,8 @@ export default async function Layout({
     notFound();
   }
   return (
-    <>
-      <AppTopbar locale={locale} surface="admin" />
+    <ProductShell locale={locale} surface="admin">
       {children}
-    </>
+    </ProductShell>
   );
 }

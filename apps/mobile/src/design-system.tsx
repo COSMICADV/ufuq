@@ -1,5 +1,7 @@
-import { colors, radii, spacing, typography } from '@ufuq/design-tokens';
-import { useState } from 'react';
+import { colors, fontFamilies, radii, spacing, typography } from '@ufuq/design-tokens';
+import { createContext, useContext, useState } from 'react';
+import type { Locale } from '@ufuq/i18n';
+import type { TextProps } from 'react-native';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -8,10 +10,27 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
+  Text as NativeText,
   TextInput,
   View,
 } from 'react-native';
+
+const TypefaceContext = createContext<string>(fontFamilies.ar);
+export function TypographyProvider({
+  locale,
+  children,
+}: {
+  readonly locale: Locale;
+  readonly children: ReactNode;
+}): React.JSX.Element {
+  return (
+    <TypefaceContext.Provider value={fontFamilies[locale]}>{children}</TypefaceContext.Provider>
+  );
+}
+function Text({ style, ...props }: TextProps): React.JSX.Element {
+  const fontFamily = useContext(TypefaceContext);
+  return <NativeText {...props} style={[{ fontFamily, fontSize: typography.body }, style]} />;
+}
 
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'wfh' | 'cancelled';
 const toneStyles: Record<
@@ -111,13 +130,14 @@ export function Input({
   readonly placeholder: string;
   readonly multiline?: boolean;
 }): React.JSX.Element {
+  const fontFamily = useContext(TypefaceContext);
   return (
     <TextInput
       accessibilityLabel={placeholder}
       placeholder={placeholder}
       placeholderTextColor={colors.textTertiary}
       multiline={multiline}
-      style={[styles.input, multiline ? styles.textarea : undefined]}
+      style={[styles.input, { fontFamily }, multiline ? styles.textarea : undefined]}
     />
   );
 }
@@ -327,7 +347,7 @@ const styles = StyleSheet.create({
   required: { color: colors.dangerText },
   helper: { color: colors.textSecondary, fontSize: typography.caption },
   input: {
-    minHeight: 44,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     borderRadius: radii.md,

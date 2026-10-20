@@ -1,6 +1,7 @@
 'use client';
+import { containDialogFocus } from '../lib/dialog-focus';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
@@ -325,26 +326,50 @@ export function Modal({
   readonly footer?: ReactNode;
   readonly closeLabel: string;
 }): React.JSX.Element | null {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    if (!open || element === null) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!element.open) element.showModal();
+    return () => {
+      element?.close();
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [open]);
   if (!open) return null;
   return (
-    <div className="modal-overlay" role="presentation" onMouseDown={onClose}>
-      <section
-        className="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <header>
-          <h2>{title}</h2>
-          <button className="icon-button" onClick={onClose} aria-label={closeLabel}>
-            ×
-          </button>
-        </header>
-        <div>{children}</div>
-        {footer ? <footer>{footer}</footer> : null}
-      </section>
-    </div>
+    <dialog
+      ref={dialog}
+      onKeyDown={containDialogFocus}
+      className="modal"
+      aria-label={title}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom
+        )
+          onClose();
+      }}
+    >
+      <header>
+        <h2>{title}</h2>
+        <button type="button" className="icon-button" onClick={onClose} aria-label={closeLabel}>
+          ×
+        </button>
+      </header>
+      <div>{children}</div>
+      {footer ? <footer>{footer}</footer> : null}
+    </dialog>
   );
 }
 
