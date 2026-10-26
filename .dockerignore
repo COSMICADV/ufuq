@@ -10,3 +10,12 @@
 product-documentation
 design-references
 **/.DS_Store
+
+# Single-server (VPS) deploy: secrets, TLS keys and backups never go into the image.
+deploy/vps/.env
+deploy/vps/certs
+deploy/vps/backups
+
+# This-Mac deploy (Cloudflare Tunnel): secrets and backups stay out of the image.
+deploy/mac/.env
+deploy/mac/backups

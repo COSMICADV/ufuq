@@ -6,9 +6,15 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "extra": {
       "phase": "1"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.ufuq"
     }
   }
 }

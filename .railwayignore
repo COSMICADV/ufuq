@@ -1,0 +1,16 @@
+# Not uploaded by `railway up` (in addition to .gitignore).
+.turbo
+**/.turbo
+**/node_modules
+**/.next
+**/dist
+apps/mobile/ios
+apps/mobile/.expo
+design-references
+product-documentation
+deploy/mac/.env
+deploy/mac/backups
+deploy/vps/.env
+deploy/vps/certs
+deploy/vps/backups
+.DS_Store

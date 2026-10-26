@@ -138,6 +138,9 @@ importers:
       '@ufuq/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      babel-preset-expo:
+        specifier: ~57.0.0
+        version: 57.0.10(@babel/core@7.29.7)(@babel/runtime@7.29.7)(expo@57.0.20)(react-refresh@0.14.2)
       expo:
         specifier: 57.0.20
         version: 57.0.20(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@5.6.3)

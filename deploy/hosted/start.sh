@@ -45,9 +45,9 @@ echo "Seeding reference data…"
 node deploy/hosted/ensure-bucket.mjs || echo "Storage bucket check failed — uploads unavailable until storage is reachable."
 
 pids=()
-(cd apps/api && exec node --max-old-space-size=200 dist/main.js) &
+(cd apps/api && exec node --max-old-space-size="${NODE_HEAP_MB:-200}" dist/main.js) &
 pids+=($!)
-(cd apps/web && NODE_OPTIONS=--max-old-space-size=200 exec ./node_modules/.bin/next start -H 127.0.0.1 -p "$NEXT_PORT") &
+(cd apps/web && NODE_OPTIONS="--max-old-space-size=${NODE_HEAP_MB:-200}" exec ./node_modules/.bin/next start -H 127.0.0.1 -p "$NEXT_PORT") &
 pids+=($!)
 node deploy/hosted/relay.mjs "${PORT:-10000}" "$NEXT_PORT" 0.0.0.0 &
 pids+=($!)

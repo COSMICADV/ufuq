@@ -34,3 +34,9 @@ pnpm-debug.log*
 .vscode/
 *.swp
 .pnpm-store/
+
+# This-Mac deploy backups
+deploy/mac/backups/
+
+# Expo prebuild output (generated)
+apps/mobile/ios/

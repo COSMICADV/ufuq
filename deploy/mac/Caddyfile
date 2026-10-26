@@ -1,0 +1,20 @@
+# Plain-HTTP proxy behind the Cloudflare Tunnel (cloudflared → caddy:80 → app).
+# TLS ends at Cloudflare; cloudflared reaches caddy over the stack's private network.
+{
+	auto_https off
+	servers {
+		trusted_proxies static private_ranges
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
+http://{$UFUQ_DOMAIN}, http://localhost {
+	encode zstd gzip
+	reverse_proxy app:10000 {
+		header_up X-Forwarded-For {client_ip}
+	}
+}
+
+http://www.{$UFUQ_DOMAIN} {
+	redir https://{$UFUQ_DOMAIN}{uri} permanent
+}

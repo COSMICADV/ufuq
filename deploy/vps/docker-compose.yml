@@ -1,0 +1,175 @@
+# UFUQ on one server — the whole product as one Docker Compose stack.
+#
+#   Browser → Cloudflare (DNS, proxy, SSL) → caddy (:443, Origin Certificate)
+#           → app: relay (:10000) → Next.js (:3000) → /api/v1 → NestJS API (:4000)
+#                                                     BullMQ jobs run inside the API
+#           → postgres · redis · minio (files/report exports) · mailpit (SMTP sink)
+#           → backup (daily database + file dumps to ./backups)
+#
+# Only caddy publishes ports. Everything else is reachable only inside the
+# stack's private network. See deploy/vps/README.md.
+#
+# Run from deploy/vps:  docker compose up -d --build
+
+name: ufuq
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ufuq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ufuq
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C.UTF-8'
+      TZ: UTC
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ufuq -d ufuq']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # BullMQ needs noeviction: queued jobs must never be dropped for memory.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  minio:
+    image: minio/minio:RELEASE.2024-09-22T00-33-43Z
+    restart: unless-stopped
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # SMTP sink: accepts every message and delivers none, so invitation and
+  # contact mail never fails. Its web UI is bound to the server's localhost
+  # only (open it through an SSH tunnel). Replace SMTP_* in .env with a real
+  # relay to send mail for real.
+  mailpit:
+    image: axllent/mailpit:v1.20
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8025:8025'
+
+  # Web app + API + relay in one container (the repository's Dockerfile and
+  # deploy/hosted/start.sh). On every boot it applies migrations and the
+  # reference seed, makes sure the storage bucket exists and, with
+  # DEMO_SEED=true, seeds the demo company once.
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_ORIGIN: https://${UFUQ_DOMAIN:?set UFUQ_DOMAIN in .env}
+    image: ufuq-app:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      # `staging` is the codebase's deployed mode with Secure cookies and the
+      # demo company. `production` skips the demo data and the ufuq_app role
+      # password (reserved for Phase 18), so it cannot run this stack.
+      NODE_ENV: staging
+      PUBLIC_ORIGIN: https://${UFUQ_DOMAIN}
+      PORT: '10000'
+      NODE_HEAP_MB: ${NODE_HEAP_MB:-768}
+      DATABASE_MIGRATION_URL: postgresql://ufuq:${POSTGRES_PASSWORD}@postgres:5432/ufuq
+      UFUQ_APP_DB_SECRET: ${UFUQ_APP_DB_SECRET:?set UFUQ_APP_DB_SECRET in .env}
+      REDIS_URL: redis://redis:6379
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: ufuq
+      STORAGE_FORCE_PATH_STYLE: 'true'
+      STORAGE_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-Ufuq <no-reply@1to1os.com>}
+      CONTACT_TO: ${CONTACT_TO:-}
+      # Client IP for login rate limits and audit: caddy sets X-Forwarded-For
+      # to the visitor (from Cloudflare's CF-Connecting-IP); the relay and
+      # Next.js each append one hop after it.
+      TRUST_PROXY_HOPS: '3'
+      DEMO_SEED: ${DEMO_SEED:-true}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "Promise.all(['http://127.0.0.1:4000/api/v1/health','http://127.0.0.1:10000/'].map(u=>fetch(u,{redirect:'manual'}))).then(r=>process.exit(r.every(x=>x.status<500)?0:1),()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      UFUQ_DOMAIN: ${UFUQ_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  # Daily PostgreSQL dump + file-storage archive into ./backups, pruned after
+  # BACKUP_KEEP_DAYS. Restore with deploy/vps/restore.sh.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ufuq
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ufuq
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_HOUR_UTC: ${BACKUP_HOUR_UTC:-1}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - minio-data:/files:ro
+    entrypoint: ['sh', '/backup.sh']
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  caddy-data:
+  caddy-config:
