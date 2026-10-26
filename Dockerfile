@@ -1,5 +1,7 @@
 # UFUQ hosted staging/demo — one container: Next.js web + NestJS API.
-# Deployed as a single Render Free web service behind a Cloudflare Worker.
+# Deployed on Railway (project "ufuq", service "app") at https://app.1to1os.com,
+# with Railway Postgres, Redis and an S3-compatible bucket. PUBLIC_ORIGIN is a
+# Railway service variable, passed in as a build argument.
 # See deploy/hosted/README.md. Not the production topology (Phase 18).
 FROM node:22-bookworm-slim
 
