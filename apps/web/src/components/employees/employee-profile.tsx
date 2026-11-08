@@ -10,11 +10,13 @@ import { ApiError, fetchEnvelope, fetchOne } from '../../lib/api-client';
 import {
   canInvite,
   editEmployeePath,
+  employeeIssueKey,
   employeePath,
   employeesPath,
   fullName,
   initials,
   invitationState,
+  PASSWORD_MIN_LENGTH,
   statusTone,
   visibleTabs,
 } from '../../lib/employees';
@@ -143,7 +145,7 @@ export function EmployeeProfile({
   );
 }
 
-type Dialog = 'deactivate' | 'activate' | null;
+type Dialog = 'deactivate' | 'activate' | 'password' | null;
 
 function ProfileBody({
   locale,
@@ -188,9 +190,11 @@ function ProfileBody({
       ? arrivedInvitation === 'sent' && employee.email !== null
         ? `${t('employees.created_notice')} — ${t('employees.invitation_sent_notice', { email: employee.email })}`
         : t('employees.created_notice')
-      : arrivedWith === 'saved'
-        ? t('employees.saved_notice')
-        : null;
+      : arrivedWith === 'created_password' && employee.email !== null
+        ? t('employees.created_with_password_notice', { email: employee.email })
+        : arrivedWith === 'saved'
+          ? t('employees.saved_notice')
+          : null;
 
   const [notice, setNotice] = useState<string | null>(initialNotice);
   const [invitationFailed, setInvitationFailed] = useState(arrivedInvitation === 'failed');
@@ -249,6 +253,44 @@ function ProfileBody({
         setInvitationFailed(meta.invitation_delivery === 'failed');
       })
       .catch((error: unknown) => {
+        setActionError(describeError(error, t));
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  };
+
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordIssue, setPasswordIssue] = useState<string | null>(null);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const savePassword = (): void => {
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      setPasswordIssue(t('invitation.policy_too_short', { min: String(PASSWORD_MIN_LENGTH) }));
+      return;
+    }
+    startAction();
+    fetchOne<EmployeeView>(`/employees/${employee.id}/password`, {
+      locale,
+      method: 'POST',
+      body: { password: newPassword },
+    })
+      .then((updated) => {
+        onEmployeeChange(updated);
+        setDialog(null);
+        setNewPassword('');
+        setNotice(
+          t('employees.password_set_notice', {
+            name,
+            email: updated.email ?? employee.email ?? '',
+          }),
+        );
+      })
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.fields['password'] !== undefined) {
+          const key = employeeIssueKey('password', error);
+          setPasswordIssue(t(key ?? 'validation.invalid', { min: String(PASSWORD_MIN_LENGTH) }));
+          return;
+        }
         setActionError(describeError(error, t));
       })
       .finally(() => {
@@ -359,6 +401,23 @@ function ProfileBody({
             >
               {t('settings.edit')}
             </Link>
+          ) : null}
+          {permissions.has('employee.create') &&
+          employee.status === 'active' &&
+          employee.account !== null &&
+          employee.account.status !== 'deactivated' ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setNewPassword('');
+                setPasswordIssue(null);
+                setShowNewPassword(false);
+                setActionError(null);
+                setDialog('password');
+              }}
+            >
+              {t('employees.set_password')}
+            </Button>
           ) : null}
           {permissions.has('employee.create') && canInvite(employee) ? (
             <Button variant="secondary" loading={busy && dialog === null} onClick={resend}>
@@ -518,6 +577,69 @@ function ProfileBody({
         </Field>
         {actionError === null ? null : (
           <Alert tone="danger" title={t('state.action_blocked')}>
+            {actionError}
+          </Alert>
+        )}
+      </Modal>
+
+      <Modal
+        open={dialog === 'password'}
+        title={t('employees.set_password_title', { name })}
+        onClose={() => {
+          setDialog(null);
+        }}
+        closeLabel={t('action.close')}
+        footer={
+          <div className="settings-form__actions">
+            <Button loading={busy} onClick={savePassword}>
+              {t('employees.set_password_confirm')}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDialog(null);
+              }}
+            >
+              {t('action.cancel')}
+            </Button>
+          </div>
+        }
+      >
+        <p>{t('employees.set_password_body', { name, email: employee.email ?? '' })}</p>
+        <Field
+          label={t('employees.signin_password')}
+          required
+          {...optionalError(passwordIssue ?? undefined)}
+        >
+          <span className="password-field">
+            <Input
+              type={showNewPassword ? 'text' : 'password'}
+              dir="ltr"
+              autoComplete="new-password"
+              value={newPassword}
+              minLength={PASSWORD_MIN_LENGTH}
+              maxLength={200}
+              required
+              onChange={(event) => {
+                setNewPassword(event.target.value);
+                setPasswordIssue(null);
+              }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={showNewPassword}
+              onClick={() => {
+                setShowNewPassword(!showNewPassword);
+              }}
+            >
+              {showNewPassword ? t('employees.hide_password') : t('employees.show_password')}
+            </Button>
+          </span>
+        </Field>
+        {actionError === null ? null : (
+          <Alert tone="danger" title={t('state.error')}>
             {actionError}
           </Alert>
         )}

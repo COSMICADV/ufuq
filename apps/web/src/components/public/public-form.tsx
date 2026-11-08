@@ -12,9 +12,11 @@ import { Button, Field, Input } from '../design-system';
 export function PublicForm({
   locale,
   kind,
+  employee = false,
 }: {
   readonly locale: Locale;
   readonly kind: 'contact' | 'register' | 'login' | 'forgot';
+  readonly employee?: boolean;
 }): React.JSX.Element {
   const c = publicCopy[locale];
   const router = useRouter();
@@ -271,7 +273,11 @@ export function PublicForm({
       {kind === 'login' ? (
         <div className="public-form__links">
           <Link href={`${publicPath(locale, 'login')}?reset=1`}>{c.forgot}</Link>
-          <Link href={publicPath(locale, 'register')}>{c.noAccount}</Link>
+          {employee ? (
+            <Link href={publicPath(locale, 'login')}>{c.employeeSwitch}</Link>
+          ) : (
+            <Link href={publicPath(locale, 'register')}>{c.noAccount}</Link>
+          )}
         </div>
       ) : null}
     </form>

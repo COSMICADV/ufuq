@@ -18,6 +18,7 @@ import {
   formFromEmployee,
   fullName,
   isDirty,
+  PASSWORD_MIN_LENGTH,
   updateBody,
 } from '../../lib/employees';
 import type { EmployeeFormValues, EmployeeView } from '../../lib/employees';
@@ -233,8 +234,9 @@ function EmployeeFormBody({
 
   const issueFor = (field: string): string | undefined => {
     const key = fieldIssues[field];
-    return key === undefined ? undefined : t(key);
+    return key === undefined ? undefined : t(key, { min: String(PASSWORD_MIN_LENGTH) });
   };
+  const [showPassword, setShowPassword] = useState(false);
 
   const cancelHref = editing === null ? employeesPath(locale) : employeePath(locale, editing.id);
 
@@ -253,7 +255,7 @@ function EmployeeFormBody({
           }).then(({ data: created, meta }) => {
             setLeaving(true);
             router.push(
-              `${employeePath(locale, created.id)}?notice=created&invitation=${meta.invitation_delivery}`,
+              `${employeePath(locale, created.id)}?notice=${values.password === '' ? 'created' : 'created_password'}&invitation=${meta.invitation_delivery}`,
             );
           })
         : fetchOne<EmployeeView>(`/employees/${editing.id}`, {
@@ -495,15 +497,54 @@ function EmployeeFormBody({
           </Select>
         </Field>
         {editing === null ? (
+          <Field
+            label={t('employees.signin_password')}
+            helper={t('employees.signin_password_helper')}
+            {...optionalError(issueFor('password'))}
+          >
+            <span className="password-field">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                dir="ltr"
+                autoComplete="new-password"
+                value={values.password}
+                minLength={PASSWORD_MIN_LENGTH}
+                maxLength={200}
+                aria-invalid={issueFor('password') !== undefined}
+                onChange={(event) => {
+                  set('password', event.target.value);
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-pressed={showPassword}
+                onClick={() => {
+                  setShowPassword(!showPassword);
+                }}
+              >
+                {showPassword ? t('employees.hide_password') : t('employees.show_password')}
+              </Button>
+            </span>
+          </Field>
+        ) : null}
+        {editing === null ? (
           <div className="settings-form__full">
-            <Toggle
-              label={t('employees.send_invitation')}
-              checked={values.send_invitation}
-              onChange={(event) => {
-                set('send_invitation', event.target.checked);
-              }}
-            />
-            <p className="field__helper">{t('employees.send_invitation_helper')}</p>
+            {values.password === '' ? (
+              <>
+                <Toggle
+                  label={t('employees.send_invitation')}
+                  checked={values.send_invitation}
+                  onChange={(event) => {
+                    set('send_invitation', event.target.checked);
+                  }}
+                />
+                <p className="field__helper">{t('employees.send_invitation_helper')}</p>
+              </>
+            ) : (
+              <p className="field__helper">{t('employees.signin_password_invitation_off')}</p>
+            )}
           </div>
         ) : null}
       </FormSection>

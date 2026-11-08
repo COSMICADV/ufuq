@@ -308,6 +308,7 @@ enum AuditAction {
   SIGNUP_REQUESTED                     @map("signup.requested")
   SIGNUP_APPROVED                      @map("signup.approved")
   SIGNUP_REJECTED                      @map("signup.rejected")
+  PASSWORD_SET_BY_ADMIN                @map("password.set_by_admin")
   SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
   EMPLOYEE_CREATED                     @map("employee.created")
   EMPLOYEE_UPDATED                     @map("employee.updated")

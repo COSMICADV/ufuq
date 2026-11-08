@@ -264,3 +264,14 @@
   justify-content: space-between;
   gap: 8px 16px;
 }
+
+/* Password input with a show/hide button beside it */
+.password-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.password-field > input {
+  flex: 1;
+  min-inline-size: 0;
+}

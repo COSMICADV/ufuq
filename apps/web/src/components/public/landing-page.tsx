@@ -143,6 +143,7 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
   };
 
   const loginHref = publicPath(locale, 'login');
+  const employeeLoginHref = `${loginHref}?as=employee`;
   const registerHref = publicPath(locale, 'register');
   const contactHref = publicPath(locale, 'contact');
 
@@ -189,6 +190,10 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
           </nav>
 
           <div className="lp-header__actions">
+            <Link href={employeeLoginHref} className="lp-signin lp-signin--employee">
+              <Users className="lp-i4" />
+              Employee Sign In
+            </Link>
             <Link href={loginHref} className="lp-signin">
               Sign In
             </Link>
@@ -220,6 +225,9 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
               </a>
             ))}
             <div className="lp-mobile-menu__actions">
+              <Link href={employeeLoginHref} className="lp-mobile-menu__signin">
+                Employee Sign In
+              </Link>
               <Link href={loginHref} className="lp-mobile-menu__signin">
                 Sign In
               </Link>
@@ -263,6 +271,13 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                 Explore Features
               </a>
             </div>
+            <p className="lp-hero__employee">
+              Are you an employee?{' '}
+              <Link href={employeeLoginHref}>
+                Sign in with the details your company gave you
+                <ArrowRight className="lp-i4" />
+              </Link>
+            </p>
 
             {/* Interactive dashboard preview */}
             <div className="lp-window" id="preview">

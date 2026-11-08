@@ -121,6 +121,10 @@ export const publicCopy = {
     credentials:
       'البريد الإلكتروني أو كلمة المرور غير صحيحة. راجعهما وحاول مجدداً، أو اطلب حساباً جديداً إذا لم يكن لديك حساب.',
     noAccount: 'ليس لديك حساب؟ اطلب الانضمام',
+    employeeTitle: 'دخول الموظفين',
+    employeeBody:
+      'سجّل الدخول بالبريد الإلكتروني وكلمة المرور اللذين أعطاهما لك مسؤول شركتك. إذا لم تحصل عليهما بعد، اطلبهما من مسؤول شركتك.',
+    employeeSwitch: 'صاحب الشركة؟ سجّل الدخول من هنا',
     retry: 'إعادة المحاولة',
     noJs: 'يتطلب إرسال النموذج JavaScript. يمكنك قراءة صفحات الموقع بدونه.',
     forgot: 'نسيت كلمة المرور؟',
@@ -257,6 +261,10 @@ export const publicCopy = {
     credentials:
       'The email or password is incorrect. Check them and try again — or request an account if you don’t have one yet.',
     noAccount: 'No account yet? Request access',
+    employeeTitle: 'Employee sign in',
+    employeeBody:
+      'Sign in with the email and password your company administrator gave you. If you don’t have them yet, ask your administrator.',
+    employeeSwitch: 'Company owner? Sign in here',
     retry: 'Try again',
     noJs: 'Submitting forms requires JavaScript. Website content remains readable without it.',
     forgot: 'Forgot password?',

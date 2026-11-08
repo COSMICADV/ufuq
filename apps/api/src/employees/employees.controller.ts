@@ -48,6 +48,7 @@ import {
   CreateEmployeeDto,
   DeactivateEmployeeDto,
   ListEmployeesQueryDto,
+  SetEmployeePasswordDto,
   UpdateEmployeeDto,
 } from './dto/employee.dto.js';
 import type { EmployeePayload } from './employee-payload.js';
@@ -150,6 +151,19 @@ export class EmployeesController {
       data: result.employee,
       meta: { locale, invitation_delivery: result.invitationDelivery },
     };
+  }
+
+  @Post(':id/password')
+  @HttpCode(200)
+  @RequirePermission('employee.create')
+  async setPassword(
+    @CurrentUser() ctx: AuthContext,
+    @Param('id', uuidParam) id: string,
+    @Body() dto: SetEmployeePasswordDto,
+    @RequestContext() origin: RequestOrigin,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<EmployeePayload>> {
+    return single(await this.employees.setPassword(ctx, id, dto.password, origin), { locale });
   }
 
   @Post(':id/invite')

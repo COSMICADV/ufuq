@@ -245,6 +245,8 @@ export interface EmployeeFormValues {
   readonly joining_date: string;
   readonly role_key: AssignableRole | '';
   readonly send_invitation: boolean;
+  /** Optional sign-in password chosen by the ADMIN (create only). Empty means "invite by email". */
+  readonly password: string;
 }
 
 /**
@@ -267,6 +269,7 @@ export function emptyEmployeeForm(defaultScheduleId: string | null): EmployeeFor
     joining_date: '',
     role_key: '',
     send_invitation: true,
+    password: '',
   };
 }
 
@@ -287,6 +290,7 @@ export function formFromEmployee(employee: EmployeeView): EmployeeFormValues {
       ? (role as AssignableRole)
       : '',
     send_invitation: false,
+    password: '',
   };
 }
 
@@ -309,7 +313,10 @@ export function createBody(values: EmployeeFormValues): Record<string, unknown> 
     work_schedule_id: values.work_schedule_id,
     joining_date: values.joining_date,
     role_key: values.role_key,
-    send_invitation: values.send_invitation,
+    // A password the ADMIN sets replaces the invitation: the account is active at once.
+    ...(values.password === ''
+      ? { send_invitation: values.send_invitation }
+      : { send_invitation: false, password: values.password }),
   };
 }
 
@@ -370,6 +377,12 @@ export function employeeIssueKey(field: string, error: ApiError): string | null 
   }
   if (field === 'manager_id' && issue === 'would_create_cycle') {
     return 'employees.manager_cycle';
+  }
+  if (field === 'password' && issue === 'too_short') {
+    return 'invitation.policy_too_short';
+  }
+  if (field === 'password' && issue === 'breached') {
+    return 'invitation.policy_breached';
   }
   const known = ['required', 'invalid', 'already_taken', 'not_found'];
   return known.includes(issue) ? `validation.${issue}` : 'validation.invalid';

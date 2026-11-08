@@ -1315,3 +1315,129 @@ describe('departments and employees', () => {
     expect(response.body.error.fields).toEqual({ manager_employee_id: ['not_found'] });
   });
 });
+
+// ---------------------------------------------------------------------------
+// The ADMIN sets the sign-in password — no invitation email needed
+// ---------------------------------------------------------------------------
+
+describe('ADMIN-set sign-in password', () => {
+  it('creates an active account the employee signs in to straight away, with no email', async () => {
+    const before = mail.countTo('direct@a.test');
+    const create = await as(adminA)
+      .post('/employees')
+      .send(
+        body({
+          email: 'direct@a.test',
+          password: 'direct-start-password-26',
+          send_invitation: true,
+        }),
+      );
+    expect(create.status).toBe(201);
+    expect(create.body.meta.invitation_delivery).toBe('not_requested');
+    expect(create.body.data.account).toMatchObject({ status: 'active', role_key: 'employee' });
+    expect(JSON.stringify(create.body)).not.toMatch(/direct-start-password/);
+    expect(mail.countTo('direct@a.test')).toBe(before);
+
+    const token = await tokenFor('direct@a.test', 'direct-start-password-26');
+    const me = await as(token).get('/auth/me');
+    expect(me.status).toBe(200);
+    expect(me.body.data.role.key).toBe('employee');
+
+    const user = await withTenant(prisma, COMPANY_A, (tx) =>
+      tx.user.findFirstOrThrow({ where: { email: 'direct@a.test' } }),
+    );
+    expect(await audits(COMPANY_A, user.id, 'PASSWORD_SET_BY_ADMIN')).toHaveLength(1);
+  });
+
+  it('applies the password policy when creating', async () => {
+    const short = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'weak@a.test', password: 'short' }));
+    expect(short.status).toBe(422);
+    expect(short.body.error.fields.password).toBeDefined();
+    const common = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'weak2@a.test', password: 'password123' }));
+    expect(common.status).toBe(422);
+    expect(common.body.error.fields.password).toBeDefined();
+    const none = await withTenant(prisma, COMPANY_A, (tx) =>
+      tx.user.count({ where: { email: { in: ['weak@a.test', 'weak2@a.test'] } } }),
+    );
+    expect(none).toBe(0);
+  });
+
+  it('activates an invited employee with a password the ADMIN sets', async () => {
+    const create = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'later@a.test' }));
+    expect(create.body.data.account.status).toBe('invited');
+    expect((await login('later@a.test', 'later-chosen-password-26')).status).toBe(401);
+
+    const set = await as(adminA)
+      .post(`/employees/${create.body.data.id as string}/password`)
+      .send({ password: 'later-chosen-password-26' });
+    expect(set.status).toBe(200);
+    expect(set.body.data.account.status).toBe('active');
+    expect(JSON.stringify(set.body)).not.toMatch(/later-chosen-password/);
+    expect((await login('later@a.test', 'later-chosen-password-26')).status).toBe(200);
+  });
+
+  it('replaces an active password, signing the old sessions out', async () => {
+    const create = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'replace@a.test', password: 'replace-first-password-26' }));
+    const id = create.body.data.id as string;
+    const oldToken = await tokenFor('replace@a.test', 'replace-first-password-26');
+    expect((await as(oldToken).get('/auth/me')).status).toBe(200);
+
+    const set = await as(adminA)
+      .post(`/employees/${id}/password`)
+      .send({ password: 'replace-second-password-26' });
+    expect(set.status).toBe(200);
+    expect((await as(oldToken).get('/auth/me')).status).toBe(401);
+    expect((await login('replace@a.test', 'replace-first-password-26')).status).toBe(401);
+    expect((await login('replace@a.test', 'replace-second-password-26')).status).toBe(200);
+  });
+
+  it('is ADMIN-only, tenant-scoped, policy-checked, and refused for a deactivated employee', async () => {
+    const create = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'guarded@a.test', password: 'guarded-first-password-26' }));
+    const id = create.body.data.id as string;
+    const employeeToken = await tokenFor('guarded@a.test', 'guarded-first-password-26');
+
+    expect(
+      (
+        await as(employeeToken)
+          .post(`/employees/${id}/password`)
+          .send({ password: 'x'.repeat(12) })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await as(adminB)
+          .post(`/employees/${id}/password`)
+          .send({ password: 'another-company-password-26' })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await anonymous()
+          .post(`/employees/${id}/password`)
+          .send({ password: 'x'.repeat(12) })
+      ).status,
+    ).toBe(401);
+    const weak = await as(adminA).post(`/employees/${id}/password`).send({ password: 'short' });
+    expect(weak.status).toBe(422);
+
+    expect(
+      (await as(adminA).post(`/employees/${id}/deactivate`).send({ reason: 'Left the company' }))
+        .status,
+    ).toBe(200);
+    const refused = await as(adminA)
+      .post(`/employees/${id}/password`)
+      .send({ password: 'after-leaving-password-26' });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe('EMPLOYEE_NOT_ACTIVE');
+  });
+});

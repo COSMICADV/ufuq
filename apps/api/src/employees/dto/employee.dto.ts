@@ -12,7 +12,7 @@
  * whitelist turns an attempt to send one into a 422.
  */
 
-import { ASSIGNABLE_ROLE_KEYS } from '@ufuq/auth';
+import { ASSIGNABLE_ROLE_KEYS, MIN_PASSWORD_LENGTH } from '@ufuq/auth';
 import type { AssignableRoleKey } from '@ufuq/auth';
 import { normaliseDigits } from '@ufuq/i18n';
 import { Transform } from 'class-transformer';
@@ -145,6 +145,25 @@ export class CreateEmployeeDto {
 
   @IsBoolean({ message: 'invalid' })
   send_invitation!: boolean;
+
+  /**
+   * Optional sign-in password the ADMIN chooses for the employee. When given,
+   * the account is active at once — the employee signs in with this email and
+   * password — and no invitation is sent, whatever `send_invitation` says.
+   */
+  @IsOptional()
+  @IsString({ message: 'invalid' })
+  @MinLength(MIN_PASSWORD_LENGTH, { message: 'invalid' })
+  @MaxLength(200, { message: 'invalid' })
+  password?: string;
+}
+
+/** `POST /employees/:id/password` — the ADMIN sets (or replaces) an employee's sign-in password. */
+export class SetEmployeePasswordDto {
+  @IsString({ message: 'invalid' })
+  @MinLength(MIN_PASSWORD_LENGTH, { message: 'invalid' })
+  @MaxLength(200, { message: 'invalid' })
+  password!: string;
 }
 
 /**

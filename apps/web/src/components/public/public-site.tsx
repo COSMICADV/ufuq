@@ -40,11 +40,15 @@ export function PublicSite({
   locale,
   page,
   reset = false,
+  employee = false,
 }: {
   readonly locale: Locale;
   readonly page: PublicPage;
   readonly reset?: boolean;
+  /** The sign-in page opened from "Employee sign in": same form, wording for employees. */
+  readonly employee?: boolean;
 }): React.JSX.Element {
+  const forEmployee = employee && page === 'login' && !reset;
   const c = publicCopy[locale];
   const index = PUBLIC_PAGES.indexOf(page);
   const link = (p: PublicPage, primary = false): React.JSX.Element => (
@@ -109,8 +113,8 @@ export function PublicSite({
         <section className={`public-intro ${page === 'home' ? 'public-hero' : ''}`}>
           <div className="public-wrap">
             <p className="public-eyebrow">{page === 'for-individuals' ? c.coming : c.brand}</p>
-            <h1>{reset ? c.forgot : c.titles[index]}</h1>
-            <p>{reset ? c.resetInfo : c.descriptions[index]}</p>
+            <h1>{reset ? c.forgot : forEmployee ? c.employeeTitle : c.titles[index]}</h1>
+            <p>{reset ? c.resetInfo : forEmployee ? c.employeeBody : c.descriptions[index]}</p>
             {page === 'home' ? (
               <div className="public-actions">
                 {link('register', true)}
@@ -261,9 +265,10 @@ export function PublicSite({
           {page === 'contact' || page === 'register' || page === 'login' ? (
             <section className="public-form-panel">
               <PublicForm
-                key={`${locale}-${page}-${String(reset)}`}
+                key={`${locale}-${page}-${String(reset)}-${String(forEmployee)}`}
                 locale={locale}
                 kind={page === 'login' && reset ? 'forgot' : page}
+                employee={forEmployee}
               />
             </section>
           ) : null}

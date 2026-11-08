@@ -43,6 +43,7 @@ import type { Locale } from '@ufuq/i18n';
 import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { InvitationService } from '../auth/invitation.service.js';
+import { PasswordService } from '../auth/password.service.js';
 import { SessionService } from '../auth/session.service.js';
 import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
@@ -120,6 +121,7 @@ export class EmployeesService extends TenantScopedService {
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(InvitationMailer) private readonly mailer: InvitationMailer,
     @Inject(EmployeeEventPublisher) private readonly events: EmployeeEventPublisher,
+    @Inject(PasswordService) private readonly passwords: PasswordService,
   ) {
     super(prisma, audit);
   }
@@ -166,6 +168,11 @@ export class EmployeesService extends TenantScopedService {
       throw forbidden();
     }
 
+    // An ADMIN-chosen password makes the account active immediately; it must
+    // meet the same policy as any other password (DOCUMENT 09 §2).
+    const passwordHash =
+      dto.password === undefined ? null : await this.hashCheckedPassword(dto.password);
+
     const { row, pending } = await this.tenant(ctx, async (tx) => {
       await this.assertReferences(tx, {
         department_id: dto.department_id ?? null,
@@ -185,9 +192,9 @@ export class EmployeesService extends TenantScopedService {
             id: userId,
             companyId: ctx.companyId,
             email: dto.email,
-            passwordHash: null,
+            passwordHash,
             roleId: role.id,
-            status: 'invited',
+            status: passwordHash === null ? 'invited' : 'active',
             createdBy: ctx.userId,
           },
         });
@@ -225,7 +232,21 @@ export class EmployeesService extends TenantScopedService {
         userAgent: origin.userAgent,
       });
 
-      const pending = dto.send_invitation ? await this.prepareInvitation(tx, ctx, created) : null;
+      if (passwordHash !== null) {
+        await this.audit.record(tx, {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          action: 'PASSWORD_SET_BY_ADMIN',
+          entityType: 'user',
+          entityId: userId,
+          ipAddress: origin.ipAddress,
+          userAgent: origin.userAgent,
+        });
+      }
+      const pending =
+        dto.send_invitation && passwordHash === null
+          ? await this.prepareInvitation(tx, ctx, created)
+          : null;
       return { row: await this.reload(tx, employeeId), pending };
     });
 
@@ -482,6 +503,68 @@ export class EmployeesService extends TenantScopedService {
       throw new AppException(ERROR_CODES.MAIL_DELIVERY_FAILED, 503);
     }
     return employeePayload(row);
+  }
+
+  // -- Sign-in password set by the ADMIN ---------------------------------------
+
+  /**
+   * Set or replace an employee's sign-in password, for companies that hand
+   * out credentials instead of emailing invitations. An invited account
+   * becomes active; an active one gets the new password, any lockout is
+   * cleared, and its existing sessions end so the old password stops working
+   * everywhere at once. A deactivated employee or account is refused.
+   */
+  async setPassword(
+    ctx: AuthContext,
+    id: string,
+    password: string,
+    origin: RequestOrigin,
+  ): Promise<EmployeePayload> {
+    const passwordHash = await this.hashCheckedPassword(password);
+    return this.tenant(ctx, async (tx) => {
+      const before = await this.loadForWrite(tx, ctx, id, 'employee.create');
+      if (!before.user) {
+        throw conflict(ERROR_CODES.CONFLICT);
+      }
+      if (before.status !== 'active' || before.user.status === 'deactivated') {
+        throw conflict(ERROR_CODES.EMPLOYEE_NOT_ACTIVE);
+      }
+      await tx.user.update({
+        where: { id: before.user.id },
+        data: {
+          passwordHash,
+          status: 'active',
+          failedLoginCount: 0,
+          lastFailedLoginAt: null,
+          lockedUntil: null,
+        },
+      });
+      // Unused invitation links stop working: the account has a password now.
+      await this.invitations.expirePending(tx, before.user.id);
+      if (before.user.status === 'active') {
+        await this.sessions.revokeAllForUserIn(tx, before.user.id);
+      }
+      await this.audit.record(tx, {
+        companyId: ctx.companyId,
+        userId: ctx.userId,
+        action: 'PASSWORD_SET_BY_ADMIN',
+        entityType: 'user',
+        entityId: before.user.id,
+        ipAddress: origin.ipAddress,
+        userAgent: origin.userAgent,
+      });
+      return employeePayload(await this.reload(tx, before.id));
+    });
+  }
+
+  private async hashCheckedPassword(password: string): Promise<string> {
+    const violations = this.passwords.checkPolicy(password);
+    if (violations.length > 0) {
+      throw new AppException(ERROR_CODES.PASSWORD_POLICY_VIOLATION, 422, {
+        fields: { password: violations.map((v) => v.code) },
+      });
+    }
+    return this.passwords.hash(password);
   }
 
   // -- Loading and scope -----------------------------------------------------
