@@ -43,10 +43,26 @@ export interface Env {
     /** Both set, or both null — an unauthenticated relay is a real deployment shape. */
     readonly smtpUser: string | null;
     readonly smtpPassword: string | null;
-    /** The `From` header, e.g. `أُفق <no-reply@example.com>`. */
+    /** The `From` header, e.g. `1to1OS <no-reply@example.com>`. */
     readonly from: string;
     /** Phase 16 contact delivery; null disables submission until configured. */
     readonly contactTo?: string | null;
+    /**
+     * Resend (https://resend.com) API key. When set, mail goes out over
+     * Resend's HTTPS API instead of SMTP — needed on hosts that block
+     * outbound SMTP (Railway's Free, Trial and Hobby plans).
+     */
+    readonly resendApiKey?: string | null;
+  };
+  /**
+   * Sign-up approval. New public registrations wait for the platform owner,
+   * who reviews them on `/owner` with this key.
+   */
+  readonly owner?: {
+    /** Unlocks the owner page and its API; null disables both. At least 32 characters. */
+    readonly accessKey: string | null;
+    /** Where new sign-up notifications are emailed; null sends none. */
+    readonly notifyTo: string | null;
   };
   readonly apiPort: number;
   readonly webPort: number;
@@ -200,6 +216,21 @@ function loadMail(raw: RawEnv, issues: string[]): Env['mail'] {
       optionalString(raw, 'CONTACT_TO') === null
         ? null
         : requireMailAddress(raw, 'CONTACT_TO', issues),
+    resendApiKey: optionalString(raw, 'RESEND_API_KEY'),
+  };
+}
+
+function loadOwner(raw: RawEnv, issues: string[]): NonNullable<Env['owner']> {
+  const accessKey = optionalString(raw, 'OWNER_ACCESS_KEY');
+  if (accessKey !== null && accessKey.length < 32) {
+    issues.push('OWNER_ACCESS_KEY must be at least 32 characters');
+  }
+  return {
+    accessKey,
+    notifyTo:
+      optionalString(raw, 'OWNER_NOTIFY_TO') === null
+        ? null
+        : requireMailAddress(raw, 'OWNER_NOTIFY_TO', issues),
   };
 }
 
@@ -229,6 +260,7 @@ export function loadEnv(raw: RawEnv = process.env): Env {
       ),
     },
     mail: loadMail(raw, issues),
+    owner: loadOwner(raw, issues),
     apiPort: requirePort(raw, 'API_PORT', 4000, issues),
     webPort: requirePort(raw, 'WEB_PORT', 3000, issues),
     webOrigin: requireUrl(raw, 'WEB_ORIGIN', ['http:', 'https:'], issues),
@@ -252,6 +284,8 @@ export const SECRET_KEYS: readonly string[] = [
   'STORAGE_ACCESS_KEY_ID',
   'STORAGE_SECRET_ACCESS_KEY',
   'SMTP_PASSWORD',
+  'RESEND_API_KEY',
+  'OWNER_ACCESS_KEY',
 ];
 
 /** Redact secrets before printing configuration anywhere. */

@@ -209,6 +209,10 @@ export function describeError(error: unknown, t: Translator): string {
       return t('error.department_has_positions');
     case 'FORBIDDEN':
       return t('error.forbidden');
+    case 'ACCOUNT_PENDING_APPROVAL':
+      return t('error.account_pending_approval');
+    case 'ACCOUNT_REJECTED':
+      return t('error.account_rejected');
     case 'NOT_FOUND':
       return t('error.not_found');
     case 'CONFLICT':

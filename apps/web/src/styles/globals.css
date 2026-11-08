@@ -1204,7 +1204,7 @@ a.button {
   padding: var(--space-6);
 }
 .auth-card__brand {
-  color: var(--green-deep-800);
+  color: var(--text-primary);
   font-size: var(--font-h3);
 }
 .auth-card__heading h1 {
@@ -1384,7 +1384,7 @@ a.button {
 }
 .attendance-tabs a.is-active {
   background: var(--bg-surface-raised);
-  color: var(--green-deep-800);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -1923,7 +1923,7 @@ a.button {
   min-inline-size: 0;
 }
 .tasks-back {
-  color: var(--green-deep-700);
+  color: var(--text-primary);
   font-weight: 600;
 }
 .tasks-muted {
@@ -3258,7 +3258,7 @@ a.button {
   display: inline-flex;
   align-items: center;
   min-block-size: 44px;
-  color: var(--green-deep-700);
+  color: var(--text-primary);
   font-weight: 600;
 }
 .monthly-report {
@@ -3303,7 +3303,7 @@ a.button {
   overflow-wrap: anywhere;
 }
 .monthly-figures .is-total dd {
-  color: var(--green-deep-700);
+  color: var(--text-primary);
 }
 .monthly-goals {
   display: grid;
@@ -3452,7 +3452,7 @@ a.button {
   border-block-end: 1px solid var(--border-subtle);
 }
 .app-topbar__home {
-  color: var(--green-deep-700);
+  color: var(--text-primary);
   font-weight: 700;
   text-decoration: none;
 }
@@ -3482,7 +3482,7 @@ a.button {
   background: var(--sage-100);
 }
 .notification-bell.has-unread {
-  color: var(--green-deep-700);
+  color: var(--text-primary);
 }
 .notification-bell__badge {
   position: absolute;

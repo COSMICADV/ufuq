@@ -1,0 +1,173 @@
+/* The platform owner's sign-up review page (components/owner/owner-requests.tsx). */
+.owner-page {
+  min-block-size: 100dvh;
+  background: radial-gradient(40% 35% at 10% 0%, rgb(30 58 138 / 0.22), transparent 70%),
+    radial-gradient(35% 35% at 95% 40%, rgb(226 192 168 / 0.08), transparent 70%), var(--bg-page);
+}
+.owner-bar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 72px;
+  padding-inline: max(20px, calc((100vw - 1040px) / 2));
+  background: rgb(15 23 42 / 0.8);
+  border-block-end: 1px solid var(--border-subtle);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.owner-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+.owner-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.owner-bar__actions > a {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-decoration: none;
+}
+.owner-bar__actions > a:hover {
+  color: var(--brand-indigo);
+}
+.owner-main {
+  max-inline-size: 1040px;
+  margin-inline: auto;
+  padding: 48px 20px 80px;
+  display: grid;
+  gap: 32px;
+}
+.owner-eyebrow {
+  margin: 0 0 8px;
+  color: var(--brand-indigo);
+  font-size: 13px;
+  font-weight: 600;
+}
+.owner-intro h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.owner-intro p:last-child {
+  margin: 8px 0 0;
+  max-inline-size: 60ch;
+  color: var(--text-secondary);
+}
+.owner-unlock {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 480px;
+  padding: 28px;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  background: rgb(15 23 42 / 0.7);
+}
+.owner-section h2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 16px;
+  font-size: var(--font-h3);
+  color: #fff;
+}
+.owner-count {
+  padding: 2px 10px;
+  border-radius: 9999px;
+  background: rgb(226 192 168 / 0.12);
+  color: var(--brand-indigo);
+  font-size: 12px;
+  font-weight: 600;
+}
+.owner-list {
+  display: grid;
+  gap: 16px;
+}
+.owner-empty {
+  margin: 0;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px dashed var(--border-default);
+  color: var(--text-secondary);
+  text-align: center;
+}
+.owner-request {
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  background: rgb(20 30 51 / 0.85);
+  scroll-margin-block: 96px;
+}
+.owner-request--focus {
+  border-color: rgb(226 192 168 / 0.7);
+  box-shadow:
+    0 0 0 1px rgb(226 192 168 / 0.3),
+    0 20px 25px -5px rgb(226 192 168 / 0.06);
+}
+.owner-request__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-end: 16px;
+}
+.owner-request__head h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+.owner-request__from {
+  display: inline-block;
+  margin-block-start: 4px;
+  font-size: 12px;
+  color: var(--brand-indigo);
+}
+.owner-request__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+.owner-request__facts dt {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.owner-request__facts dd {
+  margin: 2px 0 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.owner-request__facts a {
+  color: var(--brand-indigo);
+}
+.owner-request__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-block-start: 20px;
+  padding-block-start: 20px;
+  border-block-start: 1px solid var(--border-subtle);
+}
+.owner-request__confirm {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--danger-text);
+}
+@media (max-width: 639px) {
+  .owner-bar__actions .button {
+    padding-inline: 10px;
+  }
+}

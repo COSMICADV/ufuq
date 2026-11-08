@@ -13,7 +13,11 @@ export {
   type AuthResetTokenLookupRow,
   type AuthSessionLookupRow,
 } from './auth-lookups.js';
-export { listActiveCompanyIds } from './platform-lookups.js';
+export {
+  listActiveCompanyIds,
+  listSignupRequests,
+  type SignupRequestRow,
+} from './platform-lookups.js';
 
 // Re-exported so `apps/api` never imports `@prisma/client` directly — every
 // generated model, enum and input type comes from `@ufuq/db`'s public entry

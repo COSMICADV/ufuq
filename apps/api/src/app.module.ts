@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PublicSiteModule } from './public-site/public.module.js';
+import { OwnerModule } from './owner/owner.module.js';
 import type { DynamicModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import type { Env } from '@ufuq/config';
@@ -87,6 +88,7 @@ export class AppModule {
         MailModule.register(env),
         HealthModule,
         PublicSiteModule,
+        OwnerModule,
         AuthModule,
         CompanyStructureModule,
         EmployeesModule,

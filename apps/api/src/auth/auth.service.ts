@@ -186,6 +186,14 @@ export class AuthService {
       await this.auditPlainFailure(candidate, ctx);
       throw new AppException(ERROR_CODES.ACCOUNT_DEACTIVATED, 401);
     }
+    if (candidate.companyStatus === 'pending_approval') {
+      await this.auditPlainFailure(candidate, ctx);
+      throw new AppException(ERROR_CODES.ACCOUNT_PENDING_APPROVAL, 403);
+    }
+    if (candidate.companyStatus === 'rejected') {
+      await this.auditPlainFailure(candidate, ctx);
+      throw new AppException(ERROR_CODES.ACCOUNT_REJECTED, 403);
+    }
     if (candidate.companyStatus !== 'active') {
       await this.auditPlainFailure(candidate, ctx);
       throw new AppException(ERROR_CODES.COMPANY_INACTIVE, 401);

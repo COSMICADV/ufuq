@@ -28,6 +28,10 @@ enum CompanyStatus {
   active
   suspended
   cancelled
+  /// Public sign-up waiting for the platform owner's approval (no sign-in yet).
+  pending_approval
+  /// Public sign-up the platform owner declined.
+  rejected
 
   @@map("company_status")
 }
@@ -301,6 +305,9 @@ enum AuditAction {
   PERMISSION_DENIED                    @map("permission.denied")
   TENANCY_VIOLATION_ATTEMPT            @map("tenancy.violation_attempt")
   SETTINGS_COMPANY_UPDATED             @map("settings.company_updated")
+  SIGNUP_REQUESTED                     @map("signup.requested")
+  SIGNUP_APPROVED                      @map("signup.approved")
+  SIGNUP_REJECTED                      @map("signup.rejected")
   SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
   EMPLOYEE_CREATED                     @map("employee.created")
   EMPLOYEE_UPDATED                     @map("employee.updated")
@@ -403,6 +410,8 @@ model Company {
   /// only when this is true (Phase 14). Default false: blocked.
   allowNegativeStock   Boolean       @default(false) @map("allow_negative_stock")
   status               CompanyStatus @default(active)
+  /// When the platform owner approved or rejected a public sign-up; null otherwise.
+  reviewedAt           DateTime?     @map("reviewed_at") @db.Timestamptz(3)
   /// Nullable for legacy/demo companies; public registration records the first ADMIN.
   createdBy            String?       @map("created_by") @db.Uuid
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)

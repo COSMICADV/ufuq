@@ -23,7 +23,6 @@ describe('contact recipient configuration', () => {
       null as never,
       null as never,
       null as never,
-      null as never,
     );
     await expect(service.contact(dto)).rejects.toMatchObject({
       appErrorCode: 'CONTACT_DELIVERY_FAILED',

@@ -24,6 +24,10 @@ export const ERROR_CODES = {
   ACCOUNT_NOT_ACTIVATED: 'ACCOUNT_NOT_ACTIVATED',
   ACCOUNT_DEACTIVATED: 'ACCOUNT_DEACTIVATED',
   COMPANY_INACTIVE: 'COMPANY_INACTIVE',
+  // Sign-up approval: the company registered publicly and is waiting for, or
+  // was refused by, the platform owner.
+  ACCOUNT_PENDING_APPROVAL: 'ACCOUNT_PENDING_APPROVAL',
+  ACCOUNT_REJECTED: 'ACCOUNT_REJECTED',
   FORBIDDEN: 'FORBIDDEN',
   RATE_LIMITED: 'RATE_LIMITED',
   TOKEN_INVALID: 'TOKEN_INVALID',
@@ -178,6 +182,8 @@ const MESSAGE_KEY_BY_CODE: Record<ErrorCode, string> = {
   ACCOUNT_NOT_ACTIVATED: 'error.account_not_activated',
   ACCOUNT_DEACTIVATED: 'error.account_deactivated',
   COMPANY_INACTIVE: 'error.company_inactive',
+  ACCOUNT_PENDING_APPROVAL: 'error.account_pending_approval',
+  ACCOUNT_REJECTED: 'error.account_rejected',
   FORBIDDEN: 'error.forbidden',
   RATE_LIMITED: 'error.rate_limited',
   TOKEN_INVALID: 'error.token_invalid',

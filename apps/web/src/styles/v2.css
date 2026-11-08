@@ -1,4 +1,4 @@
-/* UFUQ V2: shared presentation layer. Functional module styles remain intact. */
+/* 1to1OS: shared presentation layer. Functional module styles remain intact. */
 html {
   scroll-padding-block-start: 88px;
 }
@@ -296,7 +296,7 @@ tbody tr:last-child td {
 }
 .product-nav a[aria-current] {
   background: var(--brand-indigo);
-  color: white;
+  color: var(--text-on-primary);
   font-weight: 600;
 }
 .product-nav a:focus-visible,
@@ -321,7 +321,7 @@ tbody tr:last-child td {
   inset-block-start: 0;
   z-index: 5;
   border-block-end: 1px solid var(--border-default);
-  background: white;
+  background: var(--bg-surface);
   min-block-size: 76px;
   padding-inline: 24px;
 }
@@ -334,7 +334,7 @@ tbody tr:last-child td {
   background: transparent;
 }
 .product-header .app-topbar__home {
-  color: var(--brand-navy);
+  color: var(--text-primary);
   font-size: 20px;
   display: flex;
   align-items: center;
@@ -375,7 +375,7 @@ tbody tr:last-child td {
 }
 .page-heading h1,
 .settings__heading h1 {
-  color: var(--brand-navy);
+  color: var(--text-primary);
   font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -444,7 +444,7 @@ tbody tr:last-child td {
   grid-column: 1 / -1;
 }
 .kpi__value {
-  color: var(--brand-navy);
+  color: var(--text-primary);
   letter-spacing: -0.035em;
 }
 .kpi__delta {
@@ -539,8 +539,8 @@ tbody tr:last-child td {
   grid-template-columns: 224px minmax(0, 1fr);
 }
 .product-shell--app .product-sidebar {
-  background: white;
-  color: var(--brand-navy);
+  background: var(--bg-surface);
+  color: var(--text-primary);
   border-inline-end: 1px solid var(--border-default);
 }
 .product-shell--app .product-sidebar .product-brand small,
@@ -608,7 +608,7 @@ tbody tr:last-child td {
     inset-block-end: 0;
     inset-inline: 0;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-    background: white;
+    background: var(--bg-surface);
     border-block-start: 1px solid var(--border-default);
   }
   .product-bottom a,
@@ -736,19 +736,19 @@ tbody tr:last-child td {
 
 /* Marketing uses the same identity with editorial spacing and a separate frame. */
 .public-site {
-  background: white;
+  background: var(--bg-surface);
 }
 .public-header {
   padding-block: 16px;
   padding-inline: max(24px, calc((100vw - 1280px) / 2));
   gap: 28px;
-  background: white;
+  background: var(--bg-surface);
 }
 .public-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--brand-navy) !important;
+  color: var(--text-primary) !important;
   font-size: 25px;
 }
 .public-header nav a,
@@ -775,7 +775,7 @@ tbody tr:last-child td {
   font-size: clamp(30px, 3.5vw, 48px);
   line-height: 1.55;
   letter-spacing: -0.035em;
-  color: var(--brand-navy);
+  color: var(--text-primary);
 }
 .public-intro p {
   line-height: 1.95;
@@ -852,7 +852,7 @@ tbody tr:last-child td {
   line-height: 1.95;
 }
 .public-site h2 {
-  color: var(--brand-navy);
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 .public-site h3 {
@@ -863,7 +863,7 @@ tbody tr:last-child td {
 }
 .public-grid article {
   padding: 28px;
-  background: white;
+  background: var(--bg-surface);
   border-radius: 16px;
   box-shadow: none;
 }
@@ -895,7 +895,7 @@ tbody tr:last-child td {
   background: var(--bg-page);
   border: 1px solid var(--border-subtle);
   padding: 20px;
-  color: var(--brand-navy);
+  color: var(--text-primary);
 }
 .public-final {
   background: var(--brand-mist);
@@ -922,7 +922,7 @@ tbody tr:last-child td {
   text-decoration: underline;
 }
 .public-form-panel {
-  background: white;
+  background: var(--bg-surface);
   padding: 32px;
   border: 1px solid var(--border-default);
   border-radius: 16px;
@@ -992,7 +992,7 @@ tbody tr:last-child td {
     padding-block-start: 8px;
   }
   .public-mobile-nav summary {
-    color: var(--brand-navy);
+    color: var(--text-primary);
     font-weight: 600;
   }
   .public-mobile-nav nav {
@@ -1146,7 +1146,7 @@ dialog.modal > div {
   grid-template-columns: minmax(0, 1fr);
 }
 .notification-item.is-unread :is(.notification-item__body, .notification-item__meta) {
-  color: var(--green-deep-600);
+  color: var(--text-primary);
 }
 .settings__sections {
   grid-auto-flow: row;
@@ -1198,7 +1198,7 @@ dialog.modal {
   gap: 20px;
 }
 .not-found-card .brand-mark {
-  color: var(--brand-navy);
+  color: var(--text-primary);
 }
 .not-found-card h1,
 .not-found-card p {
@@ -1214,5 +1214,5 @@ dialog.modal {
 }
 .not-found-card h1 {
   font-size: var(--font-h1);
-  color: var(--brand-navy);
+  color: var(--text-primary);
 }

@@ -71,8 +71,8 @@ describe('message catalogue', () => {
   });
 
   it('translates in both directions', () => {
-    expect(createTranslator('ar')('app.name')).toBe('أُفق');
-    expect(createTranslator('en')('app.name')).toBe('Ufuq');
+    expect(createTranslator('ar')('app.name')).toBe('1to1OS');
+    expect(createTranslator('en')('app.name')).toBe('1to1OS');
   });
 
   it('throws on a missing key rather than rendering one', () => {

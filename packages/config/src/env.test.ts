@@ -13,7 +13,7 @@ const valid = {
   STORAGE_SECRET_ACCESS_KEY: 'local-secret-key',
   SMTP_HOST: 'localhost',
   SMTP_PORT: '1025',
-  MAIL_FROM: 'Ufuq <no-reply@ufuq.local>',
+  MAIL_FROM: '1to1OS <no-reply@1to1os.local>',
   WEB_ORIGIN: 'http://localhost:3000',
 };
 
@@ -99,9 +99,15 @@ describe('loadEnv — SMTP for invitation mail (approved Phase 5 decision)', () 
       smtpSecure: false,
       smtpUser: null,
       smtpPassword: null,
-      from: 'Ufuq <no-reply@ufuq.local>',
+      from: '1to1OS <no-reply@1to1os.local>',
       contactTo: null,
+      resendApiKey: null,
     });
+  });
+
+  it('switches to Resend when RESEND_API_KEY is set', () => {
+    const { mail } = loadEnv({ ...valid, RESEND_API_KEY: 're_test_key' });
+    expect(mail.resendApiKey).toBe('re_test_key');
   });
 
   it('loads credentials and implicit TLS when given', () => {
@@ -166,4 +172,25 @@ describe('Phase 16 CONTACT_TO', () => {
       expect(() => loadEnv({ ...valid, CONTACT_TO: value })).toThrow(EnvError);
     },
   );
+});
+
+describe('loadEnv — sign-up approval owner settings', () => {
+  it('leaves the owner page disabled by default', () => {
+    expect(loadEnv(valid).owner).toEqual({ accessKey: null, notifyTo: null });
+  });
+
+  it('loads the owner key and notification address', () => {
+    const owner = loadEnv({
+      ...valid,
+      OWNER_ACCESS_KEY: 'k'.repeat(40),
+      OWNER_NOTIFY_TO: 'owner@example.com',
+    }).owner;
+    expect(owner).toEqual({ accessKey: 'k'.repeat(40), notifyTo: 'owner@example.com' });
+  });
+
+  it('refuses a short owner key and a malformed notification address', () => {
+    expect(() =>
+      loadEnv({ ...valid, OWNER_ACCESS_KEY: 'short', OWNER_NOTIFY_TO: 'not an email' }),
+    ).toThrow(/OWNER_ACCESS_KEY must be at least 32 characters[\s\S]*OWNER_NOTIFY_TO/);
+  });
 });

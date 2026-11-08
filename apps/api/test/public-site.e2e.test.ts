@@ -16,7 +16,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { existsSync, writeFileSync } from 'node:fs';
-import { InvitationService } from '../src/auth/invitation.service.js';
+import { AuditDispatcher } from '../src/auth/audit-dispatcher.js';
 import { MAIL_TRANSPORT } from '../src/mail/mail-transport.js';
 import type { MailMessage } from '../src/mail/mail-transport.js';
 
@@ -57,6 +57,8 @@ const ADMIN_A_EMAIL = 'admin-a@company-a.test';
 const ADMIN_A_PASSWORD = 'a-genuinely-long-password-one';
 const ADMIN_B_EMAIL = 'admin-b@company-b.test';
 const ADMIN_B_PASSWORD = 'a-genuinely-long-password-two';
+const OWNER_KEY = 'owner-key-for-tests-'.padEnd(48, 'x');
+const OWNER_EMAIL = 'owner@1to1os.test';
 
 function testEnv(databaseUrl: string): Env {
   return {
@@ -79,9 +81,10 @@ function testEnv(databaseUrl: string): Env {
       smtpSecure: false,
       smtpUser: null,
       smtpPassword: null,
-      from: 'Ufuq <no-reply@ufuq.test>',
+      from: '1to1OS <no-reply@1to1os.test>',
       contactTo: 'contact@ufuq.test',
     },
+    owner: { accessKey: OWNER_KEY, notifyTo: OWNER_EMAIL },
     apiPort: 0,
     webPort: 0,
     webOrigin: 'http://localhost:3000',
@@ -360,11 +363,24 @@ describe('Phase 16 contact delivery', () => {
   });
 });
 
-describe('Phase 16 registration and auth integration', () => {
-  it('creates company + first ADMIN + invitation atomically, verifies and signs in through existing auth', async () => {
+const owner = (method: 'get' | 'post', path = '', key: string | null = OWNER_KEY): request.Test => {
+  const req = request(app.getHttpServer())[method](`/api/v1/owner/signup-requests${path}`);
+  return key === null ? req : req.set('x-owner-key', key);
+};
+const login = (email: string, password = registration().password as string): request.Test =>
+  request(app.getHttpServer()).post('/api/v1/auth/login').send({ email, password });
+async function companyOf(email: string): Promise<{ id: string; status: string }> {
+  const rows = await inspect<{ id: string; status: string }>(
+    'SELECT c.id, c.status::text AS status FROM companies c JOIN users u ON u.company_id = c.id WHERE u.email = $1',
+    [email],
+  );
+  return rows.rows[0] as { id: string; status: string };
+}
+
+describe('Sign-up approval — registration waits for the platform owner', () => {
+  it('saves a pending company and ADMIN, emails the owner, and signs in only after approval', async () => {
     const res = await post('register', registration());
     expect(res.status).toBe(201);
-    expect(messages).toHaveLength(1);
     expect(res.text).not.toMatch(/password|token|company_id/);
     const users = await inspect<{
       id: string;
@@ -374,46 +390,72 @@ describe('Phase 16 registration and auth integration', () => {
       phone: string;
     }>("SELECT * FROM users WHERE email='founder@new-company.test'");
     const user = users.rows[0];
-    expect(user?.status).toBe('invited');
+    expect(user?.status).toBe('active');
     expect(user?.display_name).toBe('المسؤول الأول');
     expect(user?.phone).toBe('+201000000001');
+    const company = await companyOf('founder@new-company.test');
+    expect(company.status).toBe('pending_approval');
     const companies = await inspect<{ created_by: string; employee_count_range: string }>(
       'SELECT created_by,employee_count_range FROM companies WHERE id=$1',
-      [user?.company_id],
+      [company.id],
     );
     expect(companies.rows[0]?.created_by).toBe(user?.id);
     expect(companies.rows[0]?.employee_count_range).toBe('11-50');
-    const blocked = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: 'founder@new-company.test', password: registration().password });
-    expect(blocked.status).toBe(401);
-    const link = /https?:[^\s]+#token=[^\s]+/.exec(messages[0]?.text ?? '')?.[0];
-    expect(link).toBeTruthy();
-    const token = decodeURIComponent(new URL(link as string).hash.slice(7));
-    expect(
-      (await request(app.getHttpServer()).post('/api/v1/auth/invitation-preview').send({ token }))
-        .status,
-    ).toBe(200);
-    expect(
-      (
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/accept-invitation')
-          .send({ token, password: registration().password, accept_terms: true })
-      ).status,
-    ).toBe(200);
-    expect(
-      (
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/accept-invitation')
-          .send({ token, password: registration().password, accept_terms: true })
-      ).status,
-    ).toBe(400);
+    const audit = await inspect<{ action: string }>(
+      'SELECT action::text AS action FROM audit_logs WHERE company_id=$1',
+      [company.id],
+    );
+    expect(audit.rows.map((r) => r.action)).toContain('signup.requested');
+
+    // The owner hears about it; the visitor gets no email.
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.to).toBe(OWNER_EMAIL);
+    expect(messages[0]?.replyTo).toBe('founder@new-company.test');
+    expect(messages[0]?.subject).toContain('شركة جديدة');
+    const link = /http:\/\/localhost:3000\/en\/owner#[^\s]+/.exec(messages[0]?.text ?? '')?.[0];
+    const hash = new URLSearchParams(new URL(link as string).hash.slice(1));
+    expect(hash.get('key')).toBe(OWNER_KEY);
+    expect(hash.get('request')).toBe(company.id);
+
+    // Correct password, but not approved yet.
+    const blocked = await login('founder@new-company.test');
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error.code).toBe('ACCOUNT_PENDING_APPROVAL');
+    expect(blocked.body.error.message_en).toContain('1–2 days');
+    // A wrong password still says only that.
+    expect((await login('founder@new-company.test', 'wrong-password-here')).body.error.code).toBe(
+      'INVALID_CREDENTIALS',
+    );
+
+    const list = await owner('get');
+    expect(list.status).toBe(200);
+    const row = (list.body.data as { company_id: string }[]).find(
+      (r) => r.company_id === company.id,
+    );
+    expect(row).toMatchObject({
+      status: 'pending_approval',
+      admin_email: 'founder@new-company.test',
+    });
+
+    const approved = await owner('post', `/${company.id}/approve`);
+    expect(approved.status).toBe(200);
+    expect(approved.body.data.status).toBe('active');
+    expect(approved.body.data.reviewed_at).toBeTruthy();
+    expect((await companyOf('founder@new-company.test')).status).toBe('active');
+    expect(messages).toHaveLength(2);
+    expect(messages[1]?.to).toBe('founder@new-company.test');
+    expect(messages[1]?.text).toContain('http://localhost:3000/ar/login');
+    const reviewAudit = await inspect<{ action: string }>(
+      'SELECT action::text AS action FROM audit_logs WHERE company_id=$1',
+      [company.id],
+    );
+    expect(reviewAudit.rows.map((r) => r.action)).toContain('signup.approved');
+
     const agent = request.agent(app.getHttpServer());
-    const login = await agent
+    const signedIn = await agent
       .post('/api/v1/auth/login')
       .send({ email: 'founder@new-company.test', password: registration().password });
-    expect(login.status).toBe(200);
-    expect(login.headers['set-cookie']).toBeTruthy();
+    expect(signedIn.status).toBe(200);
     const me = await agent.get('/api/v1/auth/me');
     expect(me.status).toBe(200);
     expect(me.body.data.role.key).toBe('admin');
@@ -421,11 +463,54 @@ describe('Phase 16 registration and auth integration', () => {
     expect(me.body.data.company.name).toBe('شركة جديدة');
     expect((await agent.get('/api/v1/company')).status).toBe(200);
     expect((await agent.get('/api/v1/employees')).body.data).toEqual([]);
+
+    // Deciding twice is a conflict; registering the same email again too.
+    expect((await owner('post', `/${company.id}/approve`)).status).toBe(409);
+    expect((await owner('post', `/${company.id}/reject`)).status).toBe(409);
     expect((await post('register', registration())).status).toBe(409);
   });
-  it('rolls back company, user and invitation after a forced failure following the first writes', async () => {
+  it('keeps a rejected company out', async () => {
+    expect((await post('register', registration('rejected@new.test'))).status).toBe(201);
+    const company = await companyOf('rejected@new.test');
+    const res = await owner('post', `/${company.id}/reject`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('rejected');
+    const blocked = await login('rejected@new.test');
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error.code).toBe('ACCOUNT_REJECTED');
+    expect(messages).toHaveLength(1); // the owner notice only — no approval email
+  });
+  it('requires the owner key, and rate limits wrong ones', async () => {
+    expect((await owner('get', '', null)).status).toBe(401);
+    expect((await owner('get', '', 'x'.repeat(48))).status).toBe(401);
+    expect((await owner('post', `/${COMPANY_A}/approve`, null)).status).toBe(401);
+    for (let i = 0; i < 7; i++) await owner('get', '', `wrong-${String(i)}`.padEnd(40, 'z'));
+    const limited = await owner('get', '', 'still-wrong'.padEnd(40, 'z'));
+    expect(limited.status).toBe(429);
+    expect((await owner('get')).status).toBe(200);
+  });
+  it('only lists public sign-ups, never existing companies', async () => {
+    const res = await owner('get');
+    const ids = (res.body.data as { company_id: string }[]).map((r) => r.company_id);
+    expect(ids).not.toContain(COMPANY_A);
+    expect(ids).not.toContain(COMPANY_B);
+    // An existing, active company cannot be "approved" or "rejected" either.
+    expect((await owner('post', `/${COMPANY_A}/reject`)).status).toBe(409);
+  });
+  it('never loses a sign-up when the owner email fails', async () => {
+    failMail = true;
+    const res = await post('register', registration('mailfail@new.test'));
+    expect(res.status).toBe(201);
+    const company = await companyOf('mailfail@new.test');
+    expect(company.status).toBe('pending_approval');
+    expect(messages).toHaveLength(0);
+    // …and approving still works without mail.
+    expect((await owner('post', `/${company.id}/approve`)).status).toBe(200);
+    expect((await login('mailfail@new.test')).status).toBe(200);
+  });
+  it('rolls back company and user after a forced failure following the first writes', async () => {
     const before = await inspect<{ n: number }>('SELECT count(*)::int AS n FROM companies');
-    vi.spyOn(app.get(InvitationService), 'issue').mockRejectedValueOnce(
+    vi.spyOn(app.get(AuditDispatcher), 'record').mockRejectedValueOnce(
       new Error('forced registration failure'),
     );
     expect((await post('register', registration('rollback@new.test'))).status).toBe(500);
@@ -433,25 +518,6 @@ describe('Phase 16 registration and auth integration', () => {
     expect(after.rows).toEqual(before.rows);
     expect((await inspect("SELECT * FROM users WHERE email='rollback@new.test'")).rows).toEqual([]);
     expect(messages).toHaveLength(0);
-  });
-  it('keeps an invited account on SMTP failure; retry reissues existing invitation without another company', async () => {
-    failMail = true;
-    const body = registration('retry@new.test');
-    expect((await post('register', body)).status).toBe(503);
-    failMail = false;
-    expect((await post('register', body)).status).toBe(201);
-    expect((await inspect("SELECT * FROM users WHERE email='retry@new.test'")).rows).toHaveLength(
-      1,
-    );
-    expect(messages).toHaveLength(1);
-  });
-  it('does not resend activation with the wrong credentials', async () => {
-    const body = registration('protected@new.test');
-    expect((await post('register', body)).status).toBe(201);
-    expect((await post('register', { ...body, password: 'another-long-passphrase' })).status).toBe(
-      409,
-    );
-    expect(messages).toHaveLength(1);
   });
   it.each([
     ['email', 'no-email'],
@@ -484,12 +550,27 @@ describe('Phase 16 registration and auth integration', () => {
         .status,
     ).toBe(422);
   });
-  it('supports English activation email', async () => {
+  it('sends the approval email in the language the visitor registered in', async () => {
     expect(
       (await post('register', registration('english@new.test')).set('Accept-Language', 'en'))
         .status,
     ).toBe(201);
-    expect(messages[0]?.html).toContain('lang="en"');
+    const company = await companyOf('english@new.test');
+    expect((await owner('post', `/${company.id}/approve`)).status).toBe(200);
+    const approval = messages.find((m) => m.to === 'english@new.test');
+    expect(approval?.html).toContain('lang="en"');
+    expect(approval?.text).toContain('http://localhost:3000/en/login');
+  });
+  it('escapes visitor-supplied text in the owner email', async () => {
+    expect(
+      (
+        await post('register', {
+          ...registration('escape@new.test'),
+          company_name: 'Tom & Jerry "Ltd"',
+        })
+      ).status,
+    ).toBe(201);
+    expect(messages[0]?.html).toContain('Tom &amp; Jerry &quot;Ltd&quot;');
   });
   it('enforces registration throttle independently of contact', async () => {
     for (let i = 0; i < 5; i++)
@@ -508,11 +589,8 @@ if (process.env.PHASE16_PREVIEW === '1')
     // Explicitly opted-in, loopback-only, disposable PostgreSQL and fake mail.
     // No production connection, no background jobs, no token logged.
     await post('register', registration('browser-fixture@ufuq.test'));
-    const link = /https?:[^\s]+#token=[^\s]+/.exec(messages[0]?.text ?? '')?.[0];
-    const token = decodeURIComponent(new URL(link as string).hash.slice(7));
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/accept-invitation')
-      .send({ token, password: registration().password, accept_terms: true });
+    const company = await companyOf('browser-fixture@ufuq.test');
+    await owner('post', `/${company.id}/approve`);
     redis.reset();
     writeFileSync('/private/tmp/ufuq-phase16-preview-ready', 'ready');
     await new Promise<void>((resolve) => {

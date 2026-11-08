@@ -20,7 +20,7 @@ export function contactMessage(to: string, dto: ContactDto): MailMessage {
   return {
     to,
     replyTo: dto.email,
-    subject: 'أُفق — استفسار / UFUQ enquiry',
+    subject: '1to1OS — استفسار / enquiry',
     text: rows.map(([label, value]) => `${label ?? ''}: ${value ?? ''}`).join('\n\n'),
     html:
       '<!doctype html><html lang="ar" dir="rtl"><body><h1>استفسار / Enquiry</h1>' +

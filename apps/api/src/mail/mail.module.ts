@@ -11,7 +11,9 @@ import type { Env } from '@ufuq/config';
 import { InvitationMailer } from './invitation-mailer.js';
 import { MAIL_TRANSPORT } from './mail-transport.js';
 import type { MailTransport } from './mail-transport.js';
+import { ResendMailTransport } from './resend-mail-transport.js';
 import { SmtpMailTransport } from './smtp-mail-transport.js';
+import { SignupMailer } from './signup-mailer.js';
 
 @Injectable()
 class MailLifecycle implements OnModuleDestroy {
@@ -31,11 +33,18 @@ export class MailModule {
       module: MailModule,
       global: true,
       providers: [
-        { provide: MAIL_TRANSPORT, useFactory: () => new SmtpMailTransport(env.mail) },
+        {
+          provide: MAIL_TRANSPORT,
+          useFactory: (): MailTransport =>
+            env.mail.resendApiKey
+              ? new ResendMailTransport(env.mail.resendApiKey, env.mail.from)
+              : new SmtpMailTransport(env.mail),
+        },
         MailLifecycle,
         InvitationMailer,
+        SignupMailer,
       ],
-      exports: [MAIL_TRANSPORT, InvitationMailer],
+      exports: [MAIL_TRANSPORT, InvitationMailer, SignupMailer],
     };
   }
 }

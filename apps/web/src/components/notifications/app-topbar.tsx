@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
+import { Wordmark } from '../brand-mark';
 import { LanguageSwitch } from '../language-switch';
 
 import { NotificationBell } from './notification-bell';
@@ -26,8 +27,8 @@ export function AppTopbar({
   const t = createTranslator(locale);
   return (
     <div className="app-topbar">
-      <Link className="app-topbar__home" href={`/${locale}/${surface}`}>
-        {t('app.name')}
+      <Link className="app-topbar__home" href={`/${locale}/${surface}`} aria-label={t('app.name')}>
+        <Wordmark />
       </Link>
       <div className="app-topbar__actions">
         <LanguageSwitch

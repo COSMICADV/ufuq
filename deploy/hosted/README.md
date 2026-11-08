@@ -12,22 +12,25 @@ Browser → Cloudflare Worker (https://ufuq.<subdomain>.workers.dev, deploy/edge
 
 ## Render web service environment
 
-| Variable                    | Value                                                                 |
-| --------------------------- | --------------------------------------------------------------------- |
-| `PUBLIC_ORIGIN`             | the Worker URL; also needed **at build time** (Docker build argument) |
-| `DATABASE_MIGRATION_URL`    | Neon owner connection string (direct, not pooled)                     |
-| `UFUQ_APP_DB_SECRET`        | any long random value; the `ufuq_app` password is derived from it     |
-| `REDIS_URL`                 | Aiven Valkey service URI (`rediss://…`)                               |
-| `STORAGE_ENDPOINT`          | Neon Object Storage S3 endpoint                                       |
-| `STORAGE_REGION`            | Neon storage region                                                   |
-| `STORAGE_BUCKET`            | `ufuq-staging`                                                        |
-| `STORAGE_FORCE_PATH_STYLE`  | `true`                                                                |
-| `STORAGE_ACCESS_KEY_ID`     | Neon storage credential `token_id`                                    |
-| `STORAGE_SECRET_ACCESS_KEY` | Neon storage credential `s3_secret_access_key`                        |
-| `SMTP_HOST` / `SMTP_PORT`   | `127.0.0.1` / `1025` until a real relay is configured (sends fail)    |
-| `MAIL_FROM`                 | `Ufuq Staging <no-reply@ufuq.local>`                                  |
-| `TRUST_PROXY_HOPS`          | `4` (Worker → Render edge → relay → Next.js)                          |
-| `DEMO_SEED`                 | `true` — seeds the demo company once, on an empty database            |
+| Variable                    | Value                                                                   |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `PUBLIC_ORIGIN`             | the Worker URL; also needed **at build time** (Docker build argument)   |
+| `DATABASE_MIGRATION_URL`    | Neon owner connection string (direct, not pooled)                       |
+| `UFUQ_APP_DB_SECRET`        | any long random value; the `ufuq_app` password is derived from it       |
+| `REDIS_URL`                 | Aiven Valkey service URI (`rediss://…`)                                 |
+| `STORAGE_ENDPOINT`          | Neon Object Storage S3 endpoint                                         |
+| `STORAGE_REGION`            | Neon storage region                                                     |
+| `STORAGE_BUCKET`            | `ufuq-staging`                                                          |
+| `STORAGE_FORCE_PATH_STYLE`  | `true`                                                                  |
+| `STORAGE_ACCESS_KEY_ID`     | Neon storage credential `token_id`                                      |
+| `STORAGE_SECRET_ACCESS_KEY` | Neon storage credential `s3_secret_access_key`                          |
+| `SMTP_HOST` / `SMTP_PORT`   | `127.0.0.1` / `1025` until a real relay is configured (sends fail)      |
+| `MAIL_FROM`                 | `1to1OS <onboarding@resend.dev>` (until a domain is verified in Resend) |
+| `RESEND_API_KEY`            | Resend API key — mail over HTTPS (Railway blocks SMTP on Hobby)         |
+| `OWNER_ACCESS_KEY`          | 32+ random characters — unlocks `/owner` (sign-up approval)             |
+| `OWNER_NOTIFY_TO`           | `ufuq.eg.os@gmail.com` — emailed for every new sign-up                  |
+| `TRUST_PROXY_HOPS`          | `4` (Worker → Render edge → relay → Next.js)                            |
+| `DEMO_SEED`                 | `true` — seeds the demo company once, on an empty database              |
 
 `CONTACT_TO` stays unset (the public contact form answers its safe 503) until SMTP
 is configured. Notifications are in-app only.

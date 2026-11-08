@@ -8,8 +8,7 @@ import { ERROR_CODES } from '../common/errors.js';
 import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import { PasswordService } from '../auth/password.service.js';
 import { RateLimitService } from '../auth/rate-limit.service.js';
-import { InvitationService } from '../auth/invitation.service.js';
-import { InvitationMailer } from '../mail/invitation-mailer.js';
+import { SignupMailer } from '../mail/signup-mailer.js';
 import { MAIL_TRANSPORT } from '../mail/mail-transport.js';
 import type { MailTransport } from '../mail/mail-transport.js';
 import type { ContactDto, PublicSubmissionDto, RegisterDto } from './public.dto.js';
@@ -21,8 +20,7 @@ export class PublicSiteService {
     @Inject(APP_ENV) private readonly env: Env,
     @Inject(PasswordService) private readonly passwords: PasswordService,
     @Inject(RateLimitService) private readonly limits: RateLimitService,
-    @Inject(InvitationService) private readonly invitations: InvitationService,
-    @Inject(InvitationMailer) private readonly mailer: InvitationMailer,
+    @Inject(SignupMailer) private readonly signups: SignupMailer,
     @Inject(MAIL_TRANSPORT) private readonly mail: MailTransport,
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {}
@@ -57,6 +55,14 @@ export class PublicSiteService {
     }
   }
 
+  /**
+   * Public sign-up. The company and its first ADMIN are saved straight away,
+   * but the company starts as `pending_approval`: the ADMIN's password works
+   * only once the platform owner approves it on the owner page (login answers
+   * ACCOUNT_PENDING_APPROVAL until then). No email goes to the visitor — the
+   * owner's approval stands in for the old activation link — and the owner is
+   * emailed best-effort, so a mail outage never loses a sign-up.
+   */
   async register(dto: RegisterDto, locale: Locale): Promise<void> {
     const violations = this.passwords.checkPolicy(dto.password);
     if (violations.length)
@@ -65,12 +71,13 @@ export class PublicSiteService {
       });
     const passwordHash = await this.passwords.hash(dto.password);
     // Bind a fresh, server-generated tenant before its first insert; no RLS bypass.
-    // Serialize on email across registrations, including retries after SMTP failure.
+    // Serialize on email so two simultaneous sign-ups cannot both succeed.
     const companyId = generateId();
-    const delivery = await this.audit.withTenant(companyId, async (tx) => {
+    const requestedAt = new Date();
+    await this.audit.withTenant(companyId, async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${dto.email}, 16))`;
       const existing = await lookupUsersByEmail(tx, dto.email);
-      if (existing.length) return { existing: true as const, candidates: existing };
+      if (existing.length) throw new AppException(ERROR_CODES.CONFLICT, 409);
       const userId = generateId();
       const role = await tx.role.findFirstOrThrow({
         where: { key: 'admin', companyId: null, isSystem: true },
@@ -83,6 +90,8 @@ export class PublicSiteService {
           timezone: 'Africa/Cairo',
           defaultLocale: locale,
           employeeCountRange: dto.employee_count_range,
+          status: 'pending_approval',
+          createdAt: requestedAt,
         },
       });
       await tx.user.create({
@@ -94,69 +103,27 @@ export class PublicSiteService {
           phone: dto.phone,
           roleId: role.id,
           passwordHash,
-          status: 'invited',
+          status: 'active',
           locale,
         },
       });
       await tx.company.update({ where: { id: companyId }, data: { createdBy: userId } });
-      const issued = await this.invitations.issue(tx, { companyId, userId, invitedBy: userId });
       await this.audit.record(tx, {
         companyId,
         userId,
-        action: 'INVITATION_SENT',
-        entityType: 'user',
-        entityId: userId,
+        action: 'SIGNUP_REQUESTED',
+        entityType: 'company',
+        entityId: companyId,
       });
-      return { existing: false as const, ...issued };
     });
-    let token: string;
-    let expiresAt: Date;
-    if (delivery.existing) {
-      // An unverified registration can retry SMTP with its original credentials.
-      const candidate = delivery.candidates.length === 1 ? delivery.candidates[0] : undefined;
-      if (
-        !candidate ||
-        candidate.status !== 'invited' ||
-        !candidate.passwordHash ||
-        !(await this.passwords.verify(candidate.passwordHash, dto.password))
-      )
-        throw new AppException(ERROR_CODES.CONFLICT, 409);
-      const issued = await this.audit.withTenant(candidate.companyId, async (tx) => {
-        const company = await tx.company.findUniqueOrThrow({ where: { id: candidate.companyId } });
-        if (company.employeeCountRange === null || company.name !== dto.company_name)
-          throw new AppException(ERROR_CODES.CONFLICT, 409);
-        const next = await this.invitations.issue(tx, {
-          companyId: candidate.companyId,
-          userId: candidate.id,
-          invitedBy: candidate.id,
-        });
-        await this.audit.record(tx, {
-          companyId: candidate.companyId,
-          userId: candidate.id,
-          action: 'INVITATION_SENT',
-          entityType: 'user',
-          entityId: candidate.id,
-        });
-        return next;
-      });
-      token = issued.token;
-      expiresAt = issued.expiresAt;
-    } else {
-      token = delivery.token;
-      expiresAt = delivery.expiresAt;
-    }
-    try {
-      await this.mailer.send({
-        to: dto.email,
-        locale,
-        token,
-        expiresAt,
-        firstName: dto.admin_name,
-        companyName: dto.company_name,
-        timeZone: 'Africa/Cairo',
-      });
-    } catch {
-      throw new AppException(ERROR_CODES.MAIL_DELIVERY_FAILED, 503);
-    }
+    await this.signups.notifyOwner({
+      companyId,
+      companyName: dto.company_name,
+      adminName: dto.admin_name,
+      adminEmail: dto.email,
+      adminPhone: dto.phone,
+      employeeCountRange: dto.employee_count_range,
+      requestedAt,
+    });
   }
 }

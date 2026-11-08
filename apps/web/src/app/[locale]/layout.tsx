@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import '../../styles/globals.css';
 import '../../styles/public.css';
 import '../../styles/v2.css';
+import '../../styles/theme.css';
 
 interface LocaleParams {
   readonly locale: string;
@@ -31,7 +32,7 @@ export async function generateMetadata({
     return {};
   }
   const t = createTranslator(locale);
-  return { title: t('app.name'), description: t('app.tagline') };
+  return { title: t('app.name'), description: t('app.tagline'), applicationName: t('app.name') };
 }
 
 /**

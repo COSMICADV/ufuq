@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@ufuq/i18n';
 import { PUBLIC_PAGES, features, publicCopy, publicPath } from '../../lib/public-content';
 import type { PublicPage } from '../../lib/public-content';
-import { BrandMark } from '../brand-mark';
+import { BrandMark, Wordmark } from '../brand-mark';
 import { PublicForm } from './public-form';
 
 export function publicMetadata(locale: Locale, page: PublicPage): Metadata {
@@ -83,9 +83,9 @@ export function PublicSite({
         {c.skip}
       </a>
       <header className="public-header">
-        <Link className="public-brand" href={publicPath(locale, 'home')}>
+        <Link className="public-brand" href={publicPath(locale, 'home')} aria-label={c.brand}>
           <BrandMark />
-          {c.brand}
+          <Wordmark />
         </Link>
         <nav aria-label={c.menu} className="public-desktop-nav">
           {nav(['home', 'features', 'for-companies', 'pricing', 'contact'])}
@@ -277,7 +277,10 @@ export function PublicSite({
       </main>
       <footer className="public-footer">
         <div className="public-wrap">
-          <strong className="public-brand">{c.brand}</strong>
+          <strong className="public-brand">
+            <BrandMark />
+            <Wordmark />
+          </strong>
           <p>{c.footer}</p>
           <nav aria-label={c.footer}>
             {nav(PUBLIC_PAGES)}

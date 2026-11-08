@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Ufuq",
+    "name": "1to1OS",
     "tagline": "Company management and employee operations in one system"
   },
   "direction": {
@@ -39,7 +39,7 @@
   },
   "showcase": {
     "title": "Design system",
-    "description": "An inspectable reference for Ufuq components in Arabic and English.",
+    "description": "An inspectable reference for 1to1OS components in Arabic and English.",
     "buttons": "Buttons",
     "inputs": "Inputs",
     "cards": "Cards",
@@ -94,6 +94,8 @@
     "account_not_activated": "This account has not been activated yet",
     "account_deactivated": "This account has been deactivated",
     "company_inactive": "This company's account is not active",
+    "account_pending_approval": "Your access request is being reviewed. Approval takes 1–2 days — you can sign in as soon as it is approved.",
+    "account_rejected": "Your access request was not approved. Contact us if you think this is a mistake.",
     "forbidden": "You do not have permission to do this",
     "rate_limited": "Too many attempts. Try again later",
     "token_invalid": "This link is invalid or has expired",
@@ -282,7 +284,7 @@
   },
   "invitation": {
     "title": "Set your password",
-    "description": "Choose a password to activate your Ufuq account.",
+    "description": "Choose a password to activate your 1to1OS account.",
     "invited_by_title": "You have been invited",
     "company_label": "Company",
     "employee_label": "Your name",
@@ -308,12 +310,18 @@
   },
   "mail": {
     "invitation": {
-      "subject": "Your invitation to {company} on Ufuq",
+      "subject": "Your invitation to {company} on 1to1OS",
       "greeting": "Hello {name},",
-      "body": "{company} has created your account on Ufuq. Set your password to activate it.",
+      "body": "{company} has created your account on 1to1OS. Set your password to activate it.",
       "action": "Set your password",
       "expiry": "This link expires on {expiry}. After that, ask your administrator to resend it.",
       "ignore": "If you were not expecting this invitation, you can ignore this email."
+    },
+    "signup_approved": {
+      "subject": "Your 1to1OS account is approved",
+      "greeting": "Hello {name},",
+      "body": "{company} is approved on 1to1OS. You can sign in now with the email and password you registered with.",
+      "action": "Sign in to 1to1OS"
     }
   },
   "settings": {
@@ -624,6 +632,9 @@
       "permission__denied": "{actor} was refused an action they are not permitted to take",
       "tenancy__violation_attempt": "{actor} tried to reach another company’s data",
       "settings__company_updated": "{actor} updated the company settings",
+      "signup__requested": "{actor} requested access to 1to1OS",
+      "signup__approved": "{actor} approved this company’s access to 1to1OS",
+      "signup__rejected": "{actor} declined this company’s access to 1to1OS",
       "settings__schedule_changed": "{actor} changed a work schedule",
       "employee__created": "{actor} added an employee",
       "employee__updated": "{actor} updated an employee",
@@ -849,7 +860,7 @@
     "next_tasks_empty": "Nothing is due from today on.",
     "my_goals_all": "All my goals",
     "my_goals_empty": "You have no active goals.",
-    "welcome_title": "Welcome to Ufuq",
+    "welcome_title": "Welcome to 1to1OS",
     "welcome_description": "Start by checking in. Your tasks and goals will appear here once they are assigned to you.",
     "requests_pending": "Your pending requests",
     "requests_awaiting_review": "Awaiting your review",
@@ -1434,7 +1445,7 @@
     "activity_trend": "Movements, last 30 days",
     "activity_trend_total": "{count} movements in the last 30 days",
     "deferred_title": "Coming with the product catalogue",
-    "deferred": "Total products, low-stock and out-of-stock counts, and the low-stock list need each product’s minimum stock level. They appear when products are added to Ufuq.",
+    "deferred": "Total products, low-stock and out-of-stock counts, and the low-stock list need each product’s minimum stock level. They appear when products are added to 1to1OS.",
     "no_products_note": "Products and their stock are managed in Inventory. Record stock there, then move it between locations here.",
     "empty_locations_title": "No locations yet",
     "empty_locations": "Add your first warehouse, branch, store, workshop or online channel.",
@@ -2228,5 +2239,38 @@
       "error": "Notification settings could not be loaded.",
       "read_only": "You can view these settings but not change them."
     }
+  },
+  "owner": {
+    "title": "Access requests",
+    "subtitle": "New companies wait here until you approve them. Approved companies can sign in straight away.",
+    "key_label": "Owner key",
+    "key_help": "Open this page from an approval email, or paste your owner key.",
+    "unlock": "Open requests",
+    "wrong_key": "That owner key is not correct.",
+    "not_configured": "The owner page is not set up on this server yet.",
+    "pending": "Waiting for approval",
+    "reviewed": "Reviewed",
+    "empty_pending": "No requests are waiting. New sign-ups will appear here.",
+    "empty_reviewed": "Nothing reviewed yet.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "status_pending": "Pending",
+    "status_active": "Approved",
+    "status_rejected": "Rejected",
+    "requested_at": "Requested",
+    "reviewed_at": "Reviewed",
+    "employees": "Employees",
+    "phone": "Phone",
+    "email": "Email",
+    "admin": "Administrator",
+    "confirm_reject": "Reject {company}? They will not be able to sign in.",
+    "refresh": "Refresh",
+    "lock": "Lock",
+    "approved_notice": "{company} is approved and can sign in now.",
+    "rejected_notice": "{company} was rejected.",
+    "load_error": "Could not load the requests. Try again.",
+    "action_error": "That did not work. Refresh and try again.",
+    "count_pending": "{count} waiting",
+    "highlight": "From your email"
   }
 }

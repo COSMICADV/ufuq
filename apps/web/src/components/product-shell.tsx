@@ -7,7 +7,7 @@ import { useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Locale } from '@ufuq/i18n';
 
-import { BrandMark } from './brand-mark';
+import { BrandMark, Wordmark } from './brand-mark';
 import { AppTopbar } from './notifications/app-topbar';
 import { loadSession } from './employees/use-session';
 import { useResource } from './settings/use-resource';
@@ -186,7 +186,7 @@ export function ProductShell({
     <Link href={base} className="product-brand" onClick={close}>
       <BrandMark />
       <span>
-        {ar ? 'أُفق' : 'UFUQ'}
+        <Wordmark />
         <small>
           {surface === 'admin'
             ? ar
@@ -211,7 +211,8 @@ export function ProductShell({
           {salary}
         </nav>
         <p className="product-company">
-          {ready?.companyName ?? (ar ? 'اتجاه واضح. عمل أفضل.' : 'Clear direction. Better work.')}
+          {ready?.companyName ??
+            (ar ? 'منصة واحدة. إمكانات بلا حدود.' : 'One platform. Infinite possibilities.')}
         </p>
       </aside>
       <div className="product-workspace">

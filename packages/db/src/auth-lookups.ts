@@ -21,7 +21,7 @@ export interface AuthLoginLookupRow {
   readonly failedLoginCount: number;
   readonly lastFailedLoginAt: Date | null;
   readonly lockedUntil: Date | null;
-  readonly companyStatus: 'active' | 'suspended' | 'cancelled';
+  readonly companyStatus: 'active' | 'suspended' | 'cancelled' | 'pending_approval' | 'rejected';
 }
 
 interface RawLoginRow {

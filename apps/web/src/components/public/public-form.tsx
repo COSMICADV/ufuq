@@ -22,6 +22,7 @@ export function PublicForm({
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
   const [fields, setFields] = useState<readonly string[]>([]);
   const [show, setShow] = useState(false);
   const submit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -37,6 +38,7 @@ export function PublicForm({
           : { ...values, started_at: started };
     setBusy(true);
     setError('');
+    setPending(false);
     setFields([]);
     try {
       await fetchOne(
@@ -58,16 +60,25 @@ export function PublicForm({
     } catch (e) {
       const api = e instanceof ApiError ? e : null;
       setFields(Object.keys(api?.fields ?? {}));
+      const pendingCode =
+        api?.code === 'ACCOUNT_PENDING_APPROVAL' || api?.code === 'ACCOUNT_REJECTED'
+          ? api.code
+          : null;
+      setPending(pendingCode === 'ACCOUNT_PENDING_APPROVAL');
       setError(
-        api?.status === 429
-          ? c.rate
-          : api?.status === 422
-            ? c.invalid
-            : api?.status === 409
-              ? c.conflict
-              : api?.status === 401
-                ? describeError(api, createTranslator(locale))
-                : c.error,
+        pendingCode === 'ACCOUNT_PENDING_APPROVAL'
+          ? createTranslator(locale)('error.account_pending_approval')
+          : pendingCode === 'ACCOUNT_REJECTED'
+            ? createTranslator(locale)('error.account_rejected')
+            : api?.status === 429
+              ? c.rate
+              : api?.status === 422
+                ? c.invalid
+                : api?.status === 409
+                  ? c.conflict
+                  : api?.status === 401
+                    ? describeError(api, createTranslator(locale))
+                    : c.error,
       );
     } finally {
       setBusy(false);
@@ -75,7 +86,10 @@ export function PublicForm({
   };
   if (done)
     return (
-      <div role="status" className="public-success">
+      <div
+        role="status"
+        className={`public-success${kind === 'register' ? ' public-success--pending' : ''}`}
+      >
         <p>{kind === 'register' ? c.registered : kind === 'forgot' ? c.resetSent : c.sent}</p>
         {kind === 'register' || kind === 'forgot' ? (
           <Link href={publicPath(locale, 'login')}>{c.login}</Link>
@@ -130,7 +144,7 @@ export function PublicForm({
         <p>{c.noJs}</p>
       </noscript>
       {error ? (
-        <p tabIndex={-1} role="alert">
+        <p tabIndex={-1} role="alert" className={pending ? 'public-pending' : undefined}>
           {error}
         </p>
       ) : null}

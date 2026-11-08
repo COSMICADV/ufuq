@@ -1,0 +1,259 @@
+/*
+ * 1to1OS — the home page's look carried across the rest of the site.
+ *
+ * Loaded after v2.css. The colours themselves come from the dark design
+ * tokens (@ufuq/design-tokens); this file adds what tokens cannot express:
+ * the wordmark, the glow behind public pages, the sand gradient on primary
+ * actions, and the public header/footer frame. Logical properties only, so
+ * Arabic (RTL) and English (LTR) share every rule.
+ */
+
+/* ---- Wordmark ------------------------------------------------------------------- */
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  unicode-bidi: isolate;
+}
+.wordmark__to {
+  margin-inline: 0.06em;
+  color: var(--brand-indigo);
+  font-weight: 300;
+}
+.wordmark__os {
+  margin-inline-start: 0.18em;
+  color: var(--text-secondary);
+  font-size: 0.62em;
+  font-weight: 600;
+}
+.brand-mark {
+  inline-size: 40px;
+  block-size: 40px;
+}
+.product-brand {
+  font-size: 22px;
+}
+.product-sidebar,
+.product-drawer {
+  border-inline-end: 1px solid var(--border-subtle);
+}
+
+/* ---- Primary actions: the home page's sand gradient -------------------------------- */
+.button--primary {
+  background: linear-gradient(90deg, #e2c0a8, #f3d2c1);
+  color: var(--text-on-primary);
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: 0 10px 15px -3px rgb(226 192 168 / 0.12);
+}
+.button--primary:hover {
+  background: linear-gradient(90deg, #d6b098, #ecc6b3);
+}
+.button--secondary {
+  background: rgb(30 41 59 / 0.8);
+  border-color: rgb(51 65 85 / 0.8);
+  color: var(--text-primary);
+}
+.button--secondary:hover {
+  background: #1e293b;
+}
+
+/* ---- App surfaces ------------------------------------------------------------------ */
+.card {
+  background: rgb(20 30 51 / 0.85);
+  border-color: var(--border-subtle);
+}
+.product-header {
+  background: rgb(15 23 42 / 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+::selection {
+  background: #e2c0a8;
+  color: #0f172a;
+}
+
+/* ---- Public pages ------------------------------------------------------------------ */
+.public-site {
+  position: relative;
+  isolation: isolate;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+.public-site::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(40% 40% at 10% 0%, rgb(30 58 138 / 0.22), transparent 70%),
+    radial-gradient(35% 35% at 95% 45%, rgb(226 192 168 / 0.09), transparent 70%),
+    radial-gradient(40% 40% at 40% 100%, rgb(30 27 75 / 0.3), transparent 70%);
+}
+.public-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 50;
+  min-block-size: 80px;
+  background: rgb(15 23 42 / 0.8);
+  border-block-end: 1px solid rgb(30 41 59 / 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+.public-brand,
+.public-footer .public-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 22px;
+  color: var(--text-primary) !important;
+  text-decoration: none;
+}
+.public-header nav a,
+.public-account > a:not(.button) {
+  color: #cbd5e1;
+}
+.public-header nav a:hover,
+.public-header nav a[aria-current],
+.public-account > a:hover {
+  color: var(--brand-indigo);
+}
+.public-site a {
+  color: var(--brand-indigo);
+}
+.public-site .button--primary {
+  color: var(--text-on-primary);
+}
+.public-site .button--secondary {
+  color: var(--text-primary);
+}
+.public-intro,
+:is(.public-site--login, .public-site--register, .public-site--contact) {
+  background: transparent;
+}
+.public-intro h1 {
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.public-hero {
+  background: transparent;
+}
+.public-hero h1 {
+  background: linear-gradient(90deg, #f1f5f9, #e2c0a8, #f3d2c1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.public-hero .button--secondary {
+  background: rgb(30 41 59 / 0.8);
+  border-color: rgb(51 65 85 / 0.8);
+}
+.public-eyebrow {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgb(30 41 59 / 0.8);
+  border: 1px solid rgb(51 65 85 / 0.8);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--brand-indigo) !important;
+}
+.public-eyebrow::before {
+  display: none;
+}
+.public-site h2 {
+  color: #fff;
+}
+.public-grid article,
+.public-chains li,
+.public-form-panel {
+  background: rgb(15 23 42 / 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+.public-grid article:hover {
+  border-color: rgb(226 192 168 / 0.5);
+  background: rgb(30 41 59 / 0.5);
+}
+.public-grid article h3 a {
+  color: #fff;
+}
+.public-chains li {
+  color: var(--text-primary);
+}
+.public-feature-number {
+  background: rgb(226 192 168 / 0.1);
+  border: 1px solid rgb(226 192 168 / 0.2);
+  color: var(--brand-indigo);
+}
+.public-final {
+  position: relative;
+  border-radius: 16px;
+  border: 2px solid var(--brand-indigo);
+  background: linear-gradient(180deg, rgb(30 41 59 / 0.9), rgb(15 23 42 / 0.9));
+  box-shadow: var(--shadow-lg);
+}
+.public-hero-product img,
+.public-site figure img {
+  border-color: var(--border-default) !important;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+}
+.public-footer {
+  background: #0a1120;
+  border-block-start: 1px solid var(--border-subtle);
+}
+.public-footer p {
+  color: var(--text-secondary);
+}
+.public-footer nav a {
+  color: var(--text-secondary);
+}
+.public-footer nav a:hover {
+  color: var(--brand-indigo);
+}
+.public-mobile-nav summary {
+  color: var(--text-primary);
+}
+
+/* Sign-up / sign-in feedback */
+.public-success--pending {
+  background: var(--info-bg);
+  color: var(--text-primary);
+  border-color: var(--info-border);
+}
+.public-success--pending::before,
+.public-pending::before {
+  content: '';
+  display: block;
+  inline-size: 36px;
+  block-size: 36px;
+  margin-block-end: 12px;
+  border-radius: 10px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E2C0A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")
+      center / 22px no-repeat,
+    rgb(226 192 168 / 0.12);
+}
+.public-form .public-pending {
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgb(226 192 168 / 0.35);
+  background: rgb(226 192 168 / 0.08);
+  color: var(--text-primary);
+  line-height: 1.8;
+}
+
+/* Native form controls follow the dark scheme */
+.public-form select,
+.public-form textarea,
+.field input,
+.field select,
+.field textarea {
+  color-scheme: dark;
+}

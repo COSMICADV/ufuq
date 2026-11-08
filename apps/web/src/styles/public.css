@@ -19,7 +19,7 @@
 .public-brand {
   font-size: var(--font-h2);
   font-weight: 700;
-  color: var(--green-deep-800);
+  color: var(--text-primary);
   text-decoration: none;
 }
 .public-header nav,
