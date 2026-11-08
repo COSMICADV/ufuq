@@ -40,3 +40,4 @@ deploy/mac/backups/
 
 # Expo prebuild output (generated)
 apps/mobile/ios/
+dump.rdb
