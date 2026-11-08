@@ -21,7 +21,9 @@
     "confirm": "Confirm",
     "back": "Back",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "sign_out": "Sign out",
+    "signing_out": "Signing out…"
   },
   "state": {
     "loading": "Loading",

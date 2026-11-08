@@ -139,9 +139,14 @@ export function ProductShell({
   // has nothing to show, so go to sign-in rather than render an empty shell
   // whose every screen says "session ended".
   const signedOut = session.state.status === 'error' && session.state.error.isUnauthenticated;
+  // An employee who opens the business workspace (a bookmark, a shared link,
+  // a browser still signed in as them) belongs on their own side: every admin
+  // screen would only answer "you do not have permission".
+  const wrongSide = surface === 'admin' && ready?.roleKey === 'employee';
   useEffect(() => {
     if (signedOut) router.replace(publicPath(locale, 'login'));
-  }, [signedOut, router, locale]);
+    else if (wrongSide) router.replace(`/${locale}/app`);
+  }, [signedOut, wrongSide, router, locale]);
   const ar = locale === 'ar';
   const base = `/${locale}/${surface}`;
   const close = (): void => {

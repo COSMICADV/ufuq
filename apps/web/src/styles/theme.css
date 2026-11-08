@@ -320,3 +320,31 @@
 .attachment-picker__warning {
   color: var(--warning-text);
 }
+
+/* Sign out, in the top bar of every workspace screen */
+.sign-out {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.sign-out:hover {
+  color: var(--text-primary);
+  border-color: rgb(226 192 168 / 0.5);
+}
+.sign-out:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+@media (max-width: 639px) {
+  .sign-out span {
+    display: none;
+  }
+}

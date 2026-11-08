@@ -22,6 +22,8 @@ export interface SessionView {
   readonly employeeId: string | null;
   /** The company's name — printed reports state whose figures they are (DOCUMENT 18 rule 7). */
   readonly companyName: string;
+  /** The signed-in user's role: `admin`, `hr`, `manager` or `employee`. */
+  readonly roleKey: string;
 }
 
 interface MePayload {
@@ -33,6 +35,7 @@ interface MePayload {
   };
   readonly permissions: readonly { readonly key: string; readonly scope: string }[];
   readonly employee: { readonly id: string } | null;
+  readonly role: { readonly key: string };
 }
 
 export async function loadSession(locale: Locale, signal: AbortSignal): Promise<SessionView> {
@@ -44,5 +47,6 @@ export async function loadSession(locale: Locale, signal: AbortSignal): Promise<
     currency: me.company.currency,
     employeeId: me.employee?.id ?? null,
     companyName: me.company.name,
+    roleKey: me.role.key,
   };
 }
