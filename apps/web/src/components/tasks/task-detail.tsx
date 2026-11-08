@@ -96,7 +96,18 @@ export function TaskDetailScreen({
   const t = createTranslator(locale);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialNotice = searchParams?.get('notice') === 'created' ? t('tasks.created') : null;
+  const createdFiles = Number(searchParams?.get('files') ?? '0');
+  const failedFiles = Number(searchParams?.get('failed') ?? '0');
+  const initialNotice =
+    searchParams?.get('notice') === 'created'
+      ? [
+          t('tasks.created'),
+          createdFiles > 0 ? t('attachments.uploaded_many', { count: String(createdFiles) }) : '',
+          failedFiles > 0 ? t('attachments.some_not_uploaded', { count: String(failedFiles) }) : '',
+        ]
+          .filter(Boolean)
+          .join(' — ')
+      : null;
 
   const load = useCallback(
     async (signal: AbortSignal): Promise<Loaded> => {

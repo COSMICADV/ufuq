@@ -9,10 +9,15 @@ import {
   ACCEPT_ATTRIBUTE,
   ATTACHMENT_TYPES,
   downloadUrl,
+  fileProblem,
   formatBytes,
+  MAX_UPLOAD_BYTES,
   typeLabel,
   uploadErrorKey,
+  uploadName,
+  uploadType,
 } from './attachments';
+import type { PickedFile } from './attachments';
 
 describe('the file picker', () => {
   it('offers exactly DOCUMENT 20 §7’s six types, by MIME and by extension', () => {
@@ -66,4 +71,33 @@ describe('uploadErrorKey — every refusal has a sentence in both languages', ()
       }
     });
   }
+});
+
+describe('picking files and folders before upload', () => {
+  const file = (name: string, size = 1000, type = '', path = ''): PickedFile => ({
+    name,
+    size,
+    type,
+    webkitRelativePath: path,
+  });
+  it('accepts allowed types by MIME or by extension, and refuses the rest', () => {
+    expect(fileProblem(file('a.pdf', 1000, 'application/pdf'))).toBeNull();
+    expect(fileProblem(file('scan.JPG'))).toBeNull();
+    expect(fileProblem(file('notes.txt', 10, 'text/plain'))).toBe('unsupported_type');
+    expect(fileProblem(file('run.exe'))).toBe('unsupported_type');
+  });
+  it('refuses files over the size limit', () => {
+    expect(fileProblem(file('big.pdf', MAX_UPLOAD_BYTES + 1, 'application/pdf'))).toBe('too_large');
+  });
+  it('keeps a folder file’s place in its name', () => {
+    expect(uploadName(file('summary.pdf', 1, '', 'Reports/Q3/summary.pdf'))).toBe(
+      'Reports › Q3 › summary.pdf',
+    );
+    expect(uploadName(file('summary.pdf'))).toBe('summary.pdf');
+  });
+  it('names the type the extension implies when the browser gives none', () => {
+    expect(uploadType(file('sheet.xlsx'))).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+  });
 });

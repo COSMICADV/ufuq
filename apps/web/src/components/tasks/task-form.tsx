@@ -7,6 +7,8 @@ import { createTranslator } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { ApiError, fetchMany, fetchOne, issueKeys } from '../../lib/api-client';
+import { AttachmentPicker } from './attachment-picker';
+import { uploadBatch } from './upload-batch';
 import type { EmployeeView } from '../../lib/employees';
 import {
   CHECKLIST_TITLE_MAX_LENGTH,
@@ -48,8 +50,9 @@ import { useResource } from '../settings/use-resource';
  * assignee's goals are offered, because the API requires the goal to belong
  * to the assignee (DOCUMENT 13 validation). A deadline outside the goal's
  * period is warned about before saving — the task would not count toward it
- * (DOCUMENT 13 edge cases). Attachments are added on the task detail
- * once the task exists — a file belongs to an existing record
+ * (DOCUMENT 13 edge cases). Files (or a whole folder) chosen here wait in the
+ * form and are uploaded right after the task is created — a file belongs to
+ * an existing record. Later ones are added on the task detail
  * (`task-attachments.tsx`).
  */
 
@@ -200,6 +203,8 @@ export function TaskForm({
   const [issues, setIssues] = useState<Readonly<Record<string, string>>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [files, setFiles] = useState<readonly File[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   // The employee profile's "Assign task" arrives as `?assignee=<id>`
   // (DOCUMENT 04 B4). It preselects that employee — and, as choosing them by
@@ -295,9 +300,26 @@ export function TaskForm({
             body: changedFields(task, common),
           });
     request
-      .then((saved) => {
+      .then(async (saved) => {
         if (task === null) {
-          router.push(`${taskPath(locale, saved.id)}?notice=created`);
+          // The task exists now, so its files can be attached to it.
+          const result =
+            files.length === 0
+              ? null
+              : await uploadBatch(
+                  files,
+                  { relatedType: 'task', relatedId: saved.id },
+                  locale,
+                  (done, total) => {
+                    setProgress({ done, total });
+                  },
+                );
+          const query = new URLSearchParams({ notice: 'created' });
+          if (result !== null) {
+            query.set('files', String(result.uploaded.length));
+            query.set('failed', String(result.failed.length));
+          }
+          router.push(`${taskPath(locale, saved.id)}?${query.toString()}`);
         } else {
           onSaved?.(saved);
         }
@@ -485,6 +507,10 @@ export function TaskForm({
         ) : null}
 
         {task === null ? (
+          <AttachmentPicker files={files} onChange={setFiles} locale={locale} t={t} />
+        ) : null}
+
+        {task === null ? (
           <ChecklistBuilder
             t={t}
             items={draft.checklist}
@@ -507,7 +533,14 @@ export function TaskForm({
             </Button>
           )}
           <Button type="submit" loading={busy}>
-            {task === null ? t('tasks.new_task') : t('action.save')}
+            {progress !== null
+              ? t('attachments.uploading_progress', {
+                  done: String(Math.min(progress.done + 1, progress.total)),
+                  total: String(progress.total),
+                })
+              : task === null
+                ? t('tasks.new_task')
+                : t('action.save')}
           </Button>
         </div>
       </form>

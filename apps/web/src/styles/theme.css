@@ -275,3 +275,48 @@
   flex: 1;
   min-inline-size: 0;
 }
+
+/* Files and folders picked for a task */
+.attachment-picker__buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.attachment-picker__list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-block-size: 260px;
+  overflow-y: auto;
+}
+.attachment-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-raised);
+}
+.attachment-picker__item--skipped {
+  opacity: 0.65;
+}
+.attachment-picker__item--skipped .attachment-picker__meta {
+  color: var(--warning-text);
+}
+.attachment-picker__name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.attachment-picker__meta {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.attachment-picker__warning {
+  color: var(--warning-text);
+}

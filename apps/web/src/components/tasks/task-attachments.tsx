@@ -3,14 +3,17 @@
 import { useRef, useState } from 'react';
 import type { Locale, Translator } from '@ufuq/i18n';
 
-import { ApiError, sendNoContent, uploadForm } from '../../lib/api-client';
+import { ApiError, sendNoContent } from '../../lib/api-client';
 import {
   ACCEPT_ATTRIBUTE,
   downloadUrl,
+  fileProblem,
   formatBytes,
+  MAX_UPLOADS_PER_BATCH,
   typeLabel,
   uploadErrorKey,
 } from '../../lib/attachments';
+import { uploadBatch } from './upload-batch';
 import type { Attachment, RecordAttachments } from '../../lib/attachments';
 import { formatDate } from '../attendance/attendance-shared';
 import { Alert, Button, Card, EmptyState, Modal } from '../design-system';
@@ -68,22 +71,65 @@ export function TaskAttachments({
     setNotice(null);
   };
 
-  const upload = (file: File): void => {
-    const form = new FormData();
-    form.append('related_type', relatedType);
-    form.append('related_id', recordId);
-    form.append('file', file, file.name);
-    setUploading(true);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const folderPicker = useRef<HTMLInputElement>(null);
+
+  /** Upload what was picked — one file, several, or a whole folder. */
+  const upload = (list: FileList | null, input: HTMLInputElement | null): void => {
+    const picked = Array.from(list ?? []).filter(
+      (f) => !f.name.startsWith('.') && f.name !== 'Thumbs.db',
+    );
+    if (input !== null) input.value = '';
+    if (picked.length === 0) return;
+    const skipped = picked.filter((f) => fileProblem(f) !== null).length;
+    const sendable = picked.length - skipped;
     setError(null);
-    uploadForm<Attachment>('/attachments', form, { locale })
-      .then((created) => {
-        setItems((current) => [created, ...current]);
-        setNotice(t('attachments.uploaded'));
+    setNotice(null);
+    if (sendable === 0) {
+      setError(
+        t(
+          picked.length === 1
+            ? uploadErrorKey(422, fileProblem(picked[0] as File))
+            : 'attachments.none_uploadable',
+        ),
+      );
+      return;
+    }
+    setUploading(true);
+    void uploadBatch(picked, { relatedType, relatedId: recordId }, locale, (done, total) => {
+      setProgress({ done, total });
+    })
+      .then(({ uploaded, failed }) => {
+        if (uploaded.length > 0) setItems((current) => [...uploaded].reverse().concat(current));
+        const notUploaded = failed.length + skipped + Math.max(0, sendable - MAX_UPLOADS_PER_BATCH);
+        if (uploaded.length > 0) {
+          setNotice(
+            uploaded.length === 1 && notUploaded === 0
+              ? t('attachments.uploaded')
+              : t('attachments.uploaded_many', { count: String(uploaded.length) }),
+          );
+        }
+        if (notUploaded > 0) {
+          const firstSkipped = picked.find((f) => fileProblem(f) !== null);
+          const first =
+            failed[0] ??
+            (firstSkipped === undefined
+              ? undefined
+              : {
+                  name: firstSkipped.name,
+                  reason: uploadErrorKey(422, fileProblem(firstSkipped)),
+                });
+          setError(
+            picked.length === 1 && first !== undefined
+              ? t(first.reason)
+              : t('attachments.some_not_uploaded', { count: String(notUploaded) }) +
+                  (first === undefined ? '' : ` ${first.name}: ${t(first.reason)}`),
+          );
+        }
       })
-      .catch(refused)
       .finally(() => {
         setUploading(false);
-        if (picker.current !== null) picker.current.value = '';
+        setProgress(null);
       });
   };
 
@@ -110,23 +156,52 @@ export function TaskAttachments({
       <input
         ref={picker}
         type="file"
+        multiple
         accept={ACCEPT_ATTRIBUTE}
-        // Opened by the button below; hidden so there is one control, not two.
+        // Opened by the buttons below; hidden so each choice is one control.
         hidden
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file !== undefined) upload(file);
+          upload(event.target.files, event.target);
         }}
       />
-      <Button
-        variant="secondary"
-        loading={uploading}
-        onClick={() => {
-          picker.current?.click();
+      <input
+        ref={folderPicker}
+        type="file"
+        multiple
+        hidden
+        {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+        onChange={(event) => {
+          upload(event.target.files, event.target);
         }}
-      >
-        {uploading ? t('attachments.uploading') : t('attachments.upload')}
-      </Button>
+      />
+      <span className="attachment-picker__buttons">
+        <Button
+          variant="secondary"
+          loading={uploading}
+          onClick={() => {
+            picker.current?.click();
+          }}
+        >
+          {uploading
+            ? progress === null
+              ? t('attachments.uploading')
+              : t('attachments.uploading_progress', {
+                  done: String(Math.min(progress.done + 1, progress.total)),
+                  total: String(progress.total),
+                })
+            : t('attachments.add_files')}
+        </Button>
+        {uploading ? null : (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              folderPicker.current?.click();
+            }}
+          >
+            {t('attachments.add_folder')}
+          </Button>
+        )}
+      </span>
     </>
   ) : null;
 

@@ -100,3 +100,58 @@ export function uploadErrorKey(status: number, fileIssue: string | null): string
       return 'attachments.error_generic';
   }
 }
+
+/** The upload size the API accepts by default (`STORAGE_MAX_UPLOAD_BYTES`, 10 MiB). */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** Uploads one person may make per hour (DOCUMENT 08 §6) — a folder larger than this is cut. */
+export const MAX_UPLOADS_PER_BATCH = 30;
+
+const EXTENSION_TYPES: Readonly<Record<string, string>> = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
+/** The bits of a picked file this module reads — a `File` satisfies it. */
+export interface PickedFile {
+  readonly name: string;
+  readonly size: number;
+  readonly type: string;
+  readonly webkitRelativePath?: string;
+}
+
+/**
+ * Whether a picked file can be uploaded, judged before sending it: an allowed
+ * type (by MIME, or by extension when the browser gives none) and the size
+ * limit. A courtesy so a folder's stray files are skipped with a reason
+ * rather than refused one by one — the server still checks every byte.
+ */
+export function fileProblem(file: PickedFile): 'too_large' | 'unsupported_type' | null {
+  const extension = file.name.includes('.') ? (file.name.split('.').pop() ?? '').toLowerCase() : '';
+  const mime = file.type !== '' ? file.type : (EXTENSION_TYPES[extension] ?? '');
+  if (!(mime in ATTACHMENT_TYPES)) return 'unsupported_type';
+  if (file.size > MAX_UPLOAD_BYTES) return 'too_large';
+  return null;
+}
+
+/**
+ * The name a file is stored under. A file picked from a folder keeps where it
+ * was: "Reports/Q3/summary.pdf" becomes "Reports › Q3 › summary.pdf" (the
+ * server keeps only the last path segment, so "/" cannot be used).
+ */
+export function uploadName(file: PickedFile): string {
+  const path = file.webkitRelativePath ?? '';
+  return path.includes('/') ? path.split('/').filter(Boolean).join(' › ') : file.name;
+}
+
+/** The type the server should be told: the browser's, or the one the extension implies. */
+export function uploadType(file: PickedFile): string {
+  if (file.type !== '') return file.type;
+  const extension = (file.name.split('.').pop() ?? '').toLowerCase();
+  return EXTENSION_TYPES[extension] ?? 'application/octet-stream';
+}
