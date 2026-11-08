@@ -118,7 +118,9 @@ export const publicCopy = {
     fieldInvalid: 'هذه القيمة غير صحيحة.',
     rate: 'تم إرسال طلبات كثيرة. انتظر ثم حاول مجدداً.',
     conflict: 'تعذّر إنشاء حساب بهذه البيانات. جرّب تسجيل الدخول، أو تواصل معنا.',
-    credentials: 'تعذّر تسجيل الدخول. راجع بياناتك وحالة تفعيل الحساب.',
+    credentials:
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة. راجعهما وحاول مجدداً، أو اطلب حساباً جديداً إذا لم يكن لديك حساب.',
+    noAccount: 'ليس لديك حساب؟ اطلب الانضمام',
     retry: 'إعادة المحاولة',
     noJs: 'يتطلب إرسال النموذج JavaScript. يمكنك قراءة صفحات الموقع بدونه.',
     forgot: 'نسيت كلمة المرور؟',
@@ -252,7 +254,9 @@ export const publicCopy = {
     fieldInvalid: 'This value is invalid.',
     rate: 'Too many requests. Please wait before trying again.',
     conflict: 'An account could not be created with these details. Try signing in or contact us.',
-    credentials: 'Unable to sign in. Check your credentials and account activation status.',
+    credentials:
+      'The email or password is incorrect. Check them and try again — or request an account if you don’t have one yet.',
+    noAccount: 'No account yet? Request access',
     retry: 'Try again',
     noJs: 'Submitting forms requires JavaScript. Website content remains readable without it.',
     forgot: 'Forgot password?',

@@ -25,6 +25,26 @@ export function PublicForm({
   const [pending, setPending] = useState(false);
   const [fields, setFields] = useState<readonly string[]>([]);
   const [show, setShow] = useState(false);
+  /**
+   * Why a sign-in was refused. A 401 from `/auth/login` is never an expired
+   * session — it is wrong credentials or an account state — so the message
+   * names that, not "your session ended".
+   */
+  const loginFailure = (code: string): string => {
+    const t = createTranslator(locale);
+    switch (code) {
+      case 'ACCOUNT_LOCKED':
+        return t('error.account_locked');
+      case 'ACCOUNT_NOT_ACTIVATED':
+        return t('error.account_not_activated');
+      case 'ACCOUNT_DEACTIVATED':
+        return t('error.account_deactivated');
+      case 'COMPANY_INACTIVE':
+        return t('error.company_inactive');
+      default:
+        return c.credentials;
+    }
+  };
   const submit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -77,7 +97,9 @@ export function PublicForm({
                 : api?.status === 409
                   ? c.conflict
                   : api?.status === 401
-                    ? describeError(api, createTranslator(locale))
+                    ? kind === 'login'
+                      ? loginFailure(api.code)
+                      : describeError(api, createTranslator(locale))
                     : c.error,
       );
     } finally {
@@ -247,7 +269,10 @@ export function PublicForm({
         </Button>
       </fieldset>
       {kind === 'login' ? (
-        <Link href={`${publicPath(locale, 'login')}?reset=1`}>{c.forgot}</Link>
+        <div className="public-form__links">
+          <Link href={`${publicPath(locale, 'login')}?reset=1`}>{c.forgot}</Link>
+          <Link href={publicPath(locale, 'register')}>{c.noAccount}</Link>
+        </div>
       ) : null}
     </form>
   );
