@@ -2,8 +2,8 @@
 import { containDialogFocus } from '../lib/dialog-focus';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useCallback, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Locale } from '@ufuq/i18n';
 
@@ -11,6 +11,7 @@ import { BrandMark, Wordmark } from './brand-mark';
 import { AppTopbar } from './notifications/app-topbar';
 import { loadSession } from './employees/use-session';
 import { useResource } from './settings/use-resource';
+import { publicPath } from '../lib/public-content';
 
 const navigation = [
   ['', 'الرئيسية', 'Overview', 'M3 11 12 3l9 8v10h-6v-7H9v7H3Z', 'report.company', 'report.team'],
@@ -133,6 +134,14 @@ export function ProductShell({
   const load = useCallback((signal: AbortSignal) => loadSession(locale, signal), [locale]);
   const session = useResource(load);
   const ready = session.state.status === 'ready' ? session.state.value : null;
+  const router = useRouter();
+  // No session at all (never signed in, signed out, or expired): the workspace
+  // has nothing to show, so go to sign-in rather than render an empty shell
+  // whose every screen says "session ended".
+  const signedOut = session.state.status === 'error' && session.state.error.isUnauthenticated;
+  useEffect(() => {
+    if (signedOut) router.replace(publicPath(locale, 'login'));
+  }, [signedOut, router, locale]);
   const ar = locale === 'ar';
   const base = `/${locale}/${surface}`;
   const close = (): void => {
