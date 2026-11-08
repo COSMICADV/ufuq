@@ -59,7 +59,11 @@ const PILLARS: readonly {
     icon: Building2,
     title: '1to1 Business ERP',
     body: 'Streamline invoicing, client relationship management (CRM), expense tracking, and real-time inventory control.',
-    points: ['Automated Recurring Invoices', 'Multi-Currency Accounting', 'Vendor & Expense Tracking'],
+    points: [
+      'Automated Recurring Invoices',
+      'Multi-Currency Accounting',
+      'Vendor & Expense Tracking',
+    ],
     cta: 'Explore ERP Features',
   },
   {
@@ -130,6 +134,13 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
   const [activeDashboardTab, setActiveDashboardTab] = useState<'overview' | 'finance' | 'qr'>(
     'overview',
   );
+
+  /** Open a product's tab in the hero preview and bring the preview into view. */
+  const showPreview = (pillar: Pillar): void => {
+    setActiveTab(pillar);
+    setActiveDashboardTab(pillar === 'erp' ? 'overview' : pillar);
+    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   const loginHref = publicPath(locale, 'login');
   const registerHref = publicPath(locale, 'register');
@@ -254,7 +265,7 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
             </div>
 
             {/* Interactive dashboard preview */}
-            <div className="lp-window">
+            <div className="lp-window" id="preview">
               <div className="lp-window__bar">
                 <div className="lp-window__dots">
                   <span className="lp-dot lp-dot--rose" />
@@ -446,9 +457,26 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                         <Tick key={pt}>{pt}</Tick>
                       ))}
                     </ul>
-                    <div className="lp-pillar__cta">
-                      {p.cta} <ChevronRight className="lp-i4" />
-                    </div>
+                    {p.id === 'erp' ? (
+                      <Link
+                        href={publicPath(locale, 'features')}
+                        className="lp-pillar__cta"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {p.cta} <ChevronRight className="lp-i4" />
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className="lp-pillar__cta"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showPreview(p.id);
+                        }}
+                      >
+                        {p.cta} <ChevronRight className="lp-i4" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -468,7 +496,8 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
               </h2>
               <p className="lp-section__lead">
                 Your enterprise data deserves enterprise reliability. 1to1OS is engineered on a
-                resilient edge infrastructure to provide 99.99% uptime and instant latency worldwide.
+                resilient edge infrastructure to provide 99.99% uptime and instant latency
+                worldwide.
               </p>
 
               <div id="security" className="lp-features">
