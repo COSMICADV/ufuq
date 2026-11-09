@@ -38,9 +38,6 @@ c.connect()
   });
 ') || echo "Could not inspect the database owner role."
 
-# One-time full reset, only when RESET_DATABASE_TOKEN is set (see the script).
-node deploy/hosted/reset-database.mjs
-
 echo "Applying migrations…"
 (cd packages/db && ./node_modules/.bin/prisma migrate deploy)
 echo "Seeding reference data…"
