@@ -55,6 +55,8 @@ export interface SalaryPolicy {
 export interface SalaryRow {
   readonly id: string;
   readonly monthly_salary: string;
+  /** Monthly transport allowance, paid per office day. */
+  readonly transport_allowance: string;
   readonly currency: string;
   readonly effective_from: string;
   readonly effective_to: string | null;
@@ -170,6 +172,8 @@ export interface Payslip extends PayrollLine {
       readonly working_days: number;
       readonly base: string;
       readonly daily_wage: string;
+      readonly transport_allowance?: string;
+      readonly transport_daily?: string;
     }[];
     readonly absence: string;
     readonly unpaid_leave: string;
@@ -227,6 +231,47 @@ export interface PayrollEstimate {
   readonly unpaid_leave_days: number | null;
   readonly late_minutes_total: number | null;
   readonly attendance_adjustment: string | null;
+  readonly transport_allowance: string | null;
+  readonly estimated_transport: string | null;
+  /** Earned so far this month — each checked-in day adds its pay. */
+  readonly earned: EarnedToDate | null;
+}
+
+export interface EarnedToDate {
+  readonly through: string;
+  readonly days_worked: number;
+  readonly office_days: number;
+  readonly wfh_days: number;
+  readonly paid_leave_days: number;
+  readonly salary: string;
+  readonly transport: string;
+  readonly total: string;
+  readonly day_salary: string;
+  readonly day_transport: string;
+}
+
+/** `GET /payroll/month-to-date` — everyone's earnings so far this month. */
+export interface MonthToDate {
+  readonly label: string;
+  readonly through: string;
+  readonly currency: string;
+  readonly available: boolean;
+  readonly unavailable_reason: string | null;
+  readonly rows: readonly {
+    readonly employee: { readonly id: string; readonly code: string; readonly name: string };
+    readonly monthly_salary: string;
+    readonly transport_allowance: string;
+    readonly earned: EarnedToDate;
+  }[];
+  readonly missing: readonly {
+    readonly employee: { readonly id: string; readonly code: string; readonly name: string };
+    readonly issue: string;
+  }[];
+  readonly totals: {
+    readonly salary: string;
+    readonly transport: string;
+    readonly total: string;
+  } | null;
 }
 
 // -- Paths ------------------------------------------------------------------------
@@ -432,16 +477,24 @@ export function policyBody(form: PolicyForm): Record<string, unknown> {
 
 export interface SalaryForm {
   readonly monthly_salary: string;
+  readonly transport_allowance: string;
   readonly effective_from: string;
   readonly note: string;
 }
 
-export const EMPTY_SALARY_FORM: SalaryForm = { monthly_salary: '', effective_from: '', note: '' };
+export const EMPTY_SALARY_FORM: SalaryForm = {
+  monthly_salary: '',
+  transport_allowance: '',
+  effective_from: '',
+  note: '',
+};
 
 export function validateSalaryForm(form: SalaryForm): Issues {
   const issues: Record<string, string> = {};
   if (!positive(normaliseAmount(form.monthly_salary)))
     issues.monthly_salary = 'payroll.issue_amount';
+  if (!AMOUNT.test(normaliseAmount(form.transport_allowance)))
+    issues.transport_allowance = 'payroll.issue_amount';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(form.effective_from))
     issues.effective_from = 'validation.required';
   return issues;
@@ -450,6 +503,7 @@ export function validateSalaryForm(form: SalaryForm): Issues {
 export function salaryBody(form: SalaryForm): Record<string, unknown> {
   return {
     monthly_salary: normaliseAmount(form.monthly_salary),
+    transport_allowance: normaliseAmount(form.transport_allowance),
     effective_from: form.effective_from,
     ...(form.note.trim() === '' ? {} : { note: form.note.trim() }),
   };

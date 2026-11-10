@@ -6,7 +6,7 @@ import { createTranslator } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { fetchMany, fetchOne } from '../../lib/api-client';
-import { monthLabel, salaryPath } from '../../lib/payroll';
+import { money, monthLabel, salaryPath } from '../../lib/payroll';
 import type { PayrollEstimate, PayrollLine } from '../../lib/payroll';
 import { Alert, Card, EmptyState } from '../design-system';
 import { loadSession } from '../employees/use-session';
@@ -83,14 +83,55 @@ function Estimate({
     );
   }
   const currency = estimate.currency ?? '';
+  const earned = estimate.earned;
   return (
     <>
+      {earned === null ? null : (
+        <section className="earned" aria-label={t('salary.earned_title')}>
+          <p className="earned__label">{t('salary.earned_title')}</p>
+          <p className="earned__total">
+            <Amount value={earned.total} currency={currency} locale={locale} />
+          </p>
+          <ul className="earned__parts">
+            <li>
+              <span>
+                {t('salary.earned_salary', {
+                  days: String(earned.days_worked + earned.paid_leave_days),
+                })}
+              </span>
+              <Amount value={earned.salary} currency={currency} locale={locale} />
+            </li>
+            <li>
+              <span>{t('salary.earned_transport', { days: String(earned.office_days) })}</span>
+              <Amount value={earned.transport} currency={currency} locale={locale} />
+            </li>
+          </ul>
+          <p className="earned__rule">
+            {t('salary.earned_rule', {
+              salary: money(earned.day_salary, currency, locale),
+              transport: money(earned.day_transport, currency, locale),
+            })}
+          </p>
+          {earned.wfh_days > 0 ? (
+            <p className="earned__rule">
+              {t('salary.earned_wfh', { days: String(earned.wfh_days) })}
+            </p>
+          ) : null}
+        </section>
+      )}
       <Alert tone="warning" title={t('salary.provisional_title')}>
         {t('salary.provisional_detail')}
       </Alert>
       <div className="payroll-figures">
         <Figure label={t('salary.monthly_salary')}>
           <Amount value={estimate.monthly_salary ?? '0.00'} currency={currency} locale={locale} />
+        </Figure>
+        <Figure label={t('salary.transport_allowance')}>
+          <Amount
+            value={estimate.transport_allowance ?? '0.00'}
+            currency={currency}
+            locale={locale}
+          />
         </Figure>
         <Figure label={t('salary.estimated_salary')}>
           <Amount value={estimate.estimated_net ?? '0.00'} currency={currency} locale={locale} />

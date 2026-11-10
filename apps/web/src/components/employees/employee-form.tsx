@@ -18,6 +18,7 @@ import {
   formFromEmployee,
   fullName,
   isDirty,
+  salaryIssues,
   PASSWORD_MIN_LENGTH,
   updateBody,
 } from '../../lib/employees';
@@ -242,9 +243,19 @@ function EmployeeFormBody({
 
   const submit = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    setSaving(true);
     setFieldIssues({});
     setFormError(null);
+    // A new employee is never saved without a salary: checked here first.
+    if (editing === null) {
+      const missing = salaryIssues(values);
+      if (Object.keys(missing).length > 0) {
+        setFieldIssues(missing);
+        setFormError(t('employees.salary_required_form'));
+        document.getElementById('employee-salary')?.scrollIntoView({ block: 'center' });
+        return;
+      }
+    }
+    setSaving(true);
 
     const request =
       editing === null
@@ -445,6 +456,50 @@ function EmployeeFormBody({
           />
         </Field>
       </FormSection>
+
+      {editing === null ? (
+        <FormSection title={t('employees.section_salary')}>
+          <p id="employee-salary" className="field__helper employee-form__note">
+            {t('employees.salary_intro')}
+          </p>
+          <Field
+            label={t('employees.monthly_salary')}
+            required
+            helper={t('employees.monthly_salary_helper')}
+            {...optionalError(issueFor('monthly_salary'))}
+          >
+            <Input
+              inputMode="decimal"
+              dir="ltr"
+              value={values.monthly_salary}
+              required
+              placeholder="10000"
+              aria-invalid={issueFor('monthly_salary') !== undefined}
+              onChange={(event) => {
+                set('monthly_salary', event.target.value);
+              }}
+            />
+          </Field>
+          <Field
+            label={t('employees.transport_allowance')}
+            required
+            helper={t('employees.transport_allowance_helper')}
+            {...optionalError(issueFor('transport_allowance'))}
+          >
+            <Input
+              inputMode="decimal"
+              dir="ltr"
+              value={values.transport_allowance}
+              required
+              placeholder="0"
+              aria-invalid={issueFor('transport_allowance') !== undefined}
+              onChange={(event) => {
+                set('transport_allowance', event.target.value);
+              }}
+            />
+          </Field>
+        </FormSection>
+      ) : null}
 
       <FormSection title={t('employees.section_schedule')}>
         <Field

@@ -27,7 +27,10 @@
  *                 Overtime on a day with no scheduled minutes (a rest day or a
  *                 holiday worked) has no rate to price it with: it is reported,
  *                 unpriced, and the line is flagged for review.
- *   net           base + attendance adjustment − deductions + bonuses
+ *   transport     the row's monthly allowance ÷ scheduled working days in the
+ *                 month, per working day worked from the office. Working from
+ *                 home, leave and absence earn none.
+ *   net           base + transport + attendance adjustment − deductions + bonuses
  *   rounding      once, on the net only: `none` keeps piastres (0.01, half
  *                 away from zero, which DECIMAL(15,2) requires anyway);
  *                 `nearest` / `up` / `down` round to a whole pound.
@@ -81,6 +84,8 @@ export interface SalaryRow {
   readonly to: CalendarDate | null;
   /** DECIMAL(15,2) as a string. */
   readonly monthlySalary: string;
+  /** DECIMAL(15,2) as a string: the monthly transport allowance. Absent = none. */
+  readonly transportAllowance?: string;
 }
 
 export type DayStatus =
@@ -132,6 +137,13 @@ export interface EngineInput {
    * date have not happened, and are projected as worked.
    */
   readonly projectAfter?: CalendarDate;
+  /**
+   * Also report what has been earned up to and including this day: each
+   * working day worked (or on paid leave) adds the scheduled-day wage, and
+   * each one worked from the office adds the day's transport allowance. A
+   * day with no check-in yet earns nothing — and is not charged here either.
+   */
+  readonly earnedThrough?: CalendarDate;
 }
 
 export type EngineErrorCode =
@@ -158,6 +170,9 @@ export interface SegmentResult {
   readonly base: Fraction;
   readonly dailyWage: Fraction;
   readonly scheduledDayWage: Fraction;
+  readonly transportAllowance: string;
+  /** The allowance ÷ scheduled working days in the month. */
+  readonly transportDaily: Fraction;
 }
 
 export interface Counts {
@@ -178,6 +193,7 @@ export interface Counts {
 
 export interface ExactAmounts {
   readonly base: Fraction;
+  readonly transport: Fraction;
   readonly absence: Fraction;
   readonly unpaidLeave: Fraction;
   readonly lateness: Fraction;
@@ -194,6 +210,19 @@ export type ReviewReason =
   | 'missing_days'
   | 'unpriced_overtime';
 
+/** What the month has earned so far — see `EngineInput.earnedThrough`. */
+export interface EarnedToDate {
+  readonly through: string;
+  readonly workedDays: number;
+  readonly officeDays: number;
+  readonly wfhDays: number;
+  readonly paidLeaveDays: number;
+  readonly base: Decimal;
+  readonly transport: Decimal;
+  /** base + transport, from the exact values. */
+  readonly total: Decimal;
+}
+
 export interface EngineResult {
   readonly calendarDaysInMonth: number;
   readonly workingDaysInMonth: number;
@@ -204,6 +233,8 @@ export interface EngineResult {
   readonly exact: ExactAmounts;
   /** Shown components, at 0.01 half away from zero. */
   readonly baseSalary: Decimal;
+  /** The transport allowance the month's office days earned. */
+  readonly transportAllowance: Decimal;
   readonly dailyWage: Decimal;
   readonly attendanceAdjustment: Decimal;
   readonly totalDeductions: Decimal;
@@ -213,6 +244,8 @@ export interface EngineResult {
   /** OD-06: the exact or the rounded net is below zero. The caller refuses it. */
   readonly negative: boolean;
   readonly reviewReasons: readonly ReviewReason[];
+  /** Present only when `earnedThrough` was given. */
+  readonly earned: EarnedToDate | null;
 }
 
 const MONEY = 2;
@@ -330,13 +363,18 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
   }
 
   const segments: SegmentResult[] = [];
-  const wages = new Map<number, { daily: Fraction; scheduledDay: Fraction }>();
+  const wages = new Map<
+    number,
+    { daily: Fraction; scheduledDay: Fraction; transportDaily: Fraction }
+  >();
   for (const [index, working] of [...segmentWorkingDays].sort(([a], [b]) => a - b)) {
     const row = rows[index] as SalaryRow;
     const monthly = money(row.monthlySalary);
     const daily = dailyWageFor(policy, monthly, workingDaysInMonth, calendarDays);
     const scheduledDay = monthly.divideByInteger(workingDaysInMonth);
-    wages.set(index, { daily, scheduledDay });
+    const allowance = money(row.transportAllowance ?? '0.00');
+    const transportDaily = allowance.divideByInteger(workingDaysInMonth);
+    wages.set(index, { daily, scheduledDay, transportDaily });
     segments.push({
       from: formatCalendarDate(maxDate(row.from, employedFrom)),
       to: formatCalendarDate(row.to === null ? employedTo : minDate(row.to, employedTo)),
@@ -345,6 +383,8 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
       base: monthly.multiplyByInteger(working).divideByInteger(workingDaysInMonth),
       dailyWage: daily,
       scheduledDayWage: scheduledDay,
+      transportAllowance: allowance.toDecimal(MONEY, 'exact').toString(),
+      transportDaily,
     });
   }
 
@@ -353,6 +393,15 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
   let unpaidLeave = Fraction.zero();
   let lateness = Fraction.zero();
   let overtime = Fraction.zero();
+  let transport = Fraction.zero();
+  const earned = {
+    workedDays: 0,
+    officeDays: 0,
+    wfhDays: 0,
+    paidLeaveDays: 0,
+    base: Fraction.zero(),
+    transport: Fraction.zero(),
+  };
   const counts = {
     workingDays: 0,
     presentDays: 0,
@@ -370,27 +419,59 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
   };
 
   for (const day of employedDays) {
-    const wage = wages.get(segmentOf(day.date)) as { daily: Fraction; scheduledDay: Fraction };
+    const wage = wages.get(segmentOf(day.date)) as {
+      daily: Fraction;
+      scheduledDay: Fraction;
+      transportDaily: Fraction;
+    };
     const minuteWage =
       day.scheduledMinutes > 0 ? wage.daily.divideByInteger(day.scheduledMinutes) : null;
     const record = day.record;
     const working = isWorkingDay(day);
     if (working) counts.workingDays += 1;
 
+    // Earned so far: only what has actually happened, up to the given day.
+    if (
+      working &&
+      input.earnedThrough !== undefined &&
+      compareDates(day.date, input.earnedThrough) <= 0 &&
+      record !== null
+    ) {
+      if (worked(record)) {
+        earned.workedDays += 1;
+        earned.base = earned.base.add(wage.scheduledDay);
+        if (record.workMode === 'wfh') {
+          earned.wfhDays += 1;
+        } else {
+          earned.officeDays += 1;
+          earned.transport = earned.transport.add(wage.transportDaily);
+        }
+      } else if (record.status === 'on_leave' && record.leavePaid === true) {
+        earned.paidLeaveDays += 1;
+        earned.base = earned.base.add(wage.scheduledDay);
+      }
+    }
+
     if (
       working &&
       input.projectAfter !== undefined &&
       compareDates(day.date, input.projectAfter) > 0
     ) {
-      // Provisional estimate: a day that has not happened yet.
+      // Provisional estimate: a day that has not happened yet — projected as
+      // worked from the office.
       counts.projectedDays += 1;
+      transport = transport.add(wage.transportDaily);
       continue;
     }
 
     if (record !== null && worked(record)) {
       if (working) {
-        if (record.workMode === 'wfh') counts.wfhDays += 1;
-        else counts.presentDays += 1;
+        if (record.workMode === 'wfh') {
+          counts.wfhDays += 1;
+        } else {
+          counts.presentDays += 1;
+          transport = transport.add(wage.transportDaily);
+        }
       }
       if (record.status === 'pending') counts.pendingDays.push(formatCalendarDate(day.date));
       if (record.lateMinutes > 0) {
@@ -455,7 +536,7 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
   const attendanceAdjustment = overtime.subtract(absence).subtract(unpaidLeave).subtract(lateness);
   const deductions = Fraction.sum(input.deductions.map(money));
   const bonuses = Fraction.sum(input.bonuses.map(money));
-  const net = base.add(attendanceAdjustment).subtract(deductions).add(bonuses);
+  const net = base.add(transport).add(attendanceAdjustment).subtract(deductions).add(bonuses);
   const netSalary = roundNet(net, policy.rounding);
 
   const reviewReasons: ReviewReason[] = [];
@@ -479,6 +560,7 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
     counts,
     exact: {
       base,
+      transport,
       absence,
       unpaidLeave,
       lateness,
@@ -489,6 +571,7 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
       net,
     },
     baseSalary: shown(base),
+    transportAllowance: shown(transport),
     dailyWage: shown(lastSegment.dailyWage),
     attendanceAdjustment: shown(attendanceAdjustment),
     totalDeductions: deductions.toDecimal(MONEY, 'exact'),
@@ -496,6 +579,19 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
     netSalary,
     negative: net.isNegative() || netSalary.isNegative(),
     reviewReasons,
+    earned:
+      input.earnedThrough === undefined
+        ? null
+        : {
+            through: formatCalendarDate(input.earnedThrough),
+            workedDays: earned.workedDays,
+            officeDays: earned.officeDays,
+            wfhDays: earned.wfhDays,
+            paidLeaveDays: earned.paidLeaveDays,
+            base: shown(earned.base),
+            transport: shown(earned.transport),
+            total: shown(earned.base.add(earned.transport)),
+          },
   };
 }
 
@@ -507,6 +603,8 @@ export function calculatePayrollLine(input: EngineInput): EngineResult {
  */
 export function renet(input: {
   readonly base: Fraction;
+  /** The earned transport allowance; absent on lines from before it existed. */
+  readonly transport?: Fraction;
   readonly attendanceAdjustment: Fraction;
   readonly deductions: readonly string[];
   readonly bonuses: readonly string[];
@@ -520,7 +618,11 @@ export function renet(input: {
 } {
   const deductions = Fraction.sum(input.deductions.map(money));
   const bonuses = Fraction.sum(input.bonuses.map(money));
-  const net = input.base.add(input.attendanceAdjustment).subtract(deductions).add(bonuses);
+  const net = input.base
+    .add(input.transport ?? Fraction.zero())
+    .add(input.attendanceAdjustment)
+    .subtract(deductions)
+    .add(bonuses);
   const netSalary = roundNet(net, input.rounding);
   return {
     net,

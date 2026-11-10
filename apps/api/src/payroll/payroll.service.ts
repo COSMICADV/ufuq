@@ -63,7 +63,7 @@ import type {
   ListPayrollPeriodsQueryDto,
   RecalculatePayrollDto,
 } from './dto/payroll.dto.js';
-import { renet } from './payroll-engine.js';
+import { renet, shown } from './payroll-engine.js';
 import { PayrollEventPublisher } from './payroll-events.js';
 import type { PayrollEvent } from './payroll-events.js';
 import {
@@ -160,6 +160,49 @@ export interface PayrollEstimate {
   readonly unpaid_leave_days: number | null;
   readonly late_minutes_total: number | null;
   readonly attendance_adjustment: string | null;
+  /** The monthly transport allowance in effect, and what this month will pay of it. */
+  readonly transport_allowance: string | null;
+  readonly estimated_transport: string | null;
+  /**
+   * Earned so far this month, through today: every working day checked in
+   * (or on paid leave) adds the day's salary; office days add the day's
+   * transport allowance. Today counts once checked in.
+   */
+  readonly earned: {
+    readonly through: string;
+    readonly days_worked: number;
+    readonly office_days: number;
+    readonly wfh_days: number;
+    readonly paid_leave_days: number;
+    readonly salary: string;
+    readonly transport: string;
+    readonly total: string;
+    readonly day_salary: string;
+    readonly day_transport: string;
+  } | null;
+}
+
+export interface MonthToDatePayload {
+  readonly label: string;
+  readonly through: string;
+  readonly currency: string;
+  readonly available: boolean;
+  readonly unavailable_reason: string | null;
+  readonly rows: readonly {
+    readonly employee: { readonly id: string; readonly code: string; readonly name: string };
+    readonly monthly_salary: string;
+    readonly transport_allowance: string;
+    readonly earned: NonNullable<PayrollEstimate['earned']>;
+  }[];
+  readonly missing: readonly {
+    readonly employee: { readonly id: string; readonly code: string; readonly name: string };
+    readonly issue: string;
+  }[];
+  readonly totals: {
+    readonly salary: string;
+    readonly transport: string;
+    readonly total: string;
+  } | null;
 }
 
 type Kind = 'deduction' | 'bonus';
@@ -209,10 +252,31 @@ function employeeRef(employee: {
   };
 }
 
+/** The engine's earned-so-far, with today's rates, for the API. */
+function earnedPayload(
+  r: EmployeeCalculation['result'],
+  segment: EmployeeCalculation['result']['segments'][number] | undefined,
+): PayrollEstimate['earned'] {
+  if (r.earned === null) return null;
+  return {
+    through: r.earned.through,
+    days_worked: r.earned.workedDays,
+    office_days: r.earned.officeDays,
+    wfh_days: r.earned.wfhDays,
+    paid_leave_days: r.earned.paidLeaveDays,
+    salary: r.earned.base.toString(),
+    transport: r.earned.transport.toString(),
+    total: r.earned.total.toString(),
+    day_salary: segment === undefined ? '0.00' : shown(segment.scheduledDayWage).toString(),
+    day_transport: segment === undefined ? '0.00' : shown(segment.transportDaily).toString(),
+  };
+}
+
 function lineData(calc: EmployeeCalculation) {
   const r = calc.result;
   return {
     baseSalary: r.baseSalary.toString(),
+    transportAllowance: r.transportAllowance.toString(),
     dailyWage: r.dailyWage.toString(),
     workingDays: r.counts.workingDays,
     presentDays: r.counts.presentDays,
@@ -492,6 +556,7 @@ export class PayrollService extends TenantScopedService {
       where: { payrollPeriodId: periodId },
       select: {
         baseSalary: true,
+        transportAllowance: true,
         attendanceAdjustment: true,
         totalDeductions: true,
         totalBonuses: true,
@@ -499,7 +564,8 @@ export class PayrollService extends TenantScopedService {
       },
     });
     const totals = {
-      totalGross: sumMoney(lines.map((l) => l.baseSalary)).toString(),
+      // Gross is everything the salary rows pay: base and earned transport.
+      totalGross: sumMoney(lines.flatMap((l) => [l.baseSalary, l.transportAllowance])).toString(),
       totalAttendanceAdjustment: sumMoney(lines.map((l) => l.attendanceAdjustment)).toString(),
       totalDeductions: sumMoney(lines.map((l) => l.totalDeductions)).toString(),
       totalBonuses: sumMoney(lines.map((l) => l.totalBonuses)).toString(),
@@ -785,6 +851,7 @@ export class PayrollService extends TenantScopedService {
         const exact = snapshotExact(line.snapshot);
         const net = renet({
           base: exact.base,
+          transport: exact.transport,
           attendanceAdjustment: exact.attendanceAdjustment,
           deductions: line.deductions.map((d) => moneyString(d.amount)),
           bonuses: line.bonuses.map((b) => moneyString(b.amount)),
@@ -915,6 +982,7 @@ export class PayrollService extends TenantScopedService {
         const exact = snapshotExact(line.snapshot);
         const result = renet({
           base: exact.base,
+          transport: exact.transport,
           attendanceAdjustment: exact.attendanceAdjustment,
           deductions,
           bonuses,
@@ -1111,6 +1179,9 @@ export class PayrollService extends TenantScopedService {
         unpaid_leave_days: null,
         late_minutes_total: null,
         attendance_adjustment: null,
+        transport_allowance: null,
+        estimated_transport: null,
+        earned: null,
       });
       const policy = await loadPolicy(tx);
       if (policy === null) return empty('salary_policy_not_configured');
@@ -1119,11 +1190,19 @@ export class PayrollService extends TenantScopedService {
       // Only days that have ended are judged: today is still in progress, so
       // it and every later day are projected as worked, never charged.
       const yesterday = new Date(Date.UTC(today.year, today.month - 1, today.day - 1));
-      const result = await calculateMonth(tx, policy, window, employees, new Map(), {
-        year: yesterday.getUTCFullYear(),
-        month: yesterday.getUTCMonth() + 1,
-        day: yesterday.getUTCDate(),
-      });
+      const result = await calculateMonth(
+        tx,
+        policy,
+        window,
+        employees,
+        new Map(),
+        {
+          year: yesterday.getUTCFullYear(),
+          month: yesterday.getUTCMonth() + 1,
+          day: yesterday.getUTCDate(),
+        },
+        today,
+      );
       const calc = result.calculations[0];
       if (calc === undefined) {
         return empty(result.blocked[0]?.issue ?? 'unavailable');
@@ -1148,6 +1227,97 @@ export class PayrollService extends TenantScopedService {
         unpaid_leave_days: r.counts.unpaidLeaveDays,
         late_minutes_total: r.counts.lateMinutes,
         attendance_adjustment: r.attendanceAdjustment.toString(),
+        transport_allowance:
+          (current ?? r.segments[r.segments.length - 1])?.transportAllowance ?? null,
+        estimated_transport: r.transportAllowance.toString(),
+        earned: earnedPayload(r, current ?? r.segments[r.segments.length - 1]),
+      };
+    });
+  }
+
+  /**
+   * GET /payroll/month-to-date — what every employee has earned so far this
+   * month, through today (company scope: the owner / admin). The same rule as
+   * the employee's own card: a checked-in working day adds the day's salary,
+   * an office day also adds the day's transport allowance.
+   */
+  async monthToDate(ctx: AuthContext, now: Date = new Date()): Promise<MonthToDatePayload> {
+    requireCompany(ctx, 'payroll.view');
+    requireCompany(ctx, 'employee.view_salary');
+    return this.tenant(ctx, async (tx) => {
+      const today = await companyToday(tx, now);
+      const window = monthWindow(today.year, today.month);
+      const company = await tx.company.findFirstOrThrow({ select: { currency: true } });
+      const base = {
+        label: periodLabel(today.year, today.month),
+        through: formatCalendarDate(today),
+        currency: company.currency,
+      };
+      const policy = await loadPolicy(tx);
+      if (policy === null) {
+        return {
+          ...base,
+          available: false,
+          unavailable_reason: 'salary_policy_not_configured',
+          rows: [],
+          missing: [],
+          totals: null,
+        };
+      }
+      const employees = await eligibleEmployees(tx, window);
+      const yesterday = new Date(Date.UTC(today.year, today.month - 1, today.day - 1));
+      const result = await calculateMonth(
+        tx,
+        policy,
+        window,
+        employees,
+        new Map(),
+        {
+          year: yesterday.getUTCFullYear(),
+          month: yesterday.getUTCMonth() + 1,
+          day: yesterday.getUTCDate(),
+        },
+        today,
+      );
+      const rows = result.calculations.map((calc) => {
+        const segment =
+          [...calc.result.segments].reverse().find((s) => s.from <= formatCalendarDate(today)) ??
+          calc.result.segments[calc.result.segments.length - 1];
+        return {
+          employee: {
+            id: calc.employee.id,
+            code: calc.employee.employeeCode,
+            name: `${calc.employee.firstName} ${calc.employee.lastName}`,
+          },
+          monthly_salary: segment?.monthlySalary ?? '0.00',
+          transport_allowance: segment?.transportAllowance ?? '0.00',
+          earned: earnedPayload(calc.result, segment) as NonNullable<PayrollEstimate['earned']>,
+        };
+      });
+      const sum = (pick: (row: (typeof rows)[number]) => string): string =>
+        Decimal.sum(
+          rows.map((row) => Decimal.parse(pick(row), 2)),
+          2,
+        ).toString();
+      return {
+        ...base,
+        available: true,
+        unavailable_reason: null,
+        rows,
+        // Employees the month cannot be calculated for (no salary, no schedule…).
+        missing: result.blocked.map((b) => ({
+          employee: {
+            id: b.employee.id,
+            code: b.employee.employeeCode,
+            name: `${b.employee.firstName} ${b.employee.lastName}`,
+          },
+          issue: b.issue,
+        })),
+        totals: {
+          salary: sum((row) => row.earned.salary),
+          transport: sum((row) => row.earned.transport),
+          total: sum((row) => row.earned.total),
+        },
       };
     });
   }

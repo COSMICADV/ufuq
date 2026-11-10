@@ -293,7 +293,16 @@
     "history_empty_title": "No recorded changes yet",
     "history_empty": "Every change to this employee record appears here, with who made it and when.",
     "assign_task": "Assign task",
-    "assign_goal": "Assign goal"
+    "assign_goal": "Assign goal",
+    "section_salary": "Salary",
+    "salary_intro": "Required: an employee cannot be added without a salary. Each day they check in adds that day's pay.",
+    "monthly_salary": "Basic monthly salary",
+    "monthly_salary_helper": "Split over the month's working days: each day checked in earns its share.",
+    "transport_allowance": "Monthly transport allowance",
+    "transport_allowance_helper": "Paid only for days checked in at the office — not for working from home. Write 0 if there is none.",
+    "salary_required": "Enter the basic salary — an employee cannot be saved without it.",
+    "transport_required": "Enter the transport allowance (0 if there is none).",
+    "salary_required_form": "Add the salary and transport allowance before saving."
   },
   "invitation": {
     "title": "Set your password",
@@ -1451,7 +1460,22 @@
     "note": "Note (optional)",
     "saved": "Salary saved",
     "issue_before_joining": "A salary cannot start before the joining date",
-    "issue_after_termination": "A salary cannot start after the employment ends"
+    "issue_after_termination": "A salary cannot start after the employment ends",
+    "transport_allowance": "Transport allowance",
+    "earned_title": "Earned so far this month",
+    "earned_salary": "Salary — {days} days",
+    "earned_transport": "Transport — {days} office days",
+    "earned_rule": "Each day you check in adds {salary}; a day at the office also adds {transport} transport.",
+    "earned_wfh": "{days} days from home: salary only, no transport.",
+    "office_days": "Office days",
+    "home_days": "Home days",
+    "earned_salary_col": "Salary earned",
+    "earned_transport_col": "Transport earned",
+    "earned_total_col": "Total so far",
+    "month_to_date_title": "This month so far",
+    "month_to_date_intro": "What each employee has earned up to today. Every day checked in adds that day's salary; office days also add transport.",
+    "month_to_date_missing_title": "No salary yet — add one from their profile",
+    "month_to_date_total": "Total"
   },
   "warehouse": {
     "title": "Warehouse",

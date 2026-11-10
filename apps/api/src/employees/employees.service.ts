@@ -60,6 +60,7 @@ import {
 import type { FieldIssue } from '../company-structure/tenant-scoped.service.js';
 import { parseCalendarDate } from '../company-structure/validation.js';
 import { InvitationMailer } from '../mail/invitation-mailer.js';
+import { recordInitialSalary } from '../payroll/initial-salary.js';
 import type { InvitationDelivery } from '../mail/invitation-mailer.js';
 import { OPEN_STATUSES } from '../tasks/task-rules.js';
 
@@ -167,6 +168,11 @@ export class EmployeesService extends TenantScopedService {
     if ((dto.manager_id ?? null) !== null && !ctx.permissions.has('employee.assign_manager')) {
       throw forbidden();
     }
+    // The salary is part of adding an employee, so adding one needs the
+    // permission to set it.
+    if (!ctx.permissions.has('employee.set_salary')) {
+      throw forbidden();
+    }
 
     // An ADMIN-chosen password makes the account active immediately; it must
     // meet the same policy as any other password (DOCUMENT 09 §2).
@@ -220,6 +226,14 @@ export class EmployeesService extends TenantScopedService {
       } catch (error) {
         throw translateWriteError(error);
       }
+
+      // An employee is never added without a salary: it starts on the joining date.
+      await recordInitialSalary(tx, ctx, this.audit, origin, {
+        employeeId,
+        joiningDate,
+        monthlySalary: dto.monthly_salary,
+        transportAllowance: dto.transport_allowance,
+      });
 
       await this.audit.record(tx, {
         companyId: ctx.companyId,

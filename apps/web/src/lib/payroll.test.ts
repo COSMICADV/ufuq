@@ -189,25 +189,57 @@ describe('the salary policy form invents nothing', () => {
 describe('salary, deduction, bonus and adjustment forms', () => {
   it('a salary is a positive DECIMAL(15,2) with an effective date', () => {
     expect(
-      validateSalaryForm({ monthly_salary: '20000.00', effective_from: '2026-03-16', note: '' }),
+      validateSalaryForm({
+        transport_allowance: '0',
+        monthly_salary: '20000.00',
+        effective_from: '2026-03-16',
+        note: '',
+      }),
     ).toEqual({});
     expect(
-      validateSalaryForm({ monthly_salary: '0', effective_from: '2026-03-16', note: '' })
-        .monthly_salary,
+      validateSalaryForm({
+        transport_allowance: '0',
+        monthly_salary: '0',
+        effective_from: '2026-03-16',
+        note: '',
+      }).monthly_salary,
     ).toBeDefined();
     expect(
-      validateSalaryForm({ monthly_salary: '1.234', effective_from: '2026-03-16', note: '' })
-        .monthly_salary,
+      validateSalaryForm({
+        transport_allowance: '0',
+        monthly_salary: '1.234',
+        effective_from: '2026-03-16',
+        note: '',
+      }).monthly_salary,
     ).toBeDefined();
     expect(
-      validateSalaryForm({ monthly_salary: '100', effective_from: '', note: '' }).effective_from,
+      validateSalaryForm({
+        transport_allowance: '0',
+        monthly_salary: '100',
+        effective_from: '',
+        note: '',
+      }).effective_from,
     ).toBeDefined();
     expect(
-      salaryBody({ monthly_salary: '٢٠٠٠٠', effective_from: '2026-03-16', note: ' ' }),
+      salaryBody({
+        monthly_salary: '٢٠٠٠٠',
+        transport_allowance: '٥٠٠',
+        effective_from: '2026-03-16',
+        note: ' ',
+      }),
     ).toEqual({
       monthly_salary: '20000',
+      transport_allowance: '500',
       effective_from: '2026-03-16',
     });
+    expect(
+      validateSalaryForm({
+        monthly_salary: '100',
+        transport_allowance: '',
+        effective_from: '2026-03-16',
+        note: '',
+      }).transport_allowance,
+    ).toBeDefined();
   });
 
   it('a deduction or bonus needs an amount above zero and a reason of 3+ characters', () => {

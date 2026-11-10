@@ -12,6 +12,7 @@
  * whitelist turns an attempt to send one into a 422.
  */
 
+import { DecimalString, IsAmount } from '../../payroll/dto/payroll.dto.js';
 import { ASSIGNABLE_ROLE_KEYS, MIN_PASSWORD_LENGTH } from '@ufuq/auth';
 import type { AssignableRoleKey } from '@ufuq/auth';
 import { normaliseDigits } from '@ufuq/i18n';
@@ -145,6 +146,19 @@ export class CreateEmployeeDto {
 
   @IsBoolean({ message: 'invalid' })
   send_invitation!: boolean;
+
+  /**
+   * Required: an employee is never added without a salary. It starts on the
+   * joining date. The transport allowance is paid per office day.
+   */
+  @DecimalString()
+  @IsAmount('positive')
+  monthly_salary!: string;
+
+  @IsOptional()
+  @DecimalString()
+  @IsAmount('non_negative')
+  transport_allowance?: string;
 
   /**
    * Optional sign-in password the ADMIN chooses for the employee. When given,

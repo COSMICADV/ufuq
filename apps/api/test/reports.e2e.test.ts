@@ -287,7 +287,12 @@ async function api(account: Account, locale = 'en') {
 async function createEmployee(account: Account, body: Record<string, unknown>): Promise<string> {
   const response = await (await api(account))
     .post('/employees')
-    .send({ joining_date: '2026-01-05', send_invitation: true, ...body });
+    .send({
+      monthly_salary: '10000.00',
+      joining_date: '2026-01-05',
+      send_invitation: true,
+      ...body,
+    });
   if (response.status !== 201) {
     throw new Error(`Employee create failed: ${JSON.stringify(response.body)}`);
   }
@@ -901,7 +906,8 @@ beforeAll(async () => {
     const response = await admin
       .post(`/employees/${id}/salary`)
       .set('Idempotency-Key', key())
-      .send({ monthly_salary: amount, effective_from: '2026-01-05' });
+      // Each already has the salary they were added with (from 5 January).
+      .send({ monthly_salary: amount, effective_from: '2026-01-06' });
     expect(response.status).toBe(201);
   }
   ids.march = await payrollRun(2026, 3);

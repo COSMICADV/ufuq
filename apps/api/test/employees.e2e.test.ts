@@ -409,6 +409,7 @@ function body(overrides: Record<string, unknown> = {}): Record<string, unknown> 
     joining_date: '2026-01-15',
     role_key: 'employee',
     send_invitation: false,
+    monthly_salary: '10000.00',
     ...overrides,
   };
 }
@@ -434,16 +435,19 @@ beforeAll(async () => {
   refsA = await createReferences(adminA, 'A');
   refsB = await createReferences(adminB, 'B');
 
-  const created = await as(adminB).post('/employees').send({
-    first_name: 'Bee',
-    last_name: 'Tenant',
-    email: 'bee@b.test',
-    employee_code: 'B-001',
-    work_schedule_id: refsB.scheduleId,
-    joining_date: '2026-02-01',
-    role_key: 'employee',
-    send_invitation: false,
-  });
+  const created = await as(adminB)
+    .post('/employees')
+    .send({
+      monthly_salary: '10000.00',
+      first_name: 'Bee',
+      last_name: 'Tenant',
+      email: 'bee@b.test',
+      employee_code: 'B-001',
+      work_schedule_id: refsB.scheduleId,
+      joining_date: '2026-02-01',
+      role_key: 'employee',
+      send_invitation: false,
+    });
   if (created.status !== 201) {
     throw new Error(`Company B fixture failed: ${JSON.stringify(created.body)}`);
   }
@@ -476,19 +480,22 @@ describe('authentication — every endpoint requires a session', () => {
 
 describe('POST /employees — FLOW 02, one transaction', () => {
   it('creates the login user and the employee together, emails the invitation, and audits both', async () => {
-    const response = await as(adminA).post('/employees').send({
-      first_name: 'Mona',
-      last_name: 'Saleh',
-      email: MONA.email,
-      phone: '+20 100 000 0000',
-      employee_code: 'MGR-7351',
-      department_id: refsA.departmentId,
-      position_id: refsA.positionId,
-      work_schedule_id: refsA.scheduleId,
-      joining_date: '2025-06-01',
-      role_key: 'manager',
-      send_invitation: true,
-    });
+    const response = await as(adminA)
+      .post('/employees')
+      .send({
+        monthly_salary: '10000.00',
+        first_name: 'Mona',
+        last_name: 'Saleh',
+        email: MONA.email,
+        phone: '+20 100 000 0000',
+        employee_code: 'MGR-7351',
+        department_id: refsA.departmentId,
+        position_id: refsA.positionId,
+        work_schedule_id: refsA.scheduleId,
+        joining_date: '2025-06-01',
+        role_key: 'manager',
+        send_invitation: true,
+      });
 
     expect(response.status).toBe(201);
     expect(response.body.meta.invitation_delivery).toBe('sent');
@@ -563,6 +570,7 @@ describe('POST /employees — FLOW 02, one transaction', () => {
         'joining_date',
         'role_key',
         'send_invitation',
+        'monthly_salary',
       ]),
     );
   });
@@ -602,6 +610,7 @@ describe('POST /employees — FLOW 02, one transaction', () => {
     const response = await as(adminB)
       .post('/employees')
       .send({
+        monthly_salary: '10000.00',
         ...body({ employee_code: 'MGR-7351', email: MONA.email }),
         work_schedule_id: refsB.scheduleId,
       });
@@ -1195,6 +1204,7 @@ describe('the last active ADMIN cannot be demoted or deactivated', () => {
     const created = await as(adminC)
       .post('/employees')
       .send({
+        monthly_salary: '10000.00',
         first_name: 'Second',
         last_name: 'Admin',
         email: 'second@c.test',
@@ -1439,5 +1449,47 @@ describe('ADMIN-set sign-in password', () => {
       .send({ password: 'after-leaving-password-26' });
     expect(refused.status).toBe(409);
     expect(refused.body.error.code).toBe('EMPLOYEE_NOT_ACTIVE');
+  });
+});
+
+describe('salary is part of adding an employee', () => {
+  it('refuses an employee without a salary', async () => {
+    const response = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'nosalary@a.test', monthly_salary: undefined }));
+    expect(response.status).toBe(422);
+    expect(response.body.error.fields).toHaveProperty('monthly_salary');
+    const zero = await as(adminA)
+      .post('/employees')
+      .send(body({ email: 'zerosalary@a.test', monthly_salary: '0.00' }));
+    expect(zero.status).toBe(422);
+  });
+
+  it('writes the salary and transport allowance from the joining date, with a default policy', async () => {
+    const create = await as(adminA)
+      .post('/employees')
+      .send(
+        body({
+          email: 'salaried@a.test',
+          joining_date: '2026-02-01',
+          monthly_salary: '12000.00',
+          transport_allowance: '800.00',
+        }),
+      );
+    expect(create.status).toBe(201);
+    const id = create.body.data.id as string;
+
+    const salary = await as(adminA).get(`/employees/${id}/salary`);
+    expect(salary.status).toBe(200);
+    expect(salary.body.data.history).toHaveLength(1);
+    expect(salary.body.data.history[0]).toMatchObject({
+      monthly_salary: '12000.00',
+      transport_allowance: '800.00',
+      effective_from: '2026-02-01',
+      effective_to: null,
+    });
+    const policy = await as(adminA).get('/salary-policies');
+    expect(policy.body.data.policy).toMatchObject({ daily_wage_basis: 'scheduled_working_days' });
+    expect((await audits(COMPANY_A, id, 'EMPLOYEE_SALARY_CHANGED')).length).toBe(1);
   });
 });

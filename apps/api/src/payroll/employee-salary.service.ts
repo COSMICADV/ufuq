@@ -10,8 +10,8 @@
  *   - **Not into a finalized month.** A change effective inside a finalized
  *     payroll period is refused (409 `PAYROLL_PERIOD_FINALIZED`). That pay
  *     is settled; the way forward is an adjustment.
- *   - **Only with a policy.** Each row names the company's salary policy;
- *     without one there is nothing to name (`SALARY_POLICY_NOT_CONFIGURED`).
+ *   - **Always with a policy.** Each row names the company's salary policy;
+ *     a company without one gets the default (`initial-salary.ts`).
  *   - **Who sees it.** `employee.view_salary`: ADMIN company, EMPLOYEE self,
  *     MANAGER nothing (OD-07 A). Another employee's salary is 404 to a self
  *     scope, exactly as another's payslip is (DOCUMENT 15).
@@ -33,9 +33,7 @@ import {
 import type { CalendarDate } from '../attendance/zoned-time.js';
 import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
-import { AppException } from '../common/app-exception.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
-import { ERROR_CODES } from '../common/errors.js';
 import { IdempotencyService, isUniqueViolation } from '../common/idempotency.js';
 import type { IdempotencyRequest } from '../common/idempotency.js';
 import type { RequestOrigin } from '../common/request-context.js';
@@ -46,13 +44,16 @@ import {
 } from '../company-structure/tenant-scoped.service.js';
 
 import type { SetSalaryDto } from './dto/payroll.dto.js';
-import { companyToday, dateValue, loadPolicy, moneyString } from './payroll-inputs.js';
+import { ensureSalaryPolicy } from './initial-salary.js';
+import { companyToday, dateValue, moneyString } from './payroll-inputs.js';
 import { PayrollPeriodGuard } from './payroll-period-guard.js';
 import { payrollReach, requireCompany } from './payroll-rules.js';
 
 export interface SalaryRowPayload {
   readonly id: string;
   readonly monthly_salary: string;
+  /** Monthly transport allowance, paid per office day. */
+  readonly transport_allowance: string;
   readonly currency: string;
   readonly effective_from: string;
   readonly effective_to: string | null;
@@ -113,6 +114,7 @@ export class EmployeeSalaryService extends TenantScopedService {
       const history = rows.map((row) => ({
         id: row.id,
         monthly_salary: moneyString(row.monthlySalary),
+        transport_allowance: moneyString(row.transportAllowance),
         currency: row.currency,
         effective_from: day(row.effectiveFrom),
         effective_to: row.effectiveTo === null ? null : day(row.effectiveTo),
@@ -155,10 +157,9 @@ export class EmployeeSalaryService extends TenantScopedService {
         // One salary change at a time per employee.
         await tx.$queryRaw`SELECT id FROM employees WHERE id = ${employeeId}::uuid FOR UPDATE`;
 
-        const policy = await loadPolicy(tx);
-        if (policy === null) {
-          throw new AppException(ERROR_CODES.SALARY_POLICY_NOT_CONFIGURED, 422);
-        }
+        // No policy yet: the company gets the default one (initial-salary.ts),
+        // so a salary is never refused for want of a policy.
+        const policyId = await ensureSalaryPolicy(tx, ctx, this.audit, origin);
         const from = parseCalendarDate(dto.effective_from) as CalendarDate;
         if (compareDates(from, calendarDateIn(employee.joiningDate, 'UTC')) < 0) {
           throw fieldError({ effective_from: ['before_joining'] });
@@ -189,15 +190,21 @@ export class EmployeeSalaryService extends TenantScopedService {
         }
         const company = await tx.company.findFirstOrThrow({ select: { currency: true } });
         const amount = Decimal.parse(dto.monthly_salary, 2).toString();
+        // Left out, the transport allowance carries over from the current row.
+        const transport =
+          dto.transport_allowance === undefined
+            ? moneyString(latest?.transportAllowance ?? '0')
+            : Decimal.parse(dto.transport_allowance, 2).toString();
         await tx.employeeSalary.create({
           data: {
             id: rowId,
             companyId: ctx.companyId,
             employeeId,
             monthlySalary: amount,
+            transportAllowance: transport,
             currency: company.currency,
             effectiveFrom: dateValue(from),
-            salaryPolicyId: policy.id,
+            salaryPolicyId: policyId,
             createdBy: ctx.userId,
             note: dto.note ?? null,
           },
@@ -213,11 +220,13 @@ export class EmployeeSalaryService extends TenantScopedService {
             : {
                 oldValues: {
                   monthly_salary: moneyString(latest.monthlySalary),
+                  transport_allowance: moneyString(latest.transportAllowance),
                   effective_from: day(latest.effectiveFrom),
                 },
               }),
           newValues: {
             monthly_salary: amount,
+            transport_allowance: transport,
             effective_from: dto.effective_from,
             currency: company.currency,
             ...(dto.note === undefined ? {} : { note: dto.note }),

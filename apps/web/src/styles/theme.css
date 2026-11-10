@@ -849,3 +849,115 @@
   color: var(--text-primary);
   font-weight: 600;
 }
+
+/* ---- No empty gaps between cards ------------------------------------------------------
+ * Cards sit in rows that always fill the width: each card grows to share its
+ * row, a card left alone on the last row takes the whole row, and cards in one
+ * row match heights. Used by every dashboard, chart section and salary page. */
+.dashboard-widgets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 24px;
+}
+.dashboard-widgets > * {
+  flex: 1 1 26rem;
+  min-inline-size: 0;
+}
+.dashboard-widgets > :is(.dashboard-kpis, .tasks-muted, .state-block, .empty-state, .insights) {
+  flex-basis: 100%;
+}
+.insights__grid,
+.insights__kpis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+.insights__grid > * {
+  flex: 1 1 20rem;
+  min-inline-size: 0;
+}
+.insights__kpis > * {
+  flex: 1 1 15rem;
+  min-inline-size: 0;
+}
+.insights__grid > .insights__wide {
+  flex-basis: 100%;
+}
+@media (max-width: 639px) {
+  .dashboard-widgets {
+    gap: 16px;
+  }
+  .dashboard-widgets > * {
+    flex-basis: 100%;
+  }
+}
+
+/* ---- Salary earned so far (employee salary card) ---------------------------------- */
+.earned {
+  display: grid;
+  gap: 8px;
+  margin-block-end: var(--space-4);
+  padding: var(--space-4);
+  border-radius: 14px;
+  border: 1px solid rgb(var(--rgb-accent) / 0.35);
+  background: rgb(var(--rgb-accent) / 0.08);
+}
+.earned__label {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.earned__total {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--heading);
+}
+.earned__total .payroll-amount {
+  color: inherit;
+}
+.earned__parts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.earned__parts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+}
+.earned__parts .payroll-amount {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.earned__rule {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+/* A card stretched to its row's height centres an empty message instead of
+   leaving a hollow block under it. */
+:is(.dashboard-widgets, .insights__grid) > .card {
+  display: flex;
+  flex-direction: column;
+}
+:is(.dashboard-widgets, .insights__grid) > .card > .card__body {
+  flex: 1;
+}
+:is(.dashboard-widgets, .insights__grid) > .card:has(.empty-state) > .card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+:is(.dashboard-widgets, .insights__grid) > .card:has(.empty-state) .empty-state {
+  flex: 1;
+  align-content: center;
+  justify-content: center;
+}

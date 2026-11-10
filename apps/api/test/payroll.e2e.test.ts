@@ -262,9 +262,12 @@ async function api(account: Account) {
 }
 
 async function createEmployee(account: Account, body: Record<string, unknown>): Promise<string> {
-  const response = await (await api(account))
-    .post('/employees')
-    .send({ joining_date: '2026-01-05', send_invitation: true, ...body });
+  const response = await (await api(account)).post('/employees').send({
+    monthly_salary: '10000.00',
+    joining_date: '2026-01-05',
+    send_invitation: true,
+    ...body,
+  });
   if (response.status !== 201) {
     throw new Error(`Employee create failed: ${JSON.stringify(response.body)}`);
   }
@@ -587,6 +590,23 @@ beforeAll(async () => {
   });
   await activate(WORKER_B);
 
+  // Adding an employee now writes their first salary (and, the first time, a
+  // default salary policy) — covered in employees.e2e. This suite exercises
+  // payroll's own rules from a company with neither, so the fixture removes
+  // what the creation wrote, audit entries included.
+  await asOwner(async () => {
+    await prisma.$executeRawUnsafe('SET session_replication_role = replica');
+    try {
+      await prisma.$executeRawUnsafe('DELETE FROM "employee_salaries"');
+      await prisma.$executeRawUnsafe('DELETE FROM "salary_policies"');
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "audit_logs" WHERE "action" IN ('employee.salary_changed', 'salary_policy.changed')`,
+      );
+    } finally {
+      await prisma.$executeRawUnsafe('SET session_replication_role = DEFAULT');
+    }
+  });
+
   // March attendance. Omar: absent on 2 March, 30 minutes late on 17 March.
   // Sara: one open (pending) day on 4 March. Nour joins 16 March. Hala takes
   // two unpaid days, approved before payroll. Mona has no record on 31 March
@@ -687,14 +707,31 @@ describe('access: MANAGER has none, EMPLOYEE only their own, another company 404
 // ---------------------------------------------------------------------------
 
 describe('salary policy: configuration, never invented', () => {
-  it('there is none until an ADMIN saves one; salaries are refused until then', async () => {
+  it('there is none until an ADMIN saves one — or until a salary needs one', async () => {
     const admin = await api(ADMIN_A);
     expect((await admin.get('/salary-policies')).body.data).toEqual({ policy: null });
-    const refused = await admin
-      .post(`/employees/${ids.worker}/salary`)
-      .send({ monthly_salary: '20000.00', effective_from: '2026-01-05' });
-    expect(refused.status).toBe(422);
-    expect(refused.body.error.code).toBe('SALARY_POLICY_NOT_CONFIGURED');
+    // A salary is never refused for want of a policy any more (2026-11-10):
+    // the company gets the default — split over the month's working days.
+    const adminB = await api(ADMIN_B);
+    expect((await adminB.get('/salary-policies')).body.data).toEqual({ policy: null });
+    const set = await adminB
+      .post(`/employees/${ids.workerB}/salary`)
+      .send({
+        monthly_salary: '15000.00',
+        transport_allowance: '500.00',
+        effective_from: '2026-01-05',
+      });
+    expect(set.status, JSON.stringify(set.body)).toBe(201);
+    expect(set.body.data.current).toMatchObject({
+      monthly_salary: '15000.00',
+      transport_allowance: '500.00',
+    });
+    expect((await adminB.get('/salary-policies')).body.data.policy).toMatchObject({
+      daily_wage_basis: 'scheduled_working_days',
+      absence_deduction: 'daily_wage',
+    });
+    // Company A is untouched.
+    expect((await admin.get('/salary-policies')).body.data).toEqual({ policy: null });
   });
 
   it('the first save must state every rule', async () => {
@@ -788,6 +825,7 @@ describe('salary history: closed and appended, never rewritten', () => {
     expect(changes).toHaveLength(2);
     expect(changes[1]?.oldValues).toEqual({
       monthly_salary: '20000.00',
+      transport_allowance: '0.00',
       effective_from: '2026-01-05',
     });
     expect(changes[1]?.newValues).toMatchObject({

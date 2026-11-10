@@ -216,16 +216,19 @@ async function createUser(
   schedule: string,
   code: string,
 ) {
-  const r = await (await api(ADMIN_A)).post('/employees').send({
-    first_name: 'Test',
-    last_name: code,
-    email,
-    employee_code: code,
-    role_key: roleKey,
-    work_schedule_id: schedule,
-    joining_date: '2026-01-05',
-    send_invitation: true,
-  });
+  const r = await (await api(ADMIN_A))
+    .post('/employees')
+    .send({
+      monthly_salary: '10000.00',
+      first_name: 'Test',
+      last_name: code,
+      email,
+      employee_code: code,
+      role_key: roleKey,
+      work_schedule_id: schedule,
+      joining_date: '2026-01-05',
+      send_invitation: true,
+    });
   expect(r.status).toBe(201);
   const message = [...mail.sent].reverse().find((m) => m.to === email) as MailMessage;
   const token = /#token=([^\s"']+)/.exec(message.text)?.[1] as string;

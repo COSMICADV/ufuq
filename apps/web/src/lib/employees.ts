@@ -7,6 +7,8 @@
  * security control — the API enforces every rule again (DOCUMENT 09 §5).
  */
 
+import { normaliseDigits } from '@ufuq/i18n';
+
 import type { ApiError } from './api-client';
 
 // ---------------------------------------------------------------------------
@@ -247,6 +249,9 @@ export interface EmployeeFormValues {
   readonly send_invitation: boolean;
   /** Optional sign-in password chosen by the ADMIN (create only). Empty means "invite by email". */
   readonly password: string;
+  /** Create only, required: the basic monthly salary and the monthly transport allowance. */
+  readonly monthly_salary: string;
+  readonly transport_allowance: string;
 }
 
 /**
@@ -270,6 +275,8 @@ export function emptyEmployeeForm(defaultScheduleId: string | null): EmployeeFor
     role_key: '',
     send_invitation: true,
     password: '',
+    monthly_salary: '',
+    transport_allowance: '',
   };
 }
 
@@ -291,7 +298,28 @@ export function formFromEmployee(employee: EmployeeView): EmployeeFormValues {
       : '',
     send_invitation: false,
     password: '',
+    monthly_salary: '',
+    transport_allowance: '',
   };
+}
+
+/** DECIMAL(15,2): up to thirteen integer digits, two decimals, after digit normalisation. */
+const AMOUNT = /^\d{1,13}(\.\d{1,2})?$/;
+
+/**
+ * The salary section of a new employee: a basic salary above zero and a
+ * transport allowance (zero when there is none) are both required.
+ */
+export function salaryIssues(values: EmployeeFormValues): Record<string, string> {
+  const issues: Record<string, string> = {};
+  const salary = normaliseDigits(values.monthly_salary.trim());
+  if (salary === '') issues.monthly_salary = 'employees.salary_required';
+  else if (!AMOUNT.test(salary) || !/[1-9]/.test(salary))
+    issues.monthly_salary = 'payroll.issue_amount';
+  const transport = normaliseDigits(values.transport_allowance.trim());
+  if (transport === '') issues.transport_allowance = 'employees.transport_required';
+  else if (!AMOUNT.test(transport)) issues.transport_allowance = 'payroll.issue_amount';
+  return issues;
 }
 
 /** An empty select or input means "none" — an explicit null, not an omission. */
@@ -313,6 +341,8 @@ export function createBody(values: EmployeeFormValues): Record<string, unknown> 
     work_schedule_id: values.work_schedule_id,
     joining_date: values.joining_date,
     role_key: values.role_key,
+    monthly_salary: normaliseDigits(values.monthly_salary.trim()),
+    transport_allowance: normaliseDigits(values.transport_allowance.trim() || '0'),
     // A password the ADMIN sets replaces the invitation: the account is active at once.
     ...(values.password === ''
       ? { send_invitation: values.send_invitation }

@@ -293,7 +293,16 @@
     "history_empty_title": "لا توجد تغييرات مسجّلة بعد",
     "history_empty": "يظهر هنا كل تغيير على سجل هذا الموظف، ومن أجراه ومتى.",
     "assign_task": "إسناد مهمة",
-    "assign_goal": "إسناد هدف"
+    "assign_goal": "إسناد هدف",
+    "section_salary": "المرتب",
+    "salary_intro": "إلزامي: لا يمكن إضافة موظف بدون مرتب. كل يوم يسجّل فيه حضوره يُضاف له أجر ذلك اليوم.",
+    "monthly_salary": "المرتب الأساسي الشهري",
+    "monthly_salary_helper": "يُقسَّم على أيام العمل في الشهر: كل يوم حضور يُضاف له نصيبه.",
+    "transport_allowance": "بدل المواصلات الشهري",
+    "transport_allowance_helper": "يُصرف فقط عن أيام الحضور في المكتب — لا يُصرف عن العمل من المنزل. اكتب 0 لو مفيش.",
+    "salary_required": "اكتب المرتب الأساسي — لا يمكن حفظ الموظف بدونه.",
+    "transport_required": "اكتب بدل المواصلات (0 لو مفيش).",
+    "salary_required_form": "أضف المرتب وبدل المواصلات قبل الحفظ."
   },
   "invitation": {
     "title": "تعيين كلمة المرور",
@@ -1451,7 +1460,22 @@
     "note": "ملاحظة (اختياري)",
     "saved": "تم حفظ الراتب",
     "issue_before_joining": "لا يمكن أن يبدأ الراتب قبل تاريخ التعيين",
-    "issue_after_termination": "لا يمكن أن يبدأ الراتب بعد انتهاء الخدمة"
+    "issue_after_termination": "لا يمكن أن يبدأ الراتب بعد انتهاء الخدمة",
+    "transport_allowance": "بدل المواصلات",
+    "earned_title": "المستحق حتى الآن هذا الشهر",
+    "earned_salary": "المرتب — {days} يوم",
+    "earned_transport": "المواصلات — {days} يوم مكتب",
+    "earned_rule": "كل يوم تسجّل فيه حضورك يُضاف {salary}؛ ويوم المكتب يُضاف معه {transport} مواصلات.",
+    "earned_wfh": "{days} يوم من المنزل: مرتب فقط بدون مواصلات.",
+    "office_days": "أيام المكتب",
+    "home_days": "أيام المنزل",
+    "earned_salary_col": "المرتب المستحق",
+    "earned_transport_col": "المواصلات المستحقة",
+    "earned_total_col": "الإجمالي حتى الآن",
+    "month_to_date_title": "الشهر الحالي حتى الآن",
+    "month_to_date_intro": "المستحق لكل موظف حتى اليوم. كل يوم حضور يُضيف مرتب اليوم، ويوم المكتب يُضيف المواصلات كمان.",
+    "month_to_date_missing_title": "بدون مرتب حتى الآن — أضفه من ملف الموظف",
+    "month_to_date_total": "الإجمالي"
   },
   "warehouse": {
     "title": "المخزن",

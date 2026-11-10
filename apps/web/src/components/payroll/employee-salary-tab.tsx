@@ -24,7 +24,7 @@ import {
   SuccessNotice,
 } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
-import { Amount } from './payroll-shared';
+import { Amount, Figure } from './payroll-shared';
 
 /**
  * The employee profile's Salary tab — DOCUMENT 04 B4 "Salary": the current
@@ -77,6 +77,7 @@ export function EmployeeSalaryTab({
   const { salary, payslips } = resource.state.value;
   const historyHeaders = [
     t('salary.monthly_salary'),
+    t('salary.transport_allowance'),
     t('salary.effective_from'),
     t('salary.effective_to'),
     t('payroll.col_reason'),
@@ -107,13 +108,22 @@ export function EmployeeSalaryTab({
         {salary.current === null ? (
           <p className="tasks-muted">{t('salary.none_current')}</p>
         ) : (
-          <p className="payroll-figure__value">
-            <Amount
-              value={salary.current.monthly_salary}
-              currency={salary.current.currency}
-              locale={locale}
-            />
-          </p>
+          <div className="payroll-figures">
+            <Figure label={t('salary.monthly_salary')}>
+              <Amount
+                value={salary.current.monthly_salary}
+                currency={salary.current.currency}
+                locale={locale}
+              />
+            </Figure>
+            <Figure label={t('salary.transport_allowance')}>
+              <Amount
+                value={salary.current.transport_allowance}
+                currency={salary.current.currency}
+                locale={locale}
+              />
+            </Figure>
+          </div>
         )}
       </Card>
       <Card title={t('salary.history')} className="tasks-table">
@@ -130,16 +140,19 @@ export function EmployeeSalaryTab({
               <Cell key="amount" label={historyHeaders[0] as string}>
                 <Amount value={row.monthly_salary} currency={row.currency} locale={locale} />
               </Cell>,
-              <Cell key="from" label={historyHeaders[1] as string}>
+              <Cell key="transport" label={historyHeaders[1] as string}>
+                <Amount value={row.transport_allowance} currency={row.currency} locale={locale} />
+              </Cell>,
+              <Cell key="from" label={historyHeaders[2] as string}>
                 <span dir="ltr">{row.effective_from}</span>
               </Cell>,
-              <Cell key="to" label={historyHeaders[2] as string}>
+              <Cell key="to" label={historyHeaders[3] as string}>
                 <span dir="ltr">{row.effective_to ?? t('salary.open_ended')}</span>
               </Cell>,
-              <Cell key="note" label={historyHeaders[3] as string}>
+              <Cell key="note" label={historyHeaders[4] as string}>
                 <span dir="auto">{row.note ?? '—'}</span>
               </Cell>,
-              <Cell key="by" label={historyHeaders[4] as string}>
+              <Cell key="by" label={historyHeaders[5] as string}>
                 <span dir="ltr">{row.created_by.email}</span>
               </Cell>,
             ])}
@@ -172,6 +185,7 @@ export function EmployeeSalaryTab({
       ) : null}
       {setting ? (
         <SetSalaryDialog
+          currentTransport={salary.current?.transport_allowance ?? ''}
           locale={locale}
           t={t}
           employeeId={employeeId}
@@ -193,16 +207,22 @@ function SetSalaryDialog({
   locale,
   t,
   employeeId,
+  currentTransport,
   onClose,
   onSaved,
 }: {
   readonly locale: Locale;
   readonly t: Translator;
   readonly employeeId: string;
+  /** Prefilled: a raise keeps the allowance unless the Admin changes it. */
+  readonly currentTransport: string;
   readonly onClose: () => void;
   readonly onSaved: (next: EmployeeSalary) => void;
 }): React.JSX.Element {
-  const [form, setForm] = useState<SalaryForm>(EMPTY_SALARY_FORM);
+  const [form, setForm] = useState<SalaryForm>({
+    ...EMPTY_SALARY_FORM,
+    transport_allowance: currentTransport === '' ? '0' : currentTransport,
+  });
   const [issues, setIssues] = useState<Readonly<Record<string, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -283,6 +303,21 @@ function SetSalaryDialog({
             value={form.monthly_salary}
             onChange={(event) => {
               setForm({ ...form, monthly_salary: event.target.value });
+            }}
+          />
+        </Field>
+        <Field
+          label={t('salary.transport_allowance')}
+          required
+          helper={t('employees.transport_allowance_helper')}
+          {...optionalError(issue('transport_allowance'))}
+        >
+          <Input
+            dir="ltr"
+            inputMode="decimal"
+            value={form.transport_allowance}
+            onChange={(event) => {
+              setForm({ ...form, transport_allowance: event.target.value });
             }}
           />
         </Field>

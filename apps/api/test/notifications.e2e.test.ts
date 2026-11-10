@@ -272,7 +272,12 @@ async function expectExactly(
 async function createEmployee(account: Account, body: Record<string, unknown>): Promise<string> {
   const response = await (await api(account))
     .post('/employees')
-    .send({ joining_date: '2026-01-05', send_invitation: true, ...body });
+    .send({
+      monthly_salary: '10000.00',
+      joining_date: '2026-01-05',
+      send_invitation: true,
+      ...body,
+    });
   if (response.status !== 201) {
     throw new Error(`Employee create failed: ${JSON.stringify(response.body)}`);
   }
@@ -1183,7 +1188,8 @@ describe('payroll', () => {
     for (const name of ['admin2', 'manager', 'manager2', 'worker', 'worker2', 'outsider']) {
       const set = await admin
         .post(`/employees/${emp[name] as string}/salary`)
-        .send({ monthly_salary: '20500.00', effective_from: '2026-01-05' });
+        // Each already has the salary they were added with; this raise starts the next day.
+        .send({ monthly_salary: '20500.00', effective_from: '2026-01-06' });
       expect(set.status, JSON.stringify(set.body)).toBe(201);
       await seedMarch(emp[name] as string);
     }

@@ -193,6 +193,7 @@ function exactJson(result: EngineResult): Prisma.InputJsonObject {
   const e = result.exact;
   return {
     base: e.base.toJSON(),
+    transport: e.transport.toJSON(),
     absence: e.absence.toJSON(),
     unpaid_leave: e.unpaidLeave.toJSON(),
     lateness: e.lateness.toJSON(),
@@ -214,6 +215,7 @@ export async function calculateMonth(
   employees: readonly EmployeeRow[],
   entries: ReadonlyMap<string, { deductions: string[]; bonuses: string[] }> = new Map(),
   projectAfter?: CalendarDate,
+  earnedThrough?: CalendarDate,
 ): Promise<MonthCalculation> {
   const ids = employees.map((employee) => employee.id);
   const [salaries, records, holidays] = await Promise.all([
@@ -311,11 +313,13 @@ export async function calculateMonth(
           from: calendarDateIn(row.effectiveFrom, 'UTC'),
           to: row.effectiveTo === null ? null : calendarDateIn(row.effectiveTo, 'UTC'),
           monthlySalary: moneyString(row.monthlySalary),
+          transportAllowance: moneyString(row.transportAllowance),
         })),
         days,
         deductions: ownEntries.deductions,
         bonuses: ownEntries.bonuses,
         ...(projectAfter === undefined ? {} : { projectAfter }),
+        ...(earnedThrough === undefined ? {} : { earnedThrough }),
       });
     } catch (error) {
       if (error instanceof PayrollEngineError) {
@@ -361,6 +365,7 @@ export async function calculateMonth(
         salaries: rows.map((row) => ({
           id: row.id,
           monthly_salary: moneyString(row.monthlySalary),
+          transport_allowance: moneyString(row.transportAllowance),
           currency: row.currency,
           effective_from: row.effectiveFrom.toISOString().slice(0, 10),
           effective_to:
@@ -378,6 +383,8 @@ export async function calculateMonth(
           base: segment.base.toJSON(),
           daily_wage: segment.dailyWage.toJSON(),
           scheduled_day_wage: segment.scheduledDayWage.toJSON(),
+          transport_allowance: segment.transportAllowance,
+          transport_daily: segment.transportDaily.toJSON(),
         })),
         days: days.map((day) => ({
           date: formatCalendarDate(day.date),
@@ -413,18 +420,22 @@ export async function calculateMonth(
   return { calculations, blocked };
 }
 
-/** The exact base and attendance adjustment a line's snapshot kept. */
+/** The exact base, transport and attendance adjustment a line's snapshot kept. */
 export function snapshotExact(snapshot: Prisma.JsonValue): {
   readonly base: Fraction;
+  readonly transport: Fraction;
   readonly attendanceAdjustment: Fraction;
   readonly rounding: RoundingRule;
 } {
   const s = snapshot as {
-    exact: { base: string; attendance_adjustment: string };
+    exact: { base: string; transport?: string; attendance_adjustment: string };
     policy: { rounding: RoundingRule };
   };
   return {
     base: Fraction.fromJSON(s.exact.base),
+    // Lines calculated before the transport allowance existed have none.
+    transport:
+      s.exact.transport === undefined ? Fraction.zero() : Fraction.fromJSON(s.exact.transport),
     attendanceAdjustment: Fraction.fromJSON(s.exact.attendance_adjustment),
     rounding: s.policy.rounding,
   };

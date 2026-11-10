@@ -1387,17 +1387,19 @@ model SalaryPolicy {
 /// DOCUMENT 06 §3.21 — salary history. A change closes the open row and
 /// inserts a new one; an amount is never updated (database trigger).
 model EmployeeSalary {
-  id             String    @id @db.Uuid
-  companyId      String    @map("company_id") @db.Uuid
-  employeeId     String    @map("employee_id") @db.Uuid
-  monthlySalary  Decimal   @map("monthly_salary") @db.Decimal(15, 2)
-  currency       String    @db.Char(3)
-  effectiveFrom  DateTime  @map("effective_from") @db.Date
-  effectiveTo    DateTime? @map("effective_to") @db.Date
-  salaryPolicyId String    @map("salary_policy_id") @db.Uuid
-  createdBy      String    @map("created_by") @db.Uuid
-  note           String?   @db.Text
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  id                 String    @id @db.Uuid
+  companyId          String    @map("company_id") @db.Uuid
+  employeeId         String    @map("employee_id") @db.Uuid
+  monthlySalary      Decimal   @map("monthly_salary") @db.Decimal(15, 2)
+  /// The monthly transport allowance, paid per office day (not WFH, not leave).
+  transportAllowance Decimal   @default(0) @map("transport_allowance") @db.Decimal(15, 2)
+  currency           String    @db.Char(3)
+  effectiveFrom      DateTime  @map("effective_from") @db.Date
+  effectiveTo        DateTime? @map("effective_to") @db.Date
+  salaryPolicyId     String    @map("salary_policy_id") @db.Uuid
+  createdBy          String    @map("created_by") @db.Uuid
+  note               String?   @db.Text
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company      Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
   employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Restrict)
@@ -1449,6 +1451,8 @@ model PayrollLine {
   companyId            String            @map("company_id") @db.Uuid
   employeeId           String            @map("employee_id") @db.Uuid
   baseSalary           Decimal           @map("base_salary") @db.Decimal(15, 2)
+  /// What the month's office days earned of the transport allowance.
+  transportAllowance   Decimal           @default(0) @map("transport_allowance") @db.Decimal(15, 2)
   dailyWage            Decimal           @map("daily_wage") @db.Decimal(15, 2)
   workingDays          Int               @map("working_days") @db.SmallInt
   presentDays          Int               @map("present_days") @db.SmallInt

@@ -321,3 +321,20 @@ describe('invitation acceptance — DOCUMENT 04 A4, DOCUMENT 20 §6', () => {
     });
   });
 });
+
+describe('a new employee needs a salary', () => {
+  it('requires a basic salary above zero and a transport allowance (zero allowed)', async () => {
+    const { emptyEmployeeForm, salaryIssues, createBody } = await import('./employees');
+    const blank = emptyEmployeeForm(null);
+    expect(salaryIssues(blank)).toEqual({
+      monthly_salary: 'employees.salary_required',
+      transport_allowance: 'employees.transport_required',
+    });
+    expect(salaryIssues({ ...blank, monthly_salary: '0', transport_allowance: '0' })).toEqual({
+      monthly_salary: 'payroll.issue_amount',
+    });
+    const ok = { ...blank, monthly_salary: '١٠٠٠', transport_allowance: '0' };
+    expect(salaryIssues(ok)).toEqual({});
+    expect(createBody(ok)).toMatchObject({ monthly_salary: '1000', transport_allowance: '0' });
+  });
+});

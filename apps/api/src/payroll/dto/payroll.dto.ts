@@ -43,7 +43,7 @@ const MONEY_MAX = '9999999999999.99';
 /** DECIMAL(5,2). */
 const RATE_MAX = '999.99';
 
-function DecimalString(): PropertyDecorator {
+export function DecimalString(): PropertyDecorator {
   return Transform(({ value }) =>
     typeof value === 'string' ? normaliseDigits(value.trim()) : value,
   );
@@ -71,7 +71,11 @@ function inRange(value: unknown, sign: Sign, max: string): boolean {
 }
 
 /** A DECIMAL(15,2) amount, or DECIMAL(5,2) when `max` says so. */
-function IsAmount(sign: Sign, max = MONEY_MAX, options?: ValidationOptions): PropertyDecorator {
+export function IsAmount(
+  sign: Sign,
+  max = MONEY_MAX,
+  options?: ValidationOptions,
+): PropertyDecorator {
   return (target, propertyName) => {
     registerDecorator({
       name: 'isAmount',
@@ -201,6 +205,12 @@ export class SetSalaryDto {
   @DecimalString()
   @IsAmount('positive')
   monthly_salary!: string;
+
+  /** The monthly transport allowance, paid per office day. Absent = none. */
+  @IsOptional()
+  @DecimalString()
+  @IsAmount('non_negative')
+  transport_allowance?: string;
 
   @IsCalendarDate()
   effective_from!: string;

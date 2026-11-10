@@ -129,6 +129,7 @@ export const LINE_SELECT = {
   payrollPeriodId: true,
   employeeId: true,
   baseSalary: true,
+  transportAllowance: true,
   dailyWage: true,
   workingDays: true,
   presentDays: true,
@@ -192,6 +193,8 @@ export interface LineSummaryPayload {
     readonly name: string;
   };
   readonly base_salary: string;
+  /** What the month's office days earned of the transport allowance. */
+  readonly transport_allowance: string;
   readonly daily_wage: string;
   readonly working_days: number;
   readonly present_days: number;
@@ -261,6 +264,8 @@ interface SnapshotShape {
     working_days: number;
     base: string;
     daily_wage: string;
+    transport_allowance?: string;
+    transport_daily?: string;
   }[];
   readonly exact: {
     absence: string;
@@ -302,6 +307,7 @@ export function lineSummary(row: LineRow): LineSummaryPayload {
       name: `${row.employee.firstName} ${row.employee.lastName}`,
     },
     base_salary: moneyString(row.baseSalary),
+    transport_allowance: moneyString(row.transportAllowance),
     daily_wage: moneyString(row.dailyWage),
     working_days: row.workingDays,
     present_days: row.presentDays,
@@ -354,6 +360,9 @@ export function payslipPayload(
         working_days: segment.working_days,
         base: amount(segment.base),
         daily_wage: amount(segment.daily_wage),
+        transport_allowance: segment.transport_allowance ?? '0.00',
+        transport_daily:
+          segment.transport_daily === undefined ? '0.00' : amount(segment.transport_daily),
       })),
       absence: amount(snapshot.exact.absence),
       unpaid_leave: amount(snapshot.exact.unpaid_leave),

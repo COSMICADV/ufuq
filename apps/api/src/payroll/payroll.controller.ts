@@ -74,7 +74,12 @@ import { EmployeeSalaryService } from './employee-salary.service.js';
 import type { EmployeeSalaryPayload } from './employee-salary.service.js';
 import type { LineSummaryPayload, PayslipPayload, PeriodPayload } from './payroll-payload.js';
 import { PayrollService } from './payroll.service.js';
-import type { PayrollEstimate, PeriodDetail, Preflight } from './payroll.service.js';
+import type {
+  MonthToDatePayload,
+  PayrollEstimate,
+  PeriodDetail,
+  Preflight,
+} from './payroll.service.js';
 import { SalaryPolicyService } from './salary-policy.service.js';
 import type { SalaryPolicyPayload } from './salary-policy.service.js';
 
@@ -141,6 +146,16 @@ export class PayrollController {
   constructor(@Inject(PayrollService) private readonly payroll: PayrollService) {}
 
   // -- Periods ------------------------------------------------------------------
+
+  /** Declared before `periods/:id`-style routes; a fixed path. */
+  @Get('month-to-date')
+  @RequirePermission('payroll.view')
+  async monthToDate(
+    @CurrentUser() ctx: AuthContext,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<MonthToDatePayload>> {
+    return single(await this.payroll.monthToDate(ctx), { locale });
+  }
 
   @Get('periods')
   @RequirePermission('payroll.view')

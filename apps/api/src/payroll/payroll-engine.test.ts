@@ -543,3 +543,123 @@ describe('the provisional estimate', () => {
     expect(result.netSalary.toString()).toBe('19333.33');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Transport allowance and earned-so-far (2026-11-10 product decision)
+//
+// March 2026, Sunday–Thursday: 23 working days. 23,000 a month is 1,000 a
+// working day; a 2,300 allowance is 100 per office day.
+// ---------------------------------------------------------------------------
+
+describe('transport allowance — paid per office day', () => {
+  const salaries = [
+    {
+      from: date('2025-01-01'),
+      to: null,
+      monthlySalary: '23000.00',
+      transportAllowance: '2300.00',
+    },
+  ];
+  const policy = { dailyWageBasis: 'scheduled_working_days' as const, fixedDaysValue: null };
+
+  it('a full month in the office earns the whole allowance on top of the salary', () => {
+    const r = line({ salaries, policy });
+    expect(r.transportAllowance.toString()).toBe('2300.00');
+    expect(r.baseSalary.toString()).toBe('23000.00');
+    expect(r.netSalary.toString()).toBe('25300.00');
+  });
+
+  it('a day worked from home earns the salary but no transport', () => {
+    const wfh = present({ workMode: 'wfh' });
+    const r = line({
+      salaries,
+      policy,
+      days: month({ records: { '2026-03-02': wfh, '2026-03-03': wfh, '2026-03-04': wfh } }),
+    });
+    expect(r.counts.wfhDays).toBe(3);
+    expect(r.transportAllowance.toString()).toBe('2000.00');
+    expect(r.netSalary.toString()).toBe('25000.00');
+  });
+
+  it('leave and absence earn no transport; absence still costs the day', () => {
+    const r = line({
+      salaries,
+      policy,
+      days: month({ records: { '2026-03-05': leave(true), '2026-03-08': absent } }),
+    });
+    expect(r.transportAllowance.toString()).toBe('2100.00');
+    expect(r.attendanceAdjustment.toString()).toBe('-1000.00');
+    expect(r.netSalary.toString()).toBe('24100.00');
+  });
+
+  it('a salary row with no allowance pays none', () => {
+    const r = line({
+      policy,
+      salaries: [{ from: date('2025-01-01'), to: null, monthlySalary: '23000.00' }],
+    });
+    expect(r.transportAllowance.toString()).toBe('0.00');
+    expect(r.netSalary.toString()).toBe('23000.00');
+  });
+
+  it('re-netting keeps the earned transport', () => {
+    const result = renet({
+      base: Fraction.parse('23000.00'),
+      transport: Fraction.parse('2300.00'),
+      attendanceAdjustment: Fraction.zero(),
+      deductions: ['300.00'],
+      bonuses: [],
+      rounding: 'none',
+    });
+    expect(result.netSalary.toString()).toBe('25000.00');
+  });
+});
+
+describe('earned so far — each checked-in day adds its pay', () => {
+  const salaries = [
+    {
+      from: date('2025-01-01'),
+      to: null,
+      monthlySalary: '23000.00',
+      transportAllowance: '2300.00',
+    },
+  ];
+
+  it('counts only days that happened: office days add salary and transport, home days salary only', () => {
+    const r = line({
+      salaries,
+      earnedThrough: date('2026-03-04'),
+      days: month({
+        records: {
+          '2026-03-01': present(),
+          '2026-03-02': present({ workMode: 'wfh' }),
+          '2026-03-03': null, // not checked in (yet): earns nothing
+          '2026-03-04': present({ status: 'pending' }), // checked in today, not out yet
+        },
+      }),
+    });
+    expect(r.earned).toMatchObject({
+      through: '2026-03-04',
+      workedDays: 3,
+      officeDays: 2,
+      wfhDays: 1,
+      paidLeaveDays: 0,
+    });
+    expect(r.earned?.base.toString()).toBe('3000.00');
+    expect(r.earned?.transport.toString()).toBe('200.00');
+    expect(r.earned?.total.toString()).toBe('3200.00');
+  });
+
+  it('a paid leave day adds the salary, without transport', () => {
+    const r = line({
+      salaries,
+      earnedThrough: date('2026-03-01'),
+      days: month({ records: { '2026-03-01': leave(true) } }),
+    });
+    expect(r.earned?.paidLeaveDays).toBe(1);
+    expect(r.earned?.total.toString()).toBe('1000.00');
+  });
+
+  it('is absent unless asked for', () => {
+    expect(line({ salaries }).earned).toBeNull();
+  });
+});
