@@ -5,6 +5,7 @@ import type { Locale } from '@ufuq/i18n';
 import { PUBLIC_PAGES, features, publicCopy, publicPath } from '../../lib/public-content';
 import type { PublicPage } from '../../lib/public-content';
 import { BrandMark, Wordmark } from '../brand-mark';
+import { ThemePicker } from '../theme-picker';
 import { PublicForm } from './public-form';
 
 export function publicMetadata(locale: Locale, page: PublicPage): Metadata {
@@ -95,6 +96,7 @@ export function PublicSite({
           {nav(['home', 'features', 'for-companies', 'pricing', 'contact'])}
         </nav>
         <div className="public-account">
+          <ThemePicker locale={locale} />
           {language}
           {nav(['login'])}
           {link('register', true)}

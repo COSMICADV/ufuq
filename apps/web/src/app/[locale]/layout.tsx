@@ -7,6 +7,7 @@ import '../../styles/globals.css';
 import '../../styles/public.css';
 import '../../styles/v2.css';
 import '../../styles/theme.css';
+import { THEME_BOOT_SCRIPT } from '../../lib/themes';
 
 interface LocaleParams {
   readonly locale: string;
@@ -54,8 +55,10 @@ export default async function LocaleLayout({
   const { lang, dir } = documentAttributes(locale);
 
   return (
-    <html lang={lang} dir={dir}>
+    <html lang={lang} dir={dir} suppressHydrationWarning>
       <head>
+        {/* Applies the visitor's saved colour theme before first paint (lib/themes.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

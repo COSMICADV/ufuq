@@ -2299,5 +2299,53 @@
     "action_error": "لم يتم الإجراء. حدّث الصفحة وحاول مرة أخرى.",
     "count_pending": "{count} بانتظار الموافقة",
     "highlight": "من بريدك"
+  },
+  "theme": {
+    "label": "الثيم",
+    "dark_blue": "أزرق داكن",
+    "light": "أبيض وأزرق",
+    "green": "أخضر",
+    "red": "أحمر"
+  },
+  "insights": {
+    "title": "نظرة عامة بالأرقام",
+    "description": "الحضور والمهام والأهداف في لمحة.",
+    "scope_company": "الشركة كلها",
+    "scope_team": "فريقك",
+    "period_label": "الفترة",
+    "period": {
+      "month": "هذا الشهر",
+      "30d": "آخر 30 يومًا",
+      "90d": "آخر 90 يومًا"
+    },
+    "kpi_attendance": "نسبة الحضور",
+    "kpi_attendance_hint": "حضور {present} من {days} يوم عمل",
+    "kpi_completion": "إنجاز المهام",
+    "kpi_completion_hint": "اكتملت {completed} من {assigned} مهمة",
+    "kpi_on_time": "التسليم في الموعد",
+    "kpi_on_time_hint": "{overdue} مهمة متأخرة الآن",
+    "kpi_goals": "تحقيق الأهداف",
+    "kpi_goals_hint": "{achieved} محقق · {missed} لم يتحقق · {active} جارٍ",
+    "today_title": "اليوم",
+    "today_total": "المسجّل اليوم",
+    "attendance_by_day": "الحضور يومًا بيوم",
+    "attendance_by_month": "الحضور شهرًا بشهر",
+    "of_which_late": "منهم متأخر",
+    "of_which_wfh": "منهم من المنزل",
+    "tasks_by_status": "المهام حسب الحالة",
+    "tasks_by_priority": "المهام حسب الأولوية",
+    "still_open": "لم تكتمل بعد",
+    "goals_by_status": "الأهداف حسب الحالة",
+    "departments": "الحضور حسب القسم",
+    "no_department": "بدون قسم",
+    "employees_count": "{count} موظف",
+    "empty": "لا يوجد شيء مسجّل لهذه الفترة بعد.",
+    "unavailable": "تعذّر تحميل هذا الرسم.",
+    "my_title": "شهري بالأرقام",
+    "my_attendance": "حضوري هذا الشهر",
+    "my_attendance_hint": "حضور {present} من {days} يوم عمل",
+    "my_tasks": "مهامي حسب الحالة",
+    "my_goals": "تقدّم أهدافي",
+    "my_goals_empty": "لا توجد أهداف جارية بعد."
   }
 }

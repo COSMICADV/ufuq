@@ -1,8 +1,9 @@
 /* The platform owner's sign-up review page (components/owner/owner-requests.tsx). */
 .owner-page {
   min-block-size: 100dvh;
-  background: radial-gradient(40% 35% at 10% 0%, rgb(30 58 138 / 0.22), transparent 70%),
-    radial-gradient(35% 35% at 95% 40%, rgb(226 192 168 / 0.08), transparent 70%), var(--bg-page);
+  background: radial-gradient(40% 35% at 10% 0%, rgb(var(--rgb-glow-1) / 0.22), transparent 70%),
+    radial-gradient(35% 35% at 95% 40%, rgb(var(--rgb-accent) / 0.08), transparent 70%),
+    var(--bg-page);
 }
 .owner-bar {
   position: sticky;
@@ -14,7 +15,7 @@
   gap: var(--space-4);
   min-block-size: 72px;
   padding-inline: max(20px, calc((100vw - 1040px) / 2));
-  background: rgb(15 23 42 / 0.8);
+  background: rgb(var(--rgb-page) / 0.8);
   border-block-end: 1px solid var(--border-subtle);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -58,7 +59,7 @@
   font-size: clamp(28px, 4vw, 40px);
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: var(--heading);
 }
 .owner-intro p:last-child {
   margin: 8px 0 0;
@@ -72,7 +73,7 @@
   padding: 28px;
   border-radius: 16px;
   border: 1px solid var(--border-subtle);
-  background: rgb(15 23 42 / 0.7);
+  background: rgb(var(--rgb-page) / 0.7);
 }
 .owner-section h2 {
   display: flex;
@@ -81,12 +82,12 @@
   gap: 12px;
   margin: 0 0 16px;
   font-size: var(--font-h3);
-  color: #fff;
+  color: var(--heading);
 }
 .owner-count {
   padding: 2px 10px;
   border-radius: 9999px;
-  background: rgb(226 192 168 / 0.12);
+  background: rgb(var(--rgb-accent) / 0.12);
   color: var(--brand-indigo);
   font-size: 12px;
   font-weight: 600;
@@ -107,14 +108,14 @@
   padding: 24px;
   border-radius: 16px;
   border: 1px solid var(--border-subtle);
-  background: rgb(20 30 51 / 0.85);
+  background: rgb(var(--rgb-page) / 0.85);
   scroll-margin-block: 96px;
 }
 .owner-request--focus {
-  border-color: rgb(226 192 168 / 0.7);
+  border-color: rgb(var(--rgb-accent) / 0.7);
   box-shadow:
-    0 0 0 1px rgb(226 192 168 / 0.3),
-    0 20px 25px -5px rgb(226 192 168 / 0.06);
+    0 0 0 1px rgb(var(--rgb-accent) / 0.3),
+    0 20px 25px -5px rgb(var(--rgb-accent) / 0.06);
 }
 .owner-request__head {
   display: flex;
@@ -126,7 +127,7 @@
 .owner-request__head h3 {
   margin: 0;
   font-size: 18px;
-  color: #fff;
+  color: var(--heading);
 }
 .owner-request__from {
   display: inline-block;

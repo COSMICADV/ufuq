@@ -30,6 +30,8 @@ import { ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 import { TaskCard } from '../tasks/tasks-admin';
 
+import { MyInsights } from './my-insights';
+
 /**
  * `/{locale}/app` — DOCUMENT 04 C1, the employee dashboard.
  *
@@ -66,6 +68,7 @@ export function EmployeeDashboard({ locale }: { readonly locale: Locale }): Reac
         <ErrorState error={session.state.error} t={t} onRetry={session.reload} />
       ) : null}
       {ready === null ? null : <MyWork locale={locale} t={t} session={ready} />}
+      {ready === null ? null : <MyInsights locale={locale} t={t} session={ready} />}
       {ready !== null &&
       ready.employeeId !== null &&
       ready.permissions.has('payroll.view') &&

@@ -5,6 +5,7 @@ import type { Locale } from '@ufuq/i18n';
 import { Wordmark } from '../brand-mark';
 import { LanguageSwitch } from '../language-switch';
 import { SignOutButton } from '../sign-out-button';
+import { ThemePicker } from '../theme-picker';
 
 import { NotificationBell } from './notification-bell';
 
@@ -37,6 +38,7 @@ export function AppTopbar({
           label={t('language.switch')}
           names={{ ar: t('language.ar'), en: t('language.en') }}
         />
+        <ThemePicker locale={locale} />
         <NotificationBell locale={locale} surface={surface} />
         <SignOutButton locale={locale} />
       </div>

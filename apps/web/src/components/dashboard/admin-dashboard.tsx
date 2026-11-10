@@ -14,6 +14,8 @@ import { WarehouseSummaryWidget } from '../warehouse/warehouse-summary-widget';
 import { PendingRequestsKpi, PendingRequestsWidget } from '../requests/pending-requests-widget';
 import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
 
+import { TeamInsights } from './team-insights';
+
 /**
  * `/{locale}/admin` — DOCUMENT 04 B1, the admin dashboard.
  *
@@ -26,6 +28,9 @@ import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
  * inventory, recent activity, quick actions) are not
  * rendered as placeholders (DOCUMENT 27 RULE 26). They arrive with the
  * modules that own their data, mostly Phase 12.
+ *
+ * Phase 16 adds the charts (`TeamInsights`): attendance, tasks and goals for
+ * the period the caller picks, from the company reports.
  *
  * B1 gives the page to `report.company` (ADMIN) and `report.team` (MANAGER).
  * The widget's own data is `GET /tasks`, so the API applies the caller's
@@ -62,6 +67,7 @@ export function AdminDashboard({ locale }: { readonly locale: Locale }): React.J
           <PendingRequestsKpi key={`kpi-${String(decisions)}`} locale={locale} t={t} />
         </div>
       ) : null}
+      <TeamInsights locale={locale} t={t} timeZone={session.state.value.timeZone} />
       {permissions.has('task.view') ? (
         <TasksNeedingReassignment locale={locale} t={t} timeZone={session.state.value.timeZone} />
       ) : null}

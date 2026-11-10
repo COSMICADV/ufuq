@@ -2,7 +2,14 @@
 export function BrandMark(): React.JSX.Element {
   return (
     <svg className="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <rect x="0.5" y="0.5" width="39" height="39" rx="11" fill="#141e33" stroke="#334155" />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="39"
+        height="39"
+        rx="11"
+        style={{ fill: 'var(--bg-surface)', stroke: 'var(--border-strong)' }}
+      />
       <g
         transform="translate(8 8)"
         stroke="var(--brand-indigo)"

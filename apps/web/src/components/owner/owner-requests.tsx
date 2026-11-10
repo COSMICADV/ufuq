@@ -14,6 +14,7 @@ import { createTranslator, formatDateTime } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 import { apiUrl } from '../../lib/api-client';
 import { BrandMark, Wordmark } from '../brand-mark';
+import { ThemePicker } from '../theme-picker';
 import { Alert, Badge, Button, Field, Input, Skeleton } from '../design-system';
 
 const STORAGE_KEY = 'oneToOne.ownerKey';
@@ -257,6 +258,7 @@ export function OwnerRequests({ locale }: { readonly locale: Locale }): React.JS
           <Wordmark />
         </Link>
         <div className="owner-bar__actions">
+          <ThemePicker locale={locale} />
           <Link
             href={`/${locale === 'ar' ? 'en' : 'ar'}/owner`}
             hrefLang={locale === 'ar' ? 'en' : 'ar'}

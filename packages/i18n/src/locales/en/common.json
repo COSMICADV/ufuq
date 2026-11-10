@@ -2299,5 +2299,53 @@
     "action_error": "That did not work. Refresh and try again.",
     "count_pending": "{count} waiting",
     "highlight": "From your email"
+  },
+  "theme": {
+    "label": "Theme",
+    "dark_blue": "Dark Blue",
+    "light": "White & Blue",
+    "green": "Green",
+    "red": "Red"
+  },
+  "insights": {
+    "title": "Insights",
+    "description": "Attendance, tasks and goals at a glance.",
+    "scope_company": "Whole company",
+    "scope_team": "Your team",
+    "period_label": "Period",
+    "period": {
+      "month": "This month",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days"
+    },
+    "kpi_attendance": "Attendance rate",
+    "kpi_attendance_hint": "{present} of {days} working days attended",
+    "kpi_completion": "Task completion",
+    "kpi_completion_hint": "{completed} of {assigned} tasks completed",
+    "kpi_on_time": "On-time delivery",
+    "kpi_on_time_hint": "{overdue} tasks overdue right now",
+    "kpi_goals": "Goal achievement",
+    "kpi_goals_hint": "{achieved} achieved · {missed} missed · {active} active",
+    "today_title": "Today",
+    "today_total": "Recorded today",
+    "attendance_by_day": "Attendance by day",
+    "attendance_by_month": "Attendance by month",
+    "of_which_late": "of which late",
+    "of_which_wfh": "of which from home",
+    "tasks_by_status": "Tasks by status",
+    "tasks_by_priority": "Tasks by priority",
+    "still_open": "Still open",
+    "goals_by_status": "Goals by status",
+    "departments": "Attendance by department",
+    "no_department": "No department",
+    "employees_count": "{count} employees",
+    "empty": "Nothing recorded for this period yet.",
+    "unavailable": "This chart could not be loaded.",
+    "my_title": "My month in numbers",
+    "my_attendance": "My attendance this month",
+    "my_attendance_hint": "{present} of {days} working days attended",
+    "my_tasks": "My tasks by status",
+    "my_goals": "My goals progress",
+    "my_goals_empty": "No active goals yet."
   }
 }

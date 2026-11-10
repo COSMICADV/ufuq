@@ -34,6 +34,7 @@ import {
   X,
   Zap,
 } from './landing-icons';
+import { ThemePicker } from '../theme-picker';
 
 type Pillar = 'erp' | 'finance' | 'qr';
 
@@ -189,32 +190,36 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
             ))}
           </nav>
 
-          <div className="lp-header__actions">
-            <Link href={employeeLoginHref} className="lp-signin lp-signin--employee">
-              <Users className="lp-i4" />
-              Employee Sign In
-            </Link>
-            <Link href={loginHref} className="lp-signin">
-              Sign In
-            </Link>
-            <a href="#pricing" className="lp-ghost-cta">
-              <span className="lp-ghost-cta__ring" />
-              <span className="lp-ghost-cta__inner">
-                Start Free Tier
-                <ArrowRight className="lp-i4" />
-              </span>
-            </a>
-          </div>
+          <div className="lp-header__end">
+            {/* The landing copy is English in both locales, so the picker is too. */}
+            <ThemePicker locale="en" className="lp-theme" />
+            <div className="lp-header__actions">
+              <Link href={employeeLoginHref} className="lp-signin lp-signin--employee">
+                <Users className="lp-i4" />
+                Employee Sign In
+              </Link>
+              <Link href={loginHref} className="lp-signin">
+                Sign In
+              </Link>
+              <a href="#pricing" className="lp-ghost-cta">
+                <span className="lp-ghost-cta__ring" />
+                <span className="lp-ghost-cta__inner">
+                  Start Free Tier
+                  <ArrowRight className="lp-i4" />
+                </span>
+              </a>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lp-burger"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X className="lp-i6" /> : <Menu className="lp-i6" />}
-          </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lp-burger"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <X className="lp-i6" /> : <Menu className="lp-i6" />}
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (

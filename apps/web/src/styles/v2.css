@@ -244,7 +244,7 @@ tbody tr:last-child td {
   min-inline-size: 0;
   padding: 28px 16px 16px;
   background: var(--brand-navy);
-  color: white;
+  color: var(--text-on-dark);
 }
 .product-brand {
   display: flex;
@@ -292,7 +292,7 @@ tbody tr:last-child td {
 }
 .product-nav a:hover {
   background: var(--green-deep-700);
-  color: white;
+  color: var(--text-on-dark);
 }
 .product-nav a[aria-current] {
   background: var(--brand-indigo);
@@ -510,7 +510,7 @@ tbody tr:last-child td {
   block-size: 100dvh;
   max-block-size: none;
   background: var(--brand-navy);
-  color: white;
+  color: var(--text-on-dark);
 }
 .product-drawer::backdrop {
   background: rgb(23 27 56 / 0.48);
@@ -526,7 +526,7 @@ tbody tr:last-child td {
   gap: 8px;
 }
 .product-drawer .icon-button {
-  color: white;
+  color: var(--text-on-dark);
   font-size: 26px;
 }
 .product-drawer .icon-button:hover {
@@ -805,7 +805,7 @@ tbody tr:last-child td {
   text-align: center;
 }
 .public-hero h1 {
-  color: white;
+  color: var(--text-on-dark);
   margin-inline: auto;
 }
 .public-hero p {
@@ -821,7 +821,7 @@ tbody tr:last-child td {
 }
 .public-hero .button--secondary {
   background: transparent;
-  color: white;
+  color: var(--text-on-dark);
   border-color: var(--green-deep-600);
 }
 .public-hero .button--secondary:hover {
@@ -907,7 +907,7 @@ tbody tr:last-child td {
   padding-block: 48px;
 }
 .public-footer .public-brand {
-  color: white !important;
+  color: var(--text-on-dark) !important;
 }
 .public-footer nav {
   gap: 12px 28px;
@@ -918,7 +918,7 @@ tbody tr:last-child td {
   color: var(--text-on-dark-muted);
 }
 .public-footer nav a:hover {
-  color: white;
+  color: var(--text-on-dark);
   text-decoration: underline;
 }
 .public-form-panel {
