@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { GoalsAdmin } from '../../../../components/goals/goals-admin';
 import { GoalsShell } from '../../../../components/goals/goals-shell';
 import { LoadingFallback } from '../../../../components/settings/loading-fallback';
+import { SectionInsights } from '../../../../components/dashboard/section-insights';
 
 interface PageProps {
   readonly params: Promise<{ readonly locale: string }>;
@@ -19,6 +20,7 @@ export default async function Page({ params }: PageProps): Promise<React.JSX.Ele
   return (
     <GoalsShell locale={locale} surface="admin">
       <Suspense fallback={<LoadingFallback locale={locale} />}>
+        <SectionInsights locale={locale} section="goals" />
         <GoalsAdmin locale={locale} />
       </Suspense>
     </GoalsShell>

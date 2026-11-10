@@ -2346,6 +2346,25 @@
     "my_attendance_hint": "{present} of {days} working days attended",
     "my_tasks": "My tasks by status",
     "my_goals": "My goals progress",
-    "my_goals_empty": "No active goals yet."
+    "my_goals_empty": "No active goals yet.",
+    "kpi_late": "Lateness",
+    "kpi_late_hint": "{late} late arrivals among attended days",
+    "kpi_wfh": "Working from home",
+    "kpi_wfh_hint": "{wfh} attended days from home",
+    "in_office": "In the office",
+    "from_home": "From home",
+    "attendance_mix": "How the days went",
+    "tasks_by_department": "Task completion by department",
+    "goals_by_type": "Goals by type",
+    "not_yet": "Not achieved yet",
+    "section_attendance": "Attendance in numbers",
+    "section_tasks": "Tasks in numbers",
+    "section_goals": "Goals in numbers",
+    "section_payroll": "Payroll in numbers",
+    "payroll_description": "Net payroll month by month, and the latest month's make-up.",
+    "payroll_by_month": "Net payroll by month",
+    "attendance_adjustment": "Attendance adjustment",
+    "payroll_breakdown": "{month} make-up",
+    "my_salary_by_month": "My net salary by month"
   }
 }

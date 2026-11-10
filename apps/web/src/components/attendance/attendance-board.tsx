@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
-import { fetchMany, fetchOne } from '../../lib/api-client';
+import { fetchMany } from '../../lib/api-client';
+import { todayIn } from '../../lib/tasks';
 import {
   activeFilterCount,
   ATTENDANCE_STATUSES,
@@ -64,8 +65,10 @@ export function AttendanceBoard({ locale }: { readonly locale: Locale }): React.
   const load = useCallback(
     async (signal: AbortSignal) => {
       const session = await loadSession(locale, signal);
-      const state = await fetchOne<{ date: string }>('/attendance/today', { locale, signal });
-      setToday(state.date);
+      // The company's own calendar day. Not `/attendance/today`: that is the
+      // caller's check-in card and needs an employee profile, which the
+      // company owner may not have — it took this whole board down with a 403.
+      setToday(todayIn(session.timeZone));
       const [records, departments] = await Promise.all([
         fetchMany<AttendanceRecord>(`/attendance?${boardQuery(filters, page, DEFAULT_PER_PAGE)}`, {
           locale,
@@ -79,6 +82,20 @@ export function AttendanceBoard({ locale }: { readonly locale: Locale }): React.
   );
 
   const resource = useResource(load);
+
+  // Today's board fills in as people check in: refresh it every minute while
+  // it is open and showing today. Past days do not change on their own.
+  const refresh = resource.refresh;
+  const showingToday = filters.date === today;
+  useEffect(() => {
+    if (!showingToday) return undefined;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh();
+    }, 60_000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [showingToday, refresh]);
 
   const apply = (next: Partial<BoardFilters>): void => {
     const merged = { ...filters, ...next };

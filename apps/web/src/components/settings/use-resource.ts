@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError } from '../../lib/api-client';
 
@@ -32,6 +32,12 @@ export interface ResourceHandle<T> {
    * data visibly updates."
    */
   readonly replace: (value: T) => void;
+  /**
+   * Re-fetch in the background: what is on screen stays until the new value
+   * arrives, and a failure leaves it there. For screens that keep themselves
+   * current (today's attendance board).
+   */
+  readonly refresh: () => void;
 }
 
 /**
@@ -45,12 +51,15 @@ export interface ResourceHandle<T> {
 export function useResource<T>(load: (signal: AbortSignal) => Promise<T>): ResourceHandle<T> {
   const [state, setState] = useState<Resource<T>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const quiet = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
     let live = true;
+    const silent = quiet.current;
+    quiet.current = false;
 
-    setState({ status: 'loading' });
+    if (!silent) setState({ status: 'loading' });
     load(controller.signal)
       .then((value) => {
         if (live) {
@@ -58,7 +67,7 @@ export function useResource<T>(load: (signal: AbortSignal) => Promise<T>): Resou
         }
       })
       .catch((error: unknown) => {
-        if (!live || controller.signal.aborted) {
+        if (!live || controller.signal.aborted || silent) {
           return;
         }
         setState({
@@ -83,5 +92,10 @@ export function useResource<T>(load: (signal: AbortSignal) => Promise<T>): Resou
     setState({ status: 'ready', value });
   }, []);
 
-  return { state, reload, replace };
+  const refresh = useCallback(() => {
+    quiet.current = true;
+    setAttempt((value) => value + 1);
+  }, []);
+
+  return { state, reload, replace, refresh };
 }

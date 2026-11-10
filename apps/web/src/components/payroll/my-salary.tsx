@@ -12,6 +12,7 @@ import { Alert, Card, EmptyState } from '../design-system';
 import { loadSession } from '../employees/use-session';
 import { ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
+import { MySalaryChart } from './payroll-charts';
 import { Amount, Figure, ProvisionalBadge } from './payroll-shared';
 
 /**
@@ -114,6 +115,7 @@ export function MySalary({ locale }: { readonly locale: Locale }): React.JSX.Ele
   return (
     <div className="dashboard-widgets">
       <SalaryEstimateCard locale={locale} t={t} linkToSalary={false} />
+      <MySalaryChart locale={locale} />
       <MyPayslips locale={locale} limit={3} />
     </div>
   );

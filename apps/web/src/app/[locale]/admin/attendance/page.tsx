@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { AttendanceBoard } from '../../../../components/attendance/attendance-board';
 import { AttendanceShell } from '../../../../components/attendance/attendance-shell';
 import { LoadingFallback } from '../../../../components/settings/loading-fallback';
+import { SectionInsights } from '../../../../components/dashboard/section-insights';
 
 interface PageProps {
   readonly params: Promise<{ readonly locale: string }>;
@@ -26,6 +27,7 @@ export default async function Page({ params }: PageProps): Promise<React.JSX.Ele
   return (
     <AttendanceShell locale={locale} active="board">
       <Suspense fallback={<LoadingFallback locale={locale} />}>
+        <SectionInsights locale={locale} section="attendance" />
         <AttendanceBoard locale={locale} />
       </Suspense>
     </AttendanceShell>

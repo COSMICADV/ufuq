@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { createTranslator } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { fetchMany, fetchOne } from '../../lib/api-client';
@@ -16,6 +17,7 @@ import {
 } from '../../lib/insights';
 import { todayIn } from '../../lib/tasks';
 import { Card, Skeleton } from '../design-system';
+import { loadSession } from '../employees/use-session';
 import type { SessionView } from '../employees/use-session';
 import { useResource } from '../settings/use-resource';
 
@@ -43,14 +45,22 @@ export function MyInsights({
   locale,
   t,
   session,
+  only,
 }: {
   readonly locale: Locale;
   readonly t: Translator;
   readonly session: SessionView;
+  /** One part only — the attendance, tasks or goals page shows its own. */
+  readonly only?: 'attendance' | 'tasks' | 'goals';
 }): React.JSX.Element | null {
-  const canAttendance = session.employeeId !== null && session.permissions.has('attendance.view');
-  const canTasks = session.permissions.has('task.view');
-  const canGoals = session.permissions.has('goal.view');
+  const wants = (part: 'attendance' | 'tasks' | 'goals'): boolean =>
+    only === undefined || only === part;
+  const canAttendance =
+    wants('attendance') &&
+    session.employeeId !== null &&
+    session.permissions.has('attendance.view');
+  const canTasks = wants('tasks') && session.permissions.has('task.view');
+  const canGoals = wants('goals') && session.permissions.has('goal.view');
 
   const load = useCallback(
     async (signal: AbortSignal): Promise<MyFigures> => {
@@ -103,9 +113,11 @@ export function MyInsights({
 
   return (
     <section className="insights" aria-label={t('insights.my_title')}>
-      <header className="insights__header">
-        <h2>{t('insights.my_title')}</h2>
-      </header>
+      {only === undefined ? (
+        <header className="insights__header">
+          <h2>{t('insights.my_title')}</h2>
+        </header>
+      ) : null}
       <div className="insights__grid">
         {month === null ? null : (
           <Card title={t('insights.my_attendance')}>
@@ -213,4 +225,19 @@ export function MyInsights({
       </div>
     </section>
   );
+}
+
+/** A section page's own chart for the signed-in person (their attendance, tasks or goals). */
+export function MySectionInsights({
+  locale,
+  only,
+}: {
+  readonly locale: Locale;
+  readonly only: 'attendance' | 'tasks' | 'goals';
+}): React.JSX.Element | null {
+  const t = createTranslator(locale);
+  const load = useCallback((signal: AbortSignal) => loadSession(locale, signal), [locale]);
+  const session = useResource(load);
+  if (session.state.status !== 'ready') return null;
+  return <MyInsights locale={locale} t={t} session={session.state.value} only={only} />;
 }

@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { LoadingFallback } from '../../../../components/settings/loading-fallback';
 import { TasksAdmin } from '../../../../components/tasks/tasks-admin';
 import { TasksShell } from '../../../../components/tasks/tasks-shell';
+import { SectionInsights } from '../../../../components/dashboard/section-insights';
 
 interface PageProps {
   readonly params: Promise<{ readonly locale: string }>;
@@ -26,6 +27,7 @@ export default async function Page({ params }: PageProps): Promise<React.JSX.Ele
   return (
     <TasksShell locale={locale} surface="admin">
       <Suspense fallback={<LoadingFallback locale={locale} />}>
+        <SectionInsights locale={locale} section="tasks" />
         <TasksAdmin locale={locale} />
       </Suspense>
     </TasksShell>

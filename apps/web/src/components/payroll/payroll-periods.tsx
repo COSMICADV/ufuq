@@ -30,6 +30,7 @@ import {
 import { loadSession } from '../employees/use-session';
 import { Cell, describeError, ErrorState, LoadingState } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
+import { PayrollCharts } from './payroll-charts';
 import { Amount, PeriodStatusBadge } from './payroll-shared';
 
 /**
@@ -92,6 +93,7 @@ export function PayrollPeriods({ locale }: { readonly locale: Locale }): React.J
           </Button>
         </div>
       ) : null}
+      <PayrollCharts locale={locale} t={t} periods={periods} currency={session.currency} />
       {periods.length === 0 ? (
         <EmptyState
           title={t('payroll.empty_title')}

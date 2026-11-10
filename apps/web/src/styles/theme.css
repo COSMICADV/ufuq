@@ -811,3 +811,41 @@
     align-self: center;
   }
 }
+
+/* ---- Language switch: one bordered box, both languages on one line ----------------- */
+.app-topbar .language-switch,
+.product-header .language-switch {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  min-block-size: 40px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+}
+.app-topbar .language-switch > :is(a, span),
+.product-header .language-switch > :is(a, span) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.app-topbar .language-switch > a:hover,
+.product-header .language-switch > a:hover {
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+}
+.app-topbar .language-switch > [aria-current],
+.product-header .language-switch > [aria-current] {
+  background: rgb(var(--rgb-accent) / 0.16);
+  color: var(--text-primary);
+  font-weight: 600;
+}

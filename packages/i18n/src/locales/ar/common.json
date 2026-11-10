@@ -2346,6 +2346,25 @@
     "my_attendance_hint": "حضور {present} من {days} يوم عمل",
     "my_tasks": "مهامي حسب الحالة",
     "my_goals": "تقدّم أهدافي",
-    "my_goals_empty": "لا توجد أهداف جارية بعد."
+    "my_goals_empty": "لا توجد أهداف جارية بعد.",
+    "kpi_late": "التأخير",
+    "kpi_late_hint": "{late} مرة تأخير من أيام الحضور",
+    "kpi_wfh": "العمل من المنزل",
+    "kpi_wfh_hint": "{wfh} يوم حضور من المنزل",
+    "in_office": "في المكتب",
+    "from_home": "من المنزل",
+    "attendance_mix": "توزيع الأيام",
+    "tasks_by_department": "إنجاز المهام حسب القسم",
+    "goals_by_type": "الأهداف حسب النوع",
+    "not_yet": "لم يتحقق بعد",
+    "section_attendance": "الحضور بالأرقام",
+    "section_tasks": "المهام بالأرقام",
+    "section_goals": "الأهداف بالأرقام",
+    "section_payroll": "المرتبات بالأرقام",
+    "payroll_description": "صافي المرتبات شهرًا بشهر، وتفاصيل آخر شهر.",
+    "payroll_by_month": "صافي المرتبات حسب الشهر",
+    "attendance_adjustment": "تسوية الحضور",
+    "payroll_breakdown": "تفاصيل {month}",
+    "my_salary_by_month": "صافي مرتبي حسب الشهر"
   }
 }
