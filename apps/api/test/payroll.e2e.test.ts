@@ -714,13 +714,11 @@ describe('salary policy: configuration, never invented', () => {
     // the company gets the default — split over the month's working days.
     const adminB = await api(ADMIN_B);
     expect((await adminB.get('/salary-policies')).body.data).toEqual({ policy: null });
-    const set = await adminB
-      .post(`/employees/${ids.workerB}/salary`)
-      .send({
-        monthly_salary: '15000.00',
-        transport_allowance: '500.00',
-        effective_from: '2026-01-05',
-      });
+    const set = await adminB.post(`/employees/${ids.workerB}/salary`).send({
+      monthly_salary: '15000.00',
+      transport_allowance: '500.00',
+      effective_from: '2026-01-05',
+    });
     expect(set.status, JSON.stringify(set.body)).toBe(201);
     expect(set.body.data.current).toMatchObject({
       monthly_salary: '15000.00',

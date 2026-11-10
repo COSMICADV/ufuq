@@ -435,19 +435,17 @@ beforeAll(async () => {
   refsA = await createReferences(adminA, 'A');
   refsB = await createReferences(adminB, 'B');
 
-  const created = await as(adminB)
-    .post('/employees')
-    .send({
-      monthly_salary: '10000.00',
-      first_name: 'Bee',
-      last_name: 'Tenant',
-      email: 'bee@b.test',
-      employee_code: 'B-001',
-      work_schedule_id: refsB.scheduleId,
-      joining_date: '2026-02-01',
-      role_key: 'employee',
-      send_invitation: false,
-    });
+  const created = await as(adminB).post('/employees').send({
+    monthly_salary: '10000.00',
+    first_name: 'Bee',
+    last_name: 'Tenant',
+    email: 'bee@b.test',
+    employee_code: 'B-001',
+    work_schedule_id: refsB.scheduleId,
+    joining_date: '2026-02-01',
+    role_key: 'employee',
+    send_invitation: false,
+  });
   if (created.status !== 201) {
     throw new Error(`Company B fixture failed: ${JSON.stringify(created.body)}`);
   }
@@ -480,22 +478,20 @@ describe('authentication — every endpoint requires a session', () => {
 
 describe('POST /employees — FLOW 02, one transaction', () => {
   it('creates the login user and the employee together, emails the invitation, and audits both', async () => {
-    const response = await as(adminA)
-      .post('/employees')
-      .send({
-        monthly_salary: '10000.00',
-        first_name: 'Mona',
-        last_name: 'Saleh',
-        email: MONA.email,
-        phone: '+20 100 000 0000',
-        employee_code: 'MGR-7351',
-        department_id: refsA.departmentId,
-        position_id: refsA.positionId,
-        work_schedule_id: refsA.scheduleId,
-        joining_date: '2025-06-01',
-        role_key: 'manager',
-        send_invitation: true,
-      });
+    const response = await as(adminA).post('/employees').send({
+      monthly_salary: '10000.00',
+      first_name: 'Mona',
+      last_name: 'Saleh',
+      email: MONA.email,
+      phone: '+20 100 000 0000',
+      employee_code: 'MGR-7351',
+      department_id: refsA.departmentId,
+      position_id: refsA.positionId,
+      work_schedule_id: refsA.scheduleId,
+      joining_date: '2025-06-01',
+      role_key: 'manager',
+      send_invitation: true,
+    });
 
     expect(response.status).toBe(201);
     expect(response.body.meta.invitation_delivery).toBe('sent');
