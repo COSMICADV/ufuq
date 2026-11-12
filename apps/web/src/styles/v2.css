@@ -1217,26 +1217,38 @@ dialog.modal {
   color: var(--text-primary);
 }
 
-/* QR Studio (/admin/qr): the ported 1to1QR app fills the workspace under the header. */
+/* QR Studio (/admin/qr): a 1to1OS screen — the page heading, then the studio
+   itself, which fills what is left of the workspace. The studio is framed so
+   its own stylesheet cannot reach the product screens; it reads this page's
+   theme tokens, so its chrome matches. */
 .qr-studio {
-  display: flex;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   min-block-size: calc(100dvh - 76px);
 }
+.qr-studio .page-heading {
+  display: flex;
+  padding: 32px 32px 0;
+}
 .qr-studio__frame {
-  flex: 1;
   inline-size: 100%;
-  min-block-size: calc(100dvh - 76px);
+  block-size: 100%;
+  min-block-size: 640px;
   border: 0;
   background: var(--bg-page);
 }
 .qr-studio__status {
-  margin: auto;
-  padding: 32px;
+  padding: 0 32px 32px;
   color: var(--text-secondary);
 }
 @media (max-width: 1023px) {
-  .qr-studio,
-  .qr-studio__frame {
+  .qr-studio {
     min-block-size: calc(100dvh - 64px);
+  }
+  .qr-studio .page-heading {
+    padding: 24px 16px 0;
+  }
+  .qr-studio__status {
+    padding: 0 16px 24px;
   }
 }
