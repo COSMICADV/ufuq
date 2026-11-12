@@ -17,3 +17,6 @@ product-documentation
 
 # Reference images and their notes.
 design-references
+
+# QR Studio: the 1to1QR app ported as one self-contained page; kept byte-close to its source.
+apps/web/public/qr-studio

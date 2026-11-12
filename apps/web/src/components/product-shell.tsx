@@ -85,6 +85,12 @@ const navigation = [
     'stock.view',
   ],
   [
+    'qr',
+    'استوديو QR',
+    'QR Studio',
+    'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h3v3h-3ZM17 17h4v4h-4ZM14 20v1',
+  ],
+  [
     'notifications',
     'الإشعارات',
     'Notifications',
@@ -158,7 +164,9 @@ export function ProductShell({
   const items = navigation.filter(([path, , , , ...permissions]) => {
     if (ready === null) return path === '' || path === 'notifications';
     if (surface === 'app') {
-      if (['employees', 'warehouse', 'inventory', 'settings/company', 'payroll'].includes(path))
+      if (
+        ['employees', 'warehouse', 'inventory', 'settings/company', 'payroll', 'qr'].includes(path)
+      )
         return false;
       if (path === '' || path === 'reports' || path === 'attendance') return true;
     }

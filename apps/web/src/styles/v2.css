@@ -1216,3 +1216,27 @@ dialog.modal {
   font-size: var(--font-h1);
   color: var(--text-primary);
 }
+
+/* QR Studio (/admin/qr): the ported 1to1QR app fills the workspace under the header. */
+.qr-studio {
+  display: flex;
+  min-block-size: calc(100dvh - 76px);
+}
+.qr-studio__frame {
+  flex: 1;
+  inline-size: 100%;
+  min-block-size: calc(100dvh - 76px);
+  border: 0;
+  background: var(--bg-page);
+}
+.qr-studio__status {
+  margin: auto;
+  padding: 32px;
+  color: var(--text-secondary);
+}
+@media (max-width: 1023px) {
+  .qr-studio,
+  .qr-studio__frame {
+    min-block-size: calc(100dvh - 64px);
+  }
+}
