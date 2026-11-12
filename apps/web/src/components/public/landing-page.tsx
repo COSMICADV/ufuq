@@ -38,8 +38,23 @@ import { ThemePicker } from '../theme-picker';
 
 type Pillar = 'erp' | 'finance' | 'qr';
 
+/**
+ * 1to1QR — the QR Studio product of the 1to1OS family. It runs as its own site, so every
+ * "QR Studio" entry point on this page sends the visitor there in a new tab.
+ */
+const QR_STUDIO_URL = 'https://www.1to1qr.com/';
+
+const isExternal = (href: string): boolean => href.startsWith('http');
+
+/** Opens an outside link in a new tab without handing it this page. */
+const NEW_TAB = { target: '_blank', rel: 'noopener' } as const;
+
+/** Link attributes for the QR Studio site. */
+const QR_LINK = { href: QR_STUDIO_URL, ...NEW_TAB } as const;
+
 const NAV = [
   ['#products', 'Products'],
+  [QR_STUDIO_URL, 'QR Studio'],
   ['#features', 'Architecture'],
   ['#pricing', 'Pricing'],
   ['#security', 'Security'],
@@ -53,6 +68,8 @@ const PILLARS: readonly {
   readonly body: string;
   readonly points: readonly string[];
   readonly cta: string;
+  /** A short "part of 1to1OS" line shown under the title, for products that live on their own site. */
+  readonly powered?: string;
 }[] = [
   {
     id: 'erp',
@@ -81,9 +98,10 @@ const PILLARS: readonly {
     tone: 'purple',
     icon: QrCode,
     title: 'Professional QR Studio',
-    body: 'Generate high-converting, fully customized dynamic QR codes for menus, Wi-Fi, digital business cards, and campaigns.',
+    powered: '1to1QR · part of 1to1OS',
+    body: 'Generate high-converting, fully customized dynamic QR codes for menus, Wi-Fi, digital business cards, and campaigns — in your brand design, editable after printing.',
     points: ['Dynamic Target URLs', 'Custom Branding & Colors', 'Real-time Scan Analytics'],
-    cta: 'Explore QR Studio',
+    cta: 'Open QR Studio',
   },
 ];
 
@@ -184,7 +202,7 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
 
           <nav className="lp-nav" aria-label="Main">
             {NAV.map(([href, label]) => (
-              <a key={href} href={href}>
+              <a key={href} href={href} {...(isExternal(href) ? NEW_TAB : {})}>
                 {label}
               </a>
             ))}
@@ -225,7 +243,12 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
         {mobileMenuOpen && (
           <div className="lp-mobile-menu">
             {NAV.map(([href, label]) => (
-              <a key={href} href={href} onClick={() => setMobileMenuOpen(false)}>
+              <a
+                key={href}
+                href={href}
+                onClick={() => setMobileMenuOpen(false)}
+                {...(isExternal(href) ? NEW_TAB : {})}
+              >
                 {label}
               </a>
             ))}
@@ -419,6 +442,10 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                           {copiedQr ? 'Copied' : 'Copy'}
                         </button>
                       </div>
+                      <a {...QR_LINK} className="lp-qr-demo__open">
+                        Open 1to1QR Studio
+                        <ArrowRight className="lp-i35" />
+                      </a>
                     </div>
                     <div className="lp-qr">
                       <div className="lp-qr__frame">
@@ -428,7 +455,7 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                           ))}
                         </div>
                       </div>
-                      <span className="lp-qr__caption">1to1os Dynamic QR</span>
+                      <span className="lp-qr__caption">1to1QR Dynamic QR</span>
                     </div>
                   </div>
                 )}
@@ -452,17 +479,25 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
             <div className="lp-cards-3">
               {PILLARS.map((p) => {
                 const Icon = p.icon;
+                /** The QR card leads to the 1to1QR site; the others select themselves. */
+                const activate = (): void => {
+                  if (p.id === 'qr') {
+                    window.open(QR_STUDIO_URL, '_blank', 'noopener');
+                    return;
+                  }
+                  setActiveTab(p.id);
+                };
                 return (
                   <div
                     key={p.id}
                     role="button"
                     tabIndex={0}
                     aria-pressed={activeTab === p.id}
-                    onClick={() => setActiveTab(p.id)}
+                    onClick={activate}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setActiveTab(p.id);
+                        activate();
                       }
                     }}
                     className={`lp-pillar ${activeTab === p.id ? 'is-active' : ''}`}
@@ -471,6 +506,7 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                       <Icon className="lp-i6" />
                     </div>
                     <h3 className="lp-pillar__title">{p.title}</h3>
+                    {p.powered && <p className="lp-pillar__powered">{p.powered}</p>}
                     <p className="lp-pillar__body">{p.body}</p>
                     <ul className="lp-ticks">
                       {p.points.map((pt) => (
@@ -485,6 +521,14 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                       >
                         {p.cta} <ChevronRight className="lp-i4" />
                       </Link>
+                    ) : p.id === 'qr' ? (
+                      <a
+                        {...QR_LINK}
+                        className="lp-pillar__cta"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {p.cta} <ChevronRight className="lp-i4" />
+                      </a>
                     ) : (
                       <button
                         type="button"
@@ -759,7 +803,7 @@ export function LandingPage({ locale }: { readonly locale: Locale }): React.JSX.
                   <a href="#products">Personal Wealth OS</a>
                 </li>
                 <li>
-                  <a href="#products">Dynamic QR Studio</a>
+                  <a {...QR_LINK}>Dynamic QR Studio (1to1QR)</a>
                 </li>
                 <li>
                   <a href="#pricing">Free Tier Plan</a>

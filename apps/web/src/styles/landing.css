@@ -796,6 +796,19 @@
 .lp-qr-demo__field button:hover {
   background: var(--lp-s700);
 }
+.lp-qr-demo__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--lp-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: gap 0.2s;
+}
+.lp-qr-demo__open:hover {
+  color: var(--lp-accent-2);
+  gap: 0.5rem;
+}
 .lp-qr {
   --lp-white: #ffffff;
   --lp-bg: #0f172a;
@@ -1003,6 +1016,14 @@
   transition:
     color 0.2s,
     gap 0.2s;
+}
+.lp-pillar__powered {
+  margin-block: -0.25rem 0.5rem;
+  color: var(--lp-accent);
+  font-family: var(--lp-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .lp-pillar__cta:hover {
   color: var(--lp-accent-2);
