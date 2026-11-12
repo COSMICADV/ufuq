@@ -29,6 +29,7 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { WarehouseModule } from './warehouse/warehouse.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { QrModule } from './qr/qr.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 
@@ -105,6 +106,7 @@ export class AppModule {
         InventoryModule.register({ scheduler: options.backgroundJobs }),
         ReportsModule.register({ scheduler: options.backgroundJobs }),
         NotificationsModule.register({ scheduler: options.backgroundJobs }),
+        QrModule.register(env),
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

@@ -7,12 +7,23 @@
 /* 1to1OS bridge. This page only runs inside the 1to1OS QR Studio screen
    (/{locale}/admin/qr), which frames it from the same origin. */
 (function () {
+  // The public page a scan opens (served by /q/{slug}) runs the studio's own view mode.
+  if (window.QRV) return;
   var P = null;
   try { if (window.parent !== window && window.parent.document) P = window.parent; } catch (e) {}
   if (!P) { location.replace('/'); return; }
   var q = new URLSearchParams(location.search);
   var uid = (q.get('u') || 'anon').replace(/[^A-Za-z0-9_-]/g, '');
   window.QR_DOMAIN = location.host + '/q';
+  // The 1to1OS API the studio saves to (the screen passes its address).
+  var api = q.get('api') || '';
+  window.QR_API = /^(https?:\/\/[^/?#]+)?\/api\/v1$/.test(api) ? api : '';
+  window.QR_FILE_BASE = (window.QR_API.charAt(0) === '/' ? location.origin : '') + window.QR_API + '/public/qr/files/';
+  window.QR_USER_EMAIL = q.get('email') || '';
+  window.QR_USER_NAME = q.get('name') || '';
+  window.QR_MAX_UPLOAD = Number(q.get('max')) || 10485760;
+  // A session that ended: reloading the screen takes 1to1OS back to its sign-in.
+  window.osSessionEnded = function () { try { P.location.reload(); } catch (e) {} };
 
   // Each 1to1OS account keeps its own QR codes, even on a shared browser.
   var SP = Storage.prototype, get = SP.getItem, set = SP.setItem, del = SP.removeItem;
@@ -868,7 +879,7 @@ details.gset[open]>summary{margin-bottom:10px}
 /* 1to1OS: hosted inside the QR Studio screen */
 #login,#logout,.side-copy,.lg-foot,aside .langsel,aside .logo,#navBilling,#navAdmin,#navSettings,#planBox,#usageBox{display:none!important}
 html,body{background:var(--bg)}
-.app{grid-template-columns:1fr;min-height:100vh}
+.app{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start;min-height:100vh}
 aside{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;border:0;border-bottom:1px solid var(--line);padding:10px 20px}
 .nav{display:flex;gap:4px;flex-wrap:wrap}
 .nav button{width:auto;padding:8px 14px}
@@ -3223,7 +3234,7 @@ function render(){
   const t=TYPES[S.type],isPage=t.mode==='dyn'&&S.type!=='website',pg=S.page;
   const fields=t.f.filter(([k])=>!(isPage&&k==='title'));
   const fieldHTML=fields.map(([k,l,,dir,kind])=>`<label for="f_${k}">${l}${kind==='ta'?`<textarea id="f_${k}" data-fd="${k}" class="${dir||''}">${esc(S.data[k])}</textarea>`:`<input id="f_${k}" data-fd="${k}" type="${kind==='dt'?'datetime-local':'text'}" class="${dir||''}" value="${esc(S.data[k])}">`}</label>`).join('');
-  const nameCard=`<div class="card"><div class="row"><label for="qrname">اسم الكود (للتنظيم فقط)<input id="qrname" data-meta="name" value="${esc(S.name||T(t.n)+' — '+new Date().toLocaleDateString(LOC()))}"></label><label for="client">العميل / المشروع<input id="client" data-meta="client" value="${esc(S.client||'Cosmic')}"></label></div></div>`;
+  const nameCard=`<div class="card"><div class="row"><label for="qrname">اسم الكود (للتنظيم فقط)<input id="qrname" data-meta="name" value="${esc(S.name||T(t.n)+' — '+new Date().toLocaleDateString(LOC()))}"></label><label for="client">العميل / المشروع<input id="client" data-meta="client" value="${esc(S.client||window.QR_USER_NAME||'')}"></label></div></div>`;
   const note=t.mode==='dyn'?`<div class="note">الكود هيشاور على <b dir="ltr">${pg.cfg?pg.cfg.domain:'1to1OS'}/${curSlug}</b>. اللي يمسح الكود هيفتح الصفحة دي، وكل مسحة بتتسجل، وتقدر تعدّل المحتوى في أي وقت بعد الطباعة.</div>`:`<div class="note">الكود ده ثابت: البيانات متخزنة جواه، ويشتغل من غير إنترنت. أي تعديل محتاج طباعة جديدة.</div>`;
   const acc=(id,i,title,subt,inner)=>`<details class="acc" data-acc="${id}" ${OPEN.has(id)?'open':''}><summary><span class="aic">${ic(i)}</span><span><b>${title}</b><small>${subt}</small></span><span class="chev"></span></summary><div class="accb">${inner}</div></details>`;
   const sacc=(id,title,inner)=>`<details class="subacc" data-acc="${id}" ${OPEN.has(id)?'open':''}><summary>${title}</summary><div class="subb">${inner}</div></details>`;
@@ -3338,7 +3349,7 @@ $('next').onclick=async()=>{
  if(S.step<3){S.step++;render();return}
  let png='';try{png=await QRE.dataURL(S.design,payload()||' ',360)}catch(e){}
  if(S.design.saveTpl&&(S.design.tplName||'').trim()){userTpls.push({name:S.design.tplName.trim(),d:JSON.parse(JSON.stringify({...S.design,saveTpl:false,tplName:''}))});saveTpls();S.design.saveTpl=false;S.design.tplName=''}
- const rec={id:curSlug,name:S.name||T(TYPES[S.type].n),client:S.client||'Cosmic',type:S.type,data:{...S.data},design:{...S.design},page:JSON.parse(JSON.stringify(S.page)),payload:payload(),created:new Date().toISOString(),scans:0,png};
+ const rec={id:curSlug,name:S.name||T(TYPES[S.type].n),client:S.client||window.QR_USER_NAME||'',type:S.type,data:{...S.data},design:{...S.design},page:JSON.parse(JSON.stringify(S.page)),payload:payload(),created:new Date().toISOString(),scans:0,png};
  if(S.editIdx!=null&&saved[S.editIdx]){const old=saved[S.editIdx];rec.created=old.created;rec.scans=old.scans;rec.updated=new Date().toISOString();['status','tags','notes','scanLog','history','feedback'].forEach(k=>{if(old[k]!==undefined)rec[k]=old[k]});addHistory(rec,'edited');saved[S.editIdx]=rec}else{addHistory(rec,'created');saved.unshift(rec)}
  S.editIdx=null;
  persist();curSlug=slug();S.page=newPage(S.type);S.pdfErr=S.slugErr=S.pwErr='';S.newFolder=S.pwShow=false;S.mlEdit=S.mlView=null;S.step=1;S.name='';show('list');
@@ -3983,10 +3994,27 @@ $('logout').onclick=async()=>{try{window.google&&google.accounts&&google.account
 const LSEL=$('lg_lang');LSEL.innerHTML=LANGS.map(([c,l])=>`<option value="${c}" ${c===UI?'selected':''}>${l}</option>`).join('');
 LSEL.onchange=()=>{UI=LSEL.value;SEL.value=UI;try{localStorage.setItem('cosmicqr_lang',UI)}catch(e){}applyLogin();show(VIEW);applyUI();if(GOOGLE_ID&&window.google)drawGoogleBtn()};
 // ---------- Server: 1to1OS/api (PHP on Lonex). Without it (preview / file) the app runs locally as before ----------
-async function api(a,body){
- const r=await fetch('/api/?a='+a,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'1to1qr'},body:JSON.stringify(body||{})});
- let j=null;try{j=await r.json()}catch(e){const x=new Error('net');x.status=r.status;throw x}
- if(!r.ok){const x=new Error((j&&j.error)||'net');x.status=r.status;x.used=j&&j.used;x.quota=j&&j.quota;throw x}if(j&&j.usage)setUsage(j.usage);if(j&&j.plan)setPlan(j.plan);return j}
+async function osCsrf(){const m=document.cookie.match(/(?:^|;\s*)ufuq_csrf=([^;]+)/);return m?decodeURIComponent(m[1]):null}
+async function osCall(method,path,payload){const h={'Accept-Language':UI==='ar'?'ar':'en'};if(payload!==undefined)h['Content-Type']='application/json';
+ if(method!=='GET'){const t=await osCsrf();if(t)h['x-csrf-token']=t}
+ const r=await fetch(window.QR_API+path,{method,credentials:'include',headers:h,body:payload===undefined?undefined:JSON.stringify(payload)});
+ if(r.status===401&&window.osSessionEnded)window.osSessionEnded();
+ let j=null;if(r.status!==204){try{j=await r.json()}catch(e){}}
+ if(!r.ok){const x=new Error(r.status===409?'taken':(j&&j.error&&j.error.code)||'net');x.status=r.status;throw x}
+ return j&&j.data?j.data:{}}
+async function api(a,body){body=body||{};const id=encodeURIComponent(String(body.id||(body.rec&&body.rec.id)||''));
+ switch(a){
+  case 'ping':return {ok:true,maxUpload:window.QR_MAX_UPLOAD};
+  case 'config':return {google:''};
+  case 'me':return {user:{email:window.QR_USER_EMAIL,name:window.QR_USER_NAME}};
+  case 'theme':case 'logout':return {};
+  case 'list':return osCall('GET','/qr/codes');
+  case 'save':return osCall('PUT','/qr/codes/'+id,{rec:body.rec});
+  case 'delete':await osCall('DELETE','/qr/codes/'+id);return {};
+  case 'reset':await osCall('POST','/qr/codes/'+id+'/reset');return {};
+  case 'check':return osCall('GET','/qr/slugs/'+id);
+  default:{const x=new Error('unavailable');x.status=404;throw x}
+ }}
 let USAGE=null;const MB=1048576;
 // ---------- plans ----------
 var PLAN=null,PLAN_N={free:'مجاني',basic:'أساسي',pro:'احترافي',agency:'وكالات'};
@@ -4256,9 +4284,11 @@ function setUsage(u){if(!u)return;USAGE=u;const box=$('usageBox');if(!box)return
  $('usageTxt').textContent=u.quota?`${used.toFixed(1)} / ${Math.round(u.quota/MB)} MB`:`${used.toFixed(1)} MB · ∞`;
  const pc=u.quota?Math.min(100,u.used/u.quota*100):0;const bar=$('usageBar');bar.style.width=(u.quota?pc:3)+'%';bar.classList.toggle('hi',pc>=90)}
 function quotaMsg(e){const q=(e&&e.quota)||(USAGE&&USAGE.quota)||0,u=(e&&e.used)||(USAGE&&USAGE.used)||0;return `المساحة بتاعتك خلصت (${(u/MB).toFixed(1)} من ${Math.round(q/MB)} ميجا). امسح كود قديم أو ملفات مش محتاجها.`}
-async function apiUpload(file){const fd=new FormData();fd.append('file',file,file.name);
- const r=await fetch('/api/?a=upload',{method:'POST',credentials:'same-origin',headers:{'X-Requested-With':'1to1qr'},body:fd});let j=null;try{j=await r.json()}catch(e){}
- if(!r.ok||!j||!j.url){const x=new Error((j&&j.error)||(r.status===413?'too_big':'net'));x.max=j&&j.max;x.used=j&&j.used;x.quota=j&&j.quota;throw x}if(j.usage)setUsage(j.usage);return j}
+async function apiUpload(file){const fd=new FormData();fd.append('file',file,file.name);const h={};const t=await osCsrf();if(t)h['x-csrf-token']=t;
+ const r=await fetch(window.QR_API+'/qr/files',{method:'POST',credentials:'include',headers:h,body:fd});let j=null;try{j=await r.json()}catch(e){}
+ if(r.status===401&&window.osSessionEnded)window.osSessionEnded();
+ if(!r.ok||!j||!j.data){const x=new Error(r.status===413?'too_big':'net');x.max=window.QR_MAX_UPLOAD;throw x}
+ return {url:window.QR_FILE_BASE+j.data.id}}
 let SYNCED={};try{SYNCED=JSON.parse(localStorage.getItem('cosmicqr_synced')||'{}')}catch(e){}
 const saveSynced=()=>{try{localStorage.setItem('cosmicqr_synced',JSON.stringify(SYNCED))}catch(e){}};
 function recHash(q){const {scanLog,scans,feedback,...r}=q;const s=JSON.stringify(r);let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return h+':'+s.length}
@@ -4315,9 +4345,9 @@ function viewMode(V){
   const st=e.target.closest('[data-star]');if(st){stars=+st.dataset.star;el.querySelectorAll('[data-star]').forEach(x=>x.style.color=+x.dataset.star<=stars?'#f59e0b':'#d1d5db');return}
   const send=e.target.closest('.fbsend');if(send){const m=el.querySelector('.fbmsg');m.hidden=false;const L=pg.lang||'ar';
    if(!stars){m.textContent=trIn(L,'اختار عدد النجوم الأول');return}
-   send.disabled=true;try{await fetch('/api/?a=feedback',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'1to1qr'},body:JSON.stringify({s:V.slug,stars,text:(el.querySelector('.fbtext')||{}).value||''})});
+   send.disabled=true;try{await fetch((window.QR_API||'')+'/public/qr/'+encodeURIComponent(V.slug)+'/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stars,text:((el.querySelector('.fbtext')||{}).value||'').slice(0,1000)})});
     el.querySelector('.fbstars').remove();el.querySelector('.fbtext').remove();send.remove();m.textContent=trIn(L,'شكرًا! رأيك وصل.')}catch(err){send.disabled=false}return}
-  const a=e.target.closest('a');if(a&&pg.stats&&pg.stats.events){const name=(a.innerText||a.getAttribute('aria-label')||a.href).trim().slice(0,80);try{navigator.sendBeacon('/api/?a=event',new Blob([JSON.stringify({s:V.slug,name})],{type:'text/plain'}))}catch(err){}}
+  const a=e.target.closest('a');if(a&&pg.stats&&pg.stats.events){const name=(a.innerText||a.getAttribute('aria-label')||a.href).trim().slice(0,80);try{fetch((window.QR_API||'')+'/public/qr/'+encodeURIComponent(V.slug)+'/event',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({name})})}catch(err){}}
  });
 }
 
@@ -4326,7 +4356,7 @@ if(window.QRV){viewMode(window.QRV)}
 else{
  showGate();
  (async()=>{
-  if(false){try{await Promise.race([api('ping'),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);API.on=true}catch(e){}}
+  if(window.QR_API){try{await Promise.race([api('ping'),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),5000))]);API.on=true}catch(e){}}
   window.SYNC_ON=true;
   if(!API.on)return;
   {const n=$('lgNote');if(n)n.hidden=true}

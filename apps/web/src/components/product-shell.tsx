@@ -170,6 +170,8 @@ export function ProductShell({
         return false;
       if (path === '' || path === 'reports' || path === 'attendance') return true;
     }
+    // QR Studio is for the company's owner and admins (the API checks the same roles).
+    if (path === 'qr') return ready.roleKey === 'super_admin' || ready.roleKey === 'admin';
     return (
       permissions.length === 0 ||
       permissions.some((permission) => ready.permissions.has(permission))

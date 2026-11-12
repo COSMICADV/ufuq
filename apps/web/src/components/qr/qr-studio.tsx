@@ -6,12 +6,13 @@
  * The studio itself is the ported 1to1QR app (`public/qr-studio/studio.html`). It runs in a
  * same-origin frame so its own styles and scripts stay apart from the product screens, and it
  * reads the 1to1OS theme from this page, so it changes with the theme picker. It is given the
- * signed-in account and the screen's language; sign-in, language and theme are 1to1OS's.
+ * signed-in account, the screen's language and the API address; sign-in, language and theme
+ * are 1to1OS's, and the codes are saved through the API's `/qr` endpoints.
  */
 import { useCallback } from 'react';
 import type { Locale } from '@ufuq/i18n';
 
-import { fetchOne } from '../../lib/api-client';
+import { API_BASE_PATH, API_ORIGIN, fetchOne } from '../../lib/api-client';
 import { useResource } from '../settings/use-resource';
 
 interface MePayload {
@@ -50,6 +51,8 @@ export function QrStudio({ locale }: { readonly locale: Locale }): React.JSX.Ele
     u: user.id,
     email: user.email,
     name: company.name,
+    // Where the studio saves codes and uploads files: the same API this screen uses.
+    api: new URL(API_BASE_PATH, API_ORIGIN).toString(),
   });
   return (
     <section className="qr-studio">

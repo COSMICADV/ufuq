@@ -468,6 +468,11 @@ model Company {
   notificationEvents      NotificationEvent[]
   notificationPreferences CompanyNotificationSetting[]
 
+  qrCodes    QrCode[]
+  qrScans    QrScan[]
+  qrFeedback QrFeedback[]
+  qrFiles    QrFile[]
+
   @@index([status])
   @@map("companies")
 }
@@ -820,6 +825,8 @@ model User {
   reportExports       ReportExport[]                @relation("report_export_requested_by")
   notifications       Notification[]
   notificationPrefs   CompanyNotificationSetting[]  @relation("notification_setting_updated_by")
+  qrCodes             QrCode[]                      @relation("qr_code_created_by")
+  qrFiles             QrFile[]                      @relation("qr_file_created_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
@@ -1955,4 +1962,87 @@ model CompanyNotificationSetting {
 
   @@id([companyId, type, channel])
   @@map("company_notification_settings")
+}
+
+/// QR Studio — the company's QR codes. `slug` is the short link (`/q/{slug}`), unique across
+/// every company because it is a public URL. `record` is the studio's own description of the
+/// code (content, design, landing page) as the studio writes it; the server reads only the
+/// few fields a scan needs from it.
+model QrCode {
+  id        String   @id @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  createdBy String   @map("created_by") @db.Uuid
+  slug      String   @unique @db.VarChar(64)
+  name      String   @db.VarChar(200)
+  type      String   @db.VarChar(24)
+  record    Json
+  scans     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  creator  User         @relation("qr_code_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+  scanLog  QrScan[]
+  feedback QrFeedback[]
+
+  @@index([companyId, createdAt])
+  @@map("qr_codes")
+}
+
+/// One scan (`s`), page visit (`v`) or tracked click (`e`) on a code's public page.
+model QrScan {
+  id        String   @id @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  qrCodeId  String   @map("qr_code_id") @db.Uuid
+  kind      String   @db.Char(1)
+  isUnique  Boolean  @default(false) @map("is_unique")
+  os        String?  @db.VarChar(40)
+  browser   String?  @db.VarChar(40)
+  lang      String?  @db.VarChar(10)
+  country   String?  @db.Char(2)
+  city      String?  @db.VarChar(80)
+  event     String?  @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  qrCode  QrCode  @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+
+  @@index([qrCodeId, createdAt])
+  @@index([companyId, createdAt])
+  @@map("qr_scans")
+}
+
+/// A rating left on a feedback code's public page.
+model QrFeedback {
+  id        String   @id @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  qrCodeId  String   @map("qr_code_id") @db.Uuid
+  stars     Int      @db.SmallInt
+  body      String   @default("") @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  qrCode  QrCode  @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+
+  @@index([qrCodeId, createdAt])
+  @@map("qr_feedback")
+}
+
+/// A file (PDF, video, audio) uploaded for a code. Served publicly by its unguessable id,
+/// because whoever scans the code must be able to open it.
+model QrFile {
+  id          String   @id @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  createdBy   String   @map("created_by") @db.Uuid
+  storageKey  String   @unique @map("storage_key") @db.VarChar(300)
+  fileName    String   @map("file_name") @db.VarChar(255)
+  contentType String   @map("content_type") @db.VarChar(100)
+  sizeBytes   Int      @map("size_bytes")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  creator User    @relation("qr_file_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([companyId, createdAt])
+  @@map("qr_files")
 }

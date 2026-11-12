@@ -18,6 +18,7 @@ export {
   listSignupRequests,
   type SignupRequestRow,
 } from './platform-lookups.js';
+export { isQrSlugTaken, lookupQrCodeBySlug, lookupQrFileCompany } from './qr-lookups.js';
 
 // Re-exported so `apps/api` never imports `@prisma/client` directly — every
 // generated model, enum and input type comes from `@ufuq/db`'s public entry

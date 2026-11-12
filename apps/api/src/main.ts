@@ -18,6 +18,7 @@ import { EnvError, loadEnv } from '@ufuq/config';
 
 import { AppModule } from './app.module.js';
 import { API_PREFIX } from './api-prefix.js';
+import { registerBodyParsers } from './body-parsers.js';
 import type { AppInfo } from './app.tokens.js';
 import { createValidationPipe } from './common/validation-pipe.js';
 import { ErrorFilter } from './common/error.filter.js';
@@ -38,7 +39,12 @@ async function bootstrap(): Promise<void> {
   const env = loadEnv();
   const info = await readAppInfo();
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(env, info));
+  // Body parsers are registered below rather than by Nest, so QR Studio's saves
+  // can be larger than every other request (see `registerBodyParsers`).
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(env, info), {
+    bodyParser: false,
+  });
+  registerBodyParsers(app);
 
   // Behind a hosting provider's proxy (and the web app's same-origin rewrite)
   // every request otherwise comes from the proxy's address, which would merge

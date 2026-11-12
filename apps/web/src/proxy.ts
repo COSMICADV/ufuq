@@ -39,8 +39,9 @@ export default function proxy(request: NextRequest): NextResponse {
 
 export const config = {
   /**
-   * Everything except Next's own assets, files with an extension, and the API
-   * path the staging rewrite in `next.config.mjs` forwards (`/api/v1`).
+   * Everything except Next's own assets, files with an extension, the API
+   * path the staging rewrite in `next.config.mjs` forwards (`/api/v1`), and
+   * QR Studio's scan links (`/q/{slug}`), which are the same in every language.
    */
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|.*\\..*).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|q/|.*\\..*).*)'],
 };
