@@ -178,7 +178,8 @@ export function ProductShell({
     );
   });
   const links = items.map(([path, arabic, english, icon]) => {
-    const href = `${base}${path ? `/${path}` : ''}`;
+    // QR Studio opens as a page of its own, outside the workspace.
+    const href = path === 'qr' ? `/${locale}/qr` : `${base}${path ? `/${path}` : ''}`;
     const current =
       path === 'settings/company'
         ? pathname.startsWith(`${base}/settings/`)

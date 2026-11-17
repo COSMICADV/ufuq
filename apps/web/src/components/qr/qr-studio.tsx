@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * QR Studio — dynamic, branded QR codes, part of the business workspace.
+ * QR Studio — dynamic, branded QR codes, one of 1to1OS’s products (its own page, /qr).
  *
  * An ordinary 1to1OS screen: the page heading, the three views as tabs (a new code, the
  * company's codes, their statistics), then the studio itself. The studio's engine

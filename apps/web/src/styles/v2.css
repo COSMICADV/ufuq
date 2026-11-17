@@ -1217,7 +1217,44 @@ dialog.modal {
   color: var(--text-primary);
 }
 
-/* QR Studio (/admin/qr): an ordinary 1to1OS screen — the page heading, the view tabs,
+/* QR Studio's own page (/qr): the 1to1OS header without the workspace sidebar. */
+.qr-shell {
+  min-block-size: 100dvh;
+  background: var(--bg-page);
+}
+.qr-shell__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 44px;
+  color: var(--text-primary);
+  font-size: 20px;
+  text-decoration: none;
+}
+.qr-shell__brand small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  line-height: 1.4;
+}
+.qr-shell__back.button {
+  min-block-size: 40px;
+  padding-block: 0;
+  font-size: var(--font-body-sm);
+}
+.qr-shell__content {
+  margin-inline: auto;
+}
+@media (max-width: 640px) {
+  .qr-shell__header {
+    padding-inline: 16px;
+  }
+  .qr-shell__back {
+    display: none;
+  }
+}
+
+/* QR Studio: an ordinary 1to1OS screen — the page heading, the view tabs,
    then the studio. The studio is drawn in a shadow root that carries 1to1OS's own
    stylesheets beside its own, so it uses the product's buttons, fields, cards and theme
    while its landing-page templates cannot reach the other screens. */

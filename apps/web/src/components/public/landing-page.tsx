@@ -40,11 +40,11 @@ import { ThemePicker } from '../theme-picker';
 type Pillar = 'erp' | 'finance' | 'qr';
 
 /**
- * QR Studio is a screen of the 1to1OS business workspace (`/{locale}/admin/qr`), so every
+ * QR Studio is one of 1to1OS's products, on a page of its own (`/{locale}/qr`), so every
  * "QR Studio" entry point on this page opens it; a visitor who is not signed in is taken
  * to sign-in first.
  */
-const QR_STUDIO_PATH = '/admin/qr';
+const QR_STUDIO_PATH = '/qr';
 const qrStudioHref = (locale: Locale): string => `/${locale}${QR_STUDIO_PATH}`;
 
 const isExternal = (href: string): boolean => href.startsWith('http');
