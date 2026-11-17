@@ -1,6 +1,6 @@
 /**
- * QR Studio — dynamic, branded QR codes for the company (the 1to1QR studio,
- * part of 1to1OS). Object storage comes from the global AttachmentsModule.
+ * QR Studio — dynamic, branded QR codes for the company, part of the 1to1OS
+ * business workspace. Object storage comes from the global AttachmentsModule.
  */
 
 import { Module } from '@nestjs/common';

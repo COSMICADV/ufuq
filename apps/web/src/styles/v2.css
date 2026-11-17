@@ -1217,38 +1217,26 @@ dialog.modal {
   color: var(--text-primary);
 }
 
-/* QR Studio (/admin/qr): a 1to1OS screen — the page heading, then the studio
-   itself, which fills what is left of the workspace. The studio is framed so
-   its own stylesheet cannot reach the product screens; it reads this page's
-   theme tokens, so its chrome matches. */
-.qr-studio {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: calc(100dvh - 76px);
+/* QR Studio (/admin/qr): an ordinary 1to1OS screen — the page heading, the view tabs,
+   then the studio. The studio is drawn in a shadow root that carries 1to1OS's own
+   stylesheets beside its own, so it uses the product's buttons, fields, cards and theme
+   while its landing-page templates cannot reach the other screens. */
+.qr-studio__count {
+  margin-inline-start: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+  font-weight: 600;
 }
-.qr-studio .page-heading {
-  display: flex;
-  padding: 32px 32px 0;
+.tabs a.is-active .qr-studio__count {
+  background: var(--brand-mist);
+  color: var(--brand-indigo);
 }
-.qr-studio__frame {
-  inline-size: 100%;
-  block-size: 100%;
-  min-block-size: 640px;
-  border: 0;
-  background: var(--bg-page);
+.qr-studio__host {
+  min-inline-size: 0;
 }
 .qr-studio__status {
-  padding: 0 32px 32px;
   color: var(--text-secondary);
-}
-@media (max-width: 1023px) {
-  .qr-studio {
-    min-block-size: calc(100dvh - 64px);
-  }
-  .qr-studio .page-heading {
-    padding: 24px 16px 0;
-  }
-  .qr-studio__status {
-    padding: 0 16px 24px;
-  }
 }

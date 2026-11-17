@@ -1,7 +1,7 @@
 /**
  * QR Studio — the rules the server applies to the studio's records and scans.
  *
- * The studio (the ported 1to1QR app, `apps/web/public/qr-studio`) describes a
+ * The studio (QR Studio's engine, `apps/web/public/qr-studio/engine.js`) describes a
  * code as one JSON record: its content, design and landing page. The server
  * stores that record as written and reads only what a scan needs from it: the
  * type, and for a website code which address to send the visitor to.

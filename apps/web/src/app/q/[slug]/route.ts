@@ -3,8 +3,8 @@
  *
  * The scan is counted by the API (`POST /public/qr/{slug}/scan`), which answers
  * with the code's page or, for a website code, where to send the visitor. A
- * page is the studio's own view mode: the studio file with the code's content
- * handed to it as `window.QRV`, as 1to1QR's scan page did.
+ * page is drawn by the QR Studio engine (`public/qr-studio/view.html`), with the
+ * code's content handed to it as `window.QRV`.
  *
  * A first scan from a browser counts as a new visitor; a cookie per code
  * remembers it for a year.
@@ -40,10 +40,10 @@ interface ScanPage {
   readonly redirect: string | null;
 }
 
-let studio: Promise<string> | null = null;
-function studioHtml(): Promise<string> {
-  studio ??= readFile(path.join(process.cwd(), 'public', 'qr-studio', 'studio.html'), 'utf8');
-  return studio;
+let viewPage: Promise<string> | null = null;
+function viewHtml(): Promise<string> {
+  viewPage ??= readFile(path.join(process.cwd(), 'public', 'qr-studio', 'view.html'), 'utf8');
+  return viewPage;
 }
 
 /** JSON that is safe inside a `<script>` element. */
@@ -108,7 +108,7 @@ export async function GET(
   if (page.redirect !== null) {
     result = NextResponse.redirect(page.redirect, 302);
   } else {
-    const html = (await studioHtml()).replace(
+    const html = (await viewHtml()).replace(
       '<meta charset="utf-8">',
       `<meta charset="utf-8">\n<meta name="robots" content="noindex">\n<script>window.QRV=${scriptJson(
         {
