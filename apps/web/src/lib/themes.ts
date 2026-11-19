@@ -8,11 +8,23 @@
  * default theme first.
  */
 
-export const THEMES = ['dark-blue', 'light', 'green', 'red'] as const;
+export const THEMES = ['light', 'violet', 'green', 'dark'] as const;
 export type Theme = (typeof THEMES)[number];
 
-/** The original look, and what a visitor sees until they choose. */
-export const DEFAULT_THEME: Theme = 'dark-blue';
+/** White, navy and blue: what a visitor sees until they choose. */
+export const DEFAULT_THEME: Theme = 'light';
+
+/**
+ * Names a browser may still hold from before the redesign, and the theme each
+ * now means: the old dark blue is the new dark, the old red has no successor.
+ */
+export const LEGACY_THEMES: Readonly<Record<string, Theme>> = { 'dark-blue': 'dark', red: 'light' };
+
+/** A stored value, read as one of today's themes. */
+export function resolveTheme(value: unknown): Theme {
+  if (isTheme(value)) return value;
+  return typeof value === 'string' ? (LEGACY_THEMES[value] ?? DEFAULT_THEME) : DEFAULT_THEME;
+}
 
 export const THEME_STORAGE_KEY = '1to1os.theme';
 
@@ -22,7 +34,7 @@ export function isTheme(value: unknown): value is Theme {
 
 /** The catalogue key for a theme's name — both languages. */
 export function themeLabelKey(theme: Theme): string {
-  return `theme.${theme.replace('-', '_')}`;
+  return `theme.${theme}`;
 }
 
 /**
@@ -40,15 +52,14 @@ export function themeAttribute(theme: Theme): string | null {
  */
 export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(
   THEME_STORAGE_KEY,
-)});if(t&&t!=='${DEFAULT_THEME}'&&${JSON.stringify(
+)});var l=${JSON.stringify(LEGACY_THEMES)};if(t&&l[t])t=l[t];if(t&&t!=='${DEFAULT_THEME}'&&${JSON.stringify(
   THEMES,
 )}.indexOf(t)>-1){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
 
 /** The theme stored in this browser, or the default. */
 export function readStoredTheme(): Theme {
   try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isTheme(stored) ? stored : DEFAULT_THEME;
+    return resolveTheme(window.localStorage.getItem(THEME_STORAGE_KEY));
   } catch {
     return DEFAULT_THEME;
   }

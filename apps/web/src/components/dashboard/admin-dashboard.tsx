@@ -15,6 +15,7 @@ import { PendingRequestsKpi, PendingRequestsWidget } from '../requests/pending-r
 import { TasksNeedingReassignment } from '../tasks/tasks-needing-reassignment';
 
 import { TeamInsights } from './team-insights';
+import { DashboardHero } from './dashboard-hero';
 
 /**
  * `/{locale}/admin` — DOCUMENT 04 B1, the admin dashboard.
@@ -62,6 +63,12 @@ export function AdminDashboard({ locale }: { readonly locale: Locale }): React.J
 
   return (
     <div className="dashboard-widgets">
+      <DashboardHero
+        locale={locale}
+        t={t}
+        timeZone={session.state.value.timeZone}
+        company={session.state.value.companyName}
+      />
       {reviews ? (
         <div className="dashboard-kpis">
           <PendingRequestsKpi key={`kpi-${String(decisions)}`} locale={locale} t={t} />

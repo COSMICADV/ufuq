@@ -12,7 +12,7 @@
 .wordmark {
   display: inline-flex;
   align-items: baseline;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-primary);
@@ -21,7 +21,7 @@
 .wordmark__to {
   margin-inline: 0.06em;
   color: var(--brand-indigo);
-  font-weight: 300;
+  font-weight: 400;
 }
 .wordmark__os {
   margin-inline-start: 0.18em;
@@ -136,7 +136,7 @@
 }
 .public-intro h1 {
   color: var(--heading);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 .public-hero {
@@ -444,21 +444,21 @@
   inset: 50% 0 0 50%;
   background: var(--swatch-accent);
 }
-.theme-swatch--dark-blue {
-  --swatch-ground: #0f172a;
-  --swatch-accent: #e2c0a8;
-}
 .theme-swatch--light {
-  --swatch-ground: #ffffff;
-  --swatch-accent: #2563eb;
+  --swatch-ground: #e8f2ff;
+  --swatch-accent: #0084ff;
+}
+.theme-swatch--violet {
+  --swatch-ground: #f0ebff;
+  --swatch-accent: #7c5cff;
 }
 .theme-swatch--green {
-  --swatch-ground: #0b1a14;
-  --swatch-accent: #34d399;
+  --swatch-ground: #e6f7ef;
+  --swatch-accent: #16a36b;
 }
-.theme-swatch--red {
-  --swatch-ground: #1a0d10;
-  --swatch-accent: #f87171;
+.theme-swatch--dark {
+  --swatch-ground: #0b1f4d;
+  --swatch-accent: #3d9bff;
 }
 @media (max-width: 639px) {
   .theme-picker__label {
@@ -913,7 +913,7 @@
 .earned__total {
   margin: 0;
   font-size: 30px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--heading);
 }
 .earned__total .payroll-amount {

@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import { isLocale } from '@ufuq/i18n';
 import type { Metadata } from 'next';
-import { PublicSite, publicMetadata } from '../../../components/public/public-site';
+import { publicMetadata } from '../../../components/public/public-site';
+import { LoginScreen } from '../../../components/public/login-screen';
 type Props = {
   readonly params: Promise<{ readonly locale: string }>;
   readonly searchParams: Promise<{ readonly reset?: string; readonly as?: string }>;
@@ -15,11 +16,6 @@ export default async function Page({ params, searchParams }: Props): Promise<Rea
   if (!isLocale(locale)) notFound();
   const query = await searchParams;
   return (
-    <PublicSite
-      locale={locale}
-      page="login"
-      reset={query.reset === '1'}
-      employee={query.as === 'employee'}
-    />
+    <LoginScreen locale={locale} reset={query.reset === '1'} employee={query.as === 'employee'} />
   );
 }

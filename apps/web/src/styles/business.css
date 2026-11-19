@@ -1,0 +1,244 @@
+/*
+ * 1to1OS Business — the page before subscribing. Shares the home page's frame
+ * and colours (home.css, .home); these rules add the hero, the button and the
+ * strip of sections. Logical properties throughout, for Arabic and English.
+ */
+
+.biz-logo {
+  font-size: 30px;
+}
+.biz .os-logo__product {
+  color: var(--home-blue);
+  font-size: 1em;
+  font-style: normal;
+  font-weight: var(--weight-heading);
+  letter-spacing: -0.03em;
+}
+.biz-nav__sep {
+  inline-size: 2px;
+  block-size: 22px;
+  margin-inline: 6px;
+  border-radius: 2px;
+  background: var(--home-blue);
+  opacity: 0.7;
+}
+
+/* ---- First screen: the words at the start of the line, the case at the end ------------ */
+.biz-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  inline-size: min(var(--home-width), 100% - 48px);
+  margin-inline: auto;
+  padding-block: clamp(24px, 5vh, 56px) clamp(32px, 5vh, 56px);
+}
+.biz-hero__text {
+  display: grid;
+  justify-items: start;
+  gap: 20px;
+}
+.biz-title {
+  margin: 0;
+  color: var(--home-ink);
+  font-size: clamp(40px, 5.4vw, 72px);
+  font-weight: var(--weight-heading);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+.biz-title__mark {
+  position: relative;
+  display: inline-block;
+}
+.biz-title__mark svg {
+  position: absolute;
+  inset-inline: -6%;
+  inset-block-end: -0.08em;
+  inline-size: 112%;
+  block-size: 0.22em;
+  overflow: visible;
+}
+.biz-title__mark path {
+  fill: none;
+  stroke: var(--home-blue);
+  stroke-width: 4.6;
+  stroke-linecap: round;
+}
+.biz-lead {
+  margin: 0;
+  color: var(--home-ink);
+  font-size: clamp(19px, 1.8vw, 24px);
+  line-height: 1.6;
+}
+.biz-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 260px;
+  min-block-size: 60px;
+  margin-block-start: 8px;
+  padding: 0 32px;
+  border-radius: 16px;
+  background: var(--home-blue);
+  color: #ffffff !important;
+  font-size: 20px;
+  font-weight: var(--weight-ui);
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgb(7 133 255 / 0.28);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.biz-cta:hover {
+  background: #0072e0;
+  box-shadow: 0 14px 30px rgb(7 133 255 / 0.34);
+}
+.biz-cta:active {
+  transform: translateY(1px);
+}
+.biz-hero__art .business-art {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+/* ---- The sections in the subscription ---------------------------------------------- */
+.biz-sections {
+  inline-size: min(var(--home-width), 100% - 48px);
+  margin-inline: auto;
+  padding: clamp(24px, 3vw, 36px) clamp(16px, 3vw, 40px) clamp(28px, 3vw, 40px);
+  border-radius: 32px;
+  background: #eef6ff;
+  scroll-margin-block-start: 24px;
+}
+:root[data-theme='dark'] .biz-sections {
+  background: var(--bg-surface-raised);
+}
+.biz-sections h2 {
+  margin: 0 0 clamp(16px, 2.4vw, 28px);
+  color: var(--home-ink);
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: var(--weight-heading);
+  text-align: center;
+}
+.biz-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.biz-strip li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.biz-strip .section-art {
+  display: block;
+  inline-size: min(100%, 150px);
+  block-size: auto;
+  aspect-ratio: 120 / 96;
+}
+.biz-strip span {
+  color: var(--home-ink);
+  font-size: clamp(16px, 1.6vw, 21px);
+  font-weight: var(--weight-subheading);
+  line-height: 1.4;
+}
+.biz-footer {
+  margin-block-start: clamp(48px, 7vw, 88px);
+}
+
+/* ---- Tablet and phone -------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .biz-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  /* The headline and the button first; the picture after them. */
+  .biz-hero__text {
+    justify-items: center;
+    text-align: center;
+  }
+  .biz-hero__art {
+    inline-size: min(100%, 460px);
+    margin-inline: auto;
+  }
+  .biz-strip {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    row-gap: 24px;
+  }
+  /* Three on the first row, two centred on the second. */
+  .biz-strip li {
+    grid-column: span 2;
+  }
+  .biz-strip li:nth-child(4) {
+    grid-column: 2 / span 2;
+  }
+}
+@media (max-width: 680px) {
+  .biz-logo {
+    font-size: 21px;
+  }
+  .biz-logo .os-logo__spark {
+    display: none;
+  }
+  .biz-nav__sep {
+    margin-inline: 2px;
+  }
+  .biz-hero {
+    inline-size: calc(100% - 32px);
+    padding-block: 28px 20px;
+  }
+  .biz-title {
+    font-size: clamp(34px, 10vw, 44px);
+  }
+  .biz-lead {
+    font-size: 18px;
+  }
+  .biz-cta {
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 56px;
+    font-size: 18px;
+  }
+  .biz-sections {
+    inline-size: calc(100% - 32px);
+    border-radius: 24px;
+  }
+  /* Two to a row, the fifth centred on its own. */
+  .biz-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px 12px;
+  }
+  .biz-strip li,
+  .biz-strip li:nth-child(4) {
+    grid-column: span 2;
+  }
+  .biz-strip li:nth-child(5) {
+    grid-column: 2 / span 2;
+  }
+  .biz-strip .section-art {
+    inline-size: min(100%, 120px);
+  }
+  .biz-strip span {
+    font-size: 16px;
+  }
+}
+
+.biz-nav a {
+  white-space: nowrap;
+}
+@media (max-width: 400px) {
+  .biz-logo {
+    font-size: 18px;
+  }
+  .biz-nav > a {
+    padding-inline: 6px;
+    font-size: 14px;
+  }
+}

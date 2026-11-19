@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_THEME,
   isTheme,
+  resolveTheme,
   THEME_BOOT_SCRIPT,
   themeAttribute,
   themeLabelKey,
@@ -10,9 +11,16 @@ import {
 } from './themes';
 
 describe('themes', () => {
-  it('offers the four looks, the original first', () => {
-    expect(THEMES).toEqual(['dark-blue', 'light', 'green', 'red']);
-    expect(DEFAULT_THEME).toBe('dark-blue');
+  it('offers the four looks, the default first', () => {
+    expect(THEMES).toEqual(['light', 'violet', 'green', 'dark']);
+    expect(DEFAULT_THEME).toBe('light');
+  });
+
+  it('reads a theme stored before the redesign as its successor', () => {
+    expect(resolveTheme('dark-blue')).toBe('dark');
+    expect(resolveTheme('red')).toBe('light');
+    expect(resolveTheme('violet')).toBe('violet');
+    expect(resolveTheme('nonsense')).toBe('light');
   });
 
   it('recognises only the known themes', () => {
@@ -22,13 +30,13 @@ describe('themes', () => {
   });
 
   it('sets no attribute for the default theme', () => {
-    expect(themeAttribute('dark-blue')).toBeNull();
-    expect(themeAttribute('light')).toBe('light');
+    expect(themeAttribute('light')).toBeNull();
+    expect(themeAttribute('dark')).toBe('dark');
   });
 
   it('names each theme with a catalogue key', () => {
-    expect(themeLabelKey('dark-blue')).toBe('theme.dark_blue');
-    expect(themeLabelKey('red')).toBe('theme.red');
+    expect(themeLabelKey('dark')).toBe('theme.dark');
+    expect(themeLabelKey('violet')).toBe('theme.violet');
   });
 
   it('boot script applies a stored theme and ignores unknown values', () => {
@@ -48,6 +56,8 @@ describe('themes', () => {
     run('purple');
     expect(attributes.size).toBe(0);
     run('dark-blue');
+    expect(attributes.get('data-theme')).toBe('dark');
+    run('light');
     expect(attributes.size).toBe(0);
     run(null);
     expect(attributes.size).toBe(0);

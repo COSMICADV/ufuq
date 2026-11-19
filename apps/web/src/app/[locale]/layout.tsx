@@ -7,6 +7,7 @@ import '../../styles/globals.css';
 import '../../styles/public.css';
 import '../../styles/v2.css';
 import '../../styles/theme.css';
+import '../../styles/os.css';
 import { THEME_BOOT_SCRIPT } from '../../lib/themes';
 
 interface LocaleParams {
@@ -62,7 +63,7 @@ export default async function LocaleLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700&family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>

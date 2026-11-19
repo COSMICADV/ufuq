@@ -34,3 +34,38 @@ export function Wordmark(): React.JSX.Element {
     </span>
   );
 }
+
+/**
+ * The product logo from the design board: "1to1OS" in navy, the product's
+ * name in blue italic beside it, a brush stroke under the brand and three
+ * spark lines above. Always left-to-right, in every language.
+ */
+export function ProductLogo({
+  product,
+  className,
+}: {
+  readonly product?: 'Business' | 'Personal';
+  readonly className?: string;
+}): React.JSX.Element {
+  return (
+    <span className={['os-logo', className].filter(Boolean).join(' ')} dir="ltr" translate="no">
+      <span className="os-logo__brand">
+        1to1OS
+        <svg
+          className="os-logo__underline"
+          viewBox="0 0 100 10"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path d="M3 7C30 3.6 64 3 97 5" />
+        </svg>
+      </span>
+      {product ? <span className="os-logo__product">{product}</span> : null}
+      <svg className="os-logo__spark" viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M6 9 4.6 3.4" />
+        <path d="M9.6 10.6l3.6-4" />
+        <path d="M11 14.2l5-1" />
+      </svg>
+    </span>
+  );
+}

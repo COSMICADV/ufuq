@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation';
 import { createTranslator, isLocale } from '@ufuq/i18n';
 import type { Metadata } from 'next';
 import { publicMetadata } from '../../components/public/public-site';
-import { EntryPage } from '../../components/public/entry-page';
-import '../../styles/entry.css';
+import { HomePage } from '../../components/public/home-page';
+import '../../styles/home.css';
 
 type Props = { readonly params: Promise<{ readonly locale: string }> };
 
@@ -23,5 +23,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props): Promise<React.JSX.Element> {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  return <EntryPage locale={locale} />;
+  return <HomePage locale={locale} />;
 }

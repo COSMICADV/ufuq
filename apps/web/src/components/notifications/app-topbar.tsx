@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
-import { Wordmark } from '../brand-mark';
+import { ProductLogo } from '../brand-mark';
 import { LanguageSwitch } from '../language-switch';
 import { SignOutButton } from '../sign-out-button';
 import { ThemePicker } from '../theme-picker';
@@ -30,17 +30,21 @@ export function AppTopbar({
   return (
     <div className="app-topbar">
       <Link className="app-topbar__home" href={`/${locale}/${surface}`} aria-label={t('app.name')}>
-        <Wordmark />
+        <ProductLogo product="Business" />
       </Link>
       <div className="app-topbar__actions">
-        <LanguageSwitch
-          locale={locale}
-          label={t('language.switch')}
-          names={{ ar: t('language.ar'), en: t('language.en') }}
-        />
-        <ThemePicker locale={locale} />
+        <div className="app-topbar__prefs">
+          <LanguageSwitch
+            locale={locale}
+            label={t('language.switch')}
+            names={{ ar: t('language.ar'), en: t('language.en') }}
+          />
+          <ThemePicker locale={locale} />
+        </div>
         <NotificationBell locale={locale} surface={surface} />
-        <SignOutButton locale={locale} />
+        <div className="app-topbar__prefs">
+          <SignOutButton locale={locale} />
+        </div>
       </div>
     </div>
   );

@@ -96,5 +96,8 @@ export const layout = {
   pagePaddingMobile: 16,
 } as const;
 
-export const fontFamilies = { ar: 'Alexandria', en: 'Inter' } as const;
+export const fontFamilies = { ar: 'Cairo', en: 'Inter' } as const;
+
+/** Headings 700, subheadings 600, body 400, buttons and navigation 500. */
+export const fontWeights = { heading: '700', subheading: '600', body: '400', ui: '500' } as const;
 export const motion = { duration: 180 } as const;

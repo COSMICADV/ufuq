@@ -7,8 +7,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Locale } from '@ufuq/i18n';
 
-import { BrandMark, Wordmark } from './brand-mark';
+import { ProductLogo } from './brand-mark';
+import { FreehandIcon } from './freehand-icon';
+import type { FreehandIconName } from './freehand-icon';
 import { AppTopbar } from './notifications/app-topbar';
+import { createTranslator } from '@ufuq/i18n';
+import { LanguageSwitch } from './language-switch';
+import { SignOutButton } from './sign-out-button';
+import { ThemePicker } from './theme-picker';
 import { loadSession } from './employees/use-session';
 import { useResource } from './settings/use-resource';
 import { publicPath } from '../lib/public-content';
@@ -107,7 +113,34 @@ const navigation = [
   ],
 ] as const;
 
-function NavIcon({ path }: { readonly path: string }): React.JSX.Element {
+/** The Freehand icon each section is drawn with (the paths above stay as the fallback). */
+const NAV_ICONS: Readonly<Record<string, FreehandIconName>> = {
+  '': 'home',
+  employees: 'users',
+  attendance: 'clock',
+  tasks: 'checkbox',
+  goals: 'target',
+  requests: 'clipboard',
+  'requests?category=leave': 'calendar',
+  payroll: 'wallet',
+  reports: 'chart',
+  warehouse: 'building',
+  inventory: 'box',
+  qr: 'qr',
+  notifications: 'bell',
+  'settings/company': 'gear',
+  salary: 'wallet',
+};
+
+function NavIcon({
+  path,
+  section,
+}: {
+  readonly path: string;
+  readonly section?: string;
+}): React.JSX.Element {
+  const freehand = section === undefined ? undefined : NAV_ICONS[section];
+  if (freehand !== undefined) return <FreehandIcon name={freehand} size={22} />;
   return (
     <svg
       width="20"
@@ -154,6 +187,7 @@ export function ProductShell({
     else if (wrongSide) router.replace(`/${locale}/app`);
   }, [signedOut, wrongSide, router, locale]);
   const ar = locale === 'ar';
+  const t = createTranslator(locale);
   const base = `/${locale}/${surface}`;
   const close = (): void => {
     drawer.current?.close();
@@ -188,7 +222,7 @@ export function ProductShell({
           : !path.includes('?') && (pathname === href || pathname.startsWith(`${href}/`));
     return (
       <Link key={path} href={href} onClick={close} aria-current={current ? 'page' : undefined}>
-        <NavIcon path={icon} />
+        <NavIcon path={icon} section={path} />
         <span>{ar ? arabic : surface === 'app' && path === '' ? 'Home' : english}</span>
       </Link>
     );
@@ -203,15 +237,14 @@ export function ProductShell({
         onClick={close}
         aria-current={pathname.startsWith(`${base}/salary`) ? 'page' : undefined}
       >
-        <NavIcon path={navigation[7][3]} />
+        <NavIcon path={navigation[7][3]} section="salary" />
         <span>{ar ? 'راتبي' : 'My salary'}</span>
       </Link>
     ) : null;
   const branding = (
     <Link href={base} className="product-brand" onClick={close}>
-      <BrandMark />
       <span>
-        <Wordmark />
+        <ProductLogo product="Business" />
         <small>
           {surface === 'admin'
             ? ar
@@ -236,8 +269,13 @@ export function ProductShell({
           {salary}
         </nav>
         <p className="product-company">
-          {ready?.companyName ??
-            (ar ? 'منصة واحدة. إمكانات بلا حدود.' : 'One platform. Infinite possibilities.')}
+          <span className="product-company__icon">
+            <FreehandIcon name="building" size={20} />
+          </span>
+          <span>
+            {ready?.companyName ??
+              (ar ? 'منصة واحدة. إمكانات بلا حدود.' : 'One platform. Infinite possibilities.')}
+          </span>
         </p>
       </aside>
       <div className="product-workspace">
@@ -248,7 +286,7 @@ export function ProductShell({
             aria-label={ar ? 'فتح قائمة التنقل' : 'Open navigation'}
             aria-haspopup="dialog"
           >
-            <NavIcon path="M4 6h16M4 12h16M4 18h16" />
+            <FreehandIcon name="menu" size={24} />
           </button>
           <AppTopbar locale={locale} surface={surface} />
         </header>
@@ -273,35 +311,47 @@ export function ProductShell({
               onClick={close}
               aria-label={ar ? 'إغلاق القائمة' : 'Close menu'}
             >
-              ×
+              <FreehandIcon name="close" size={22} />
             </button>
           </div>
           <nav className="product-nav" aria-label={ar ? 'كل الأقسام' : 'All sections'}>
             {links}
             {salary}
           </nav>
+          <div className="product-drawer__prefs">
+            <LanguageSwitch
+              locale={locale}
+              label={t('language.switch')}
+              names={{ ar: t('language.ar'), en: t('language.en') }}
+            />
+            <ThemePicker locale={locale} />
+            <SignOutButton locale={locale} />
+          </div>
         </div>
       </dialog>
-      {surface === 'app' ? (
-        <nav className="product-bottom" aria-label={ar ? 'التنقل السريع' : 'Quick navigation'}>
-          {items
-            .filter(([p]) => ['', 'attendance', 'tasks', 'requests'].includes(p))
-            .map(([path, arabic, english, icon]) => (
-              <Link
-                key={path}
-                href={`${base}${path ? `/${path}` : ''}`}
-                aria-current={pathname === `${base}${path ? `/${path}` : ''}` ? 'page' : undefined}
-              >
-                <NavIcon path={icon} />
-                <span>{ar ? arabic : surface === 'app' && path === '' ? 'Home' : english}</span>
-              </Link>
-            ))}
-          <button onClick={open} aria-haspopup="dialog">
-            <NavIcon path="M5 12h.01M12 12h.01M19 12h.01" />
-            <span>{ar ? 'المزيد' : 'More'}</span>
-          </button>
-        </nav>
-      ) : null}
+      <nav className="product-bottom" aria-label={ar ? 'التنقل السريع' : 'Quick navigation'}>
+        {items
+          .filter(([p]) =>
+            (surface === 'app'
+              ? ['', 'attendance', 'tasks', 'requests']
+              : ['', 'employees', 'tasks', 'requests']
+            ).includes(p),
+          )
+          .map(([path, arabic, english, icon]) => (
+            <Link
+              key={path}
+              href={`${base}${path ? `/${path}` : ''}`}
+              aria-current={pathname === `${base}${path ? `/${path}` : ''}` ? 'page' : undefined}
+            >
+              <NavIcon path={icon} section={path} />
+              <span>{ar ? arabic : surface === 'app' && path === '' ? 'Home' : english}</span>
+            </Link>
+          ))}
+        <button onClick={open} aria-haspopup="dialog">
+          <FreehandIcon name="more" size={22} />
+          <span>{ar ? 'المزيد' : 'More'}</span>
+        </button>
+      </nav>
     </div>
   );
 }

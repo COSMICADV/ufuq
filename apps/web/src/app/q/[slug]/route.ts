@@ -57,7 +57,7 @@ function scriptJson(value: unknown): string {
 function notFound(lang: 'ar' | 'en'): NextResponse {
   const ar = lang === 'ar';
   const html = `<!doctype html><html lang="${lang}" dir="${ar ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${ar ? 'الكود ده مش موجود' : 'Code not found'}</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Alexandria,Inter,system-ui,sans-serif;background:#0f172a;color:#f1f5f9;padding:24px;box-sizing:border-box}.b{max-width:380px;width:100%;background:#141e33;border:1px solid #233049;border-radius:16px;padding:28px 24px;text-align:center}h1{font-size:20px;margin:0 0 8px}p{margin:0;color:#a3b0c4;line-height:1.6}small{display:block;margin-top:18px;color:#8d9ab0}</style></head>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Inter,Cairo,system-ui,sans-serif;background:#0f172a;color:#f1f5f9;padding:24px;box-sizing:border-box}.b{max-width:380px;width:100%;background:#141e33;border:1px solid #233049;border-radius:16px;padding:28px 24px;text-align:center}h1{font-size:20px;margin:0 0 8px}p{margin:0;color:#a3b0c4;line-height:1.6}small{display:block;margin-top:18px;color:#8d9ab0}</style></head>
 <body><div class="b"><h1>${ar ? 'الكود ده مش موجود' : 'This code does not exist'}</h1><p>${ar ? 'ممكن يكون اتمسح أو الرابط غلط.' : 'It may have been removed, or the link is wrong.'}</p><small dir="ltr">1to1OS QR Studio</small></div></body></html>`;
   return new NextResponse(html, {
     status: 404,

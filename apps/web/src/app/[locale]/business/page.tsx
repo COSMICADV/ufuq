@@ -1,24 +1,31 @@
 import { notFound } from 'next/navigation';
-import { isLocale } from '@ufuq/i18n';
+import { createTranslator, isLocale } from '@ufuq/i18n';
 import type { Metadata } from 'next';
 import { publicMetadata } from '../../../components/public/public-site';
-import { LandingPage } from '../../../components/public/landing-page';
-import '../../../styles/landing.css';
+import { BusinessPage } from '../../../components/public/business-page';
+import '../../../styles/home.css';
+import '../../../styles/business.css';
 
-/** The company site: what used to be the home page, now one door of two. */
+/** 1to1OS Business: the subscription and its sections, before signing up. */
 type Props = { readonly params: Promise<{ readonly locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
+  const t = createTranslator(locale);
   const base = publicMetadata(locale, 'home');
-  const path = `${locale === 'ar' ? '' : '/en'}/business`;
   return {
     ...base,
-    title: '1to1OS Business',
+    title: t('business.title'),
+    description: t('business.description'),
     alternates: {
-      canonical: path,
+      canonical: locale === 'ar' ? '/business' : '/en/business',
       languages: { ar: '/business', en: '/en/business', 'x-default': '/business' },
+    },
+    openGraph: {
+      ...base.openGraph,
+      title: t('business.title'),
+      description: t('business.description'),
     },
   };
 }
@@ -26,5 +33,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props): Promise<React.JSX.Element> {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  return <LandingPage locale={locale} />;
+  return <BusinessPage locale={locale} />;
 }

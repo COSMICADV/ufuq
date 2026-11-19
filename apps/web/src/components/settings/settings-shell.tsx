@@ -3,6 +3,8 @@ import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 import type { ReactNode } from 'react';
 
+import { FreehandIcon } from '../freehand-icon';
+import type { FreehandIconName } from '../freehand-icon';
 import { sectionLabelKey, SETTINGS_SECTIONS, settingsPath } from '../../lib/settings-nav';
 import type { SettingsSection } from '../../lib/settings-nav';
 
@@ -26,6 +28,18 @@ import type { SettingsSection } from '../../lib/settings-nav';
  * §9.2) and the layout is written in logical properties, so the nav lands on
  * the correct side by itself.
  */
+const SECTION_ICONS: Readonly<Record<SettingsSection, FreehandIconName>> = {
+  company: 'building',
+  departments: 'sitemap',
+  positions: 'badge',
+  schedules: 'clock',
+  'leave-types': 'calendar',
+  'salary-policy': 'coins',
+  performance: 'trend',
+  notifications: 'bell',
+  'audit-log': 'document',
+};
+
 export function SettingsShell({
   locale,
   section,
@@ -55,7 +69,8 @@ export function SettingsShell({
               className={candidate === section ? 'is-active' : ''}
               {...(candidate === section ? { 'aria-current': 'page' as const } : {})}
             >
-              {t(sectionLabelKey(candidate))}
+              <FreehandIcon name={SECTION_ICONS[candidate]} size={22} />
+              <span>{t(sectionLabelKey(candidate))}</span>
             </Link>
           ))}
         </nav>
