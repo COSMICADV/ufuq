@@ -1,34 +1,21 @@
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
+import { notFound, redirect } from 'next/navigation';
 import { isLocale } from '@ufuq/i18n';
-
-import { QrShell } from '../../../components/qr/qr-shell';
-import { QrStudio } from '../../../components/qr/qr-studio';
 
 interface PageProps {
   readonly params: Promise<{ readonly locale: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { locale } = await params;
-  return {
-    title: locale === 'ar' ? 'استوديو QR — 1to1OS' : 'QR Studio — 1to1OS',
-    robots: { index: false },
-  };
-}
-
 /**
- * `/qr` — QR Studio: dynamic, branded QR codes. One of 1to1OS's products, on a page of
- * its own rather than inside the business workspace.
+ * `/qr` — QR Studio is hidden from 1to1OS for now. Its page sends visitors to
+ * the business workspace instead.
+ *
+ * Only the screen is closed: codes already printed keep working (`/q/[slug]`),
+ * and the API and the stored codes are untouched. To bring the studio back,
+ * render `QrShell` + `QrStudio` (components/qr) here again and restore its
+ * menu entry in `product-shell.tsx`.
  */
-export default async function Page({ params }: PageProps): Promise<React.JSX.Element> {
+export default async function Page({ params }: PageProps): Promise<never> {
   const { locale } = await params;
-  if (!isLocale(locale)) {
-    notFound();
-  }
-  return (
-    <QrShell locale={locale}>
-      <QrStudio locale={locale} />
-    </QrShell>
-  );
+  if (!isLocale(locale)) notFound();
+  redirect(`/${locale}/admin`);
 }

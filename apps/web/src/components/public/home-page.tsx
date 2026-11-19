@@ -3,22 +3,18 @@ import type { Locale } from '@ufuq/i18n';
 
 import { ProductLogo } from '../brand-mark';
 import { FreehandIcon } from '../freehand-icon';
-import type { FreehandIconName } from '../freehand-icon';
+import { NavGlyph } from '../nav-glyph';
+import type { NavGlyphName } from '../nav-glyph';
 import { LanguageSwitch } from '../language-switch';
 import { ThemePicker } from '../theme-picker';
 import { publicPath } from '../../lib/public-content';
-
-import { HomeDemo } from './home-demo';
-import { HomeLoginMenu } from './home-login-menu';
-import { BusinessArt, PersonalArt } from './product-art';
 
 /**
  * The public home page of 1to1OS.
  *
  * First screen: one headline and two doors, Business and Personal, each opening
- * its product. Below: the tools of the product as a plain grid, a short demo of
- * one finished task, the current prices, and a small footer with the language
- * and theme. Every word comes from the i18n catalogue (`home.*`, `entry.*`), so
+ * its product. Below: the tools of the product as a plain grid, the current
+ * prices, and a small footer with the language and theme. Every word comes from the i18n catalogue (`home.*`, `entry.*`), so
  * Arabic (right to left) and English share this one component.
  */
 
@@ -48,19 +44,18 @@ export function homePaths(locale: Locale): {
 }
 
 /** The tools of the product, in the order of its own menu. */
-const TOOLS: readonly (readonly [string, FreehandIconName])[] = [
-  ['employees', 'users'],
-  ['attendance', 'clock'],
-  ['tasks', 'checkbox'],
-  ['goals', 'target'],
-  ['requests', 'clipboard'],
-  ['leave', 'calendar'],
-  ['payroll', 'wallet'],
-  ['reports', 'chart'],
-  ['warehouses', 'building'],
-  ['inventory', 'box'],
-  ['qr', 'qr'],
-  ['notifications', 'bell'],
+const TOOLS: readonly (readonly [string, NavGlyphName])[] = [
+  ['employees', 'employees'],
+  ['attendance', 'attendance'],
+  ['tasks', 'tasks'],
+  ['goals', 'goals'],
+  ['requests', 'requests'],
+  ['leave', 'leave'],
+  ['payroll', 'payroll'],
+  ['reports', 'reports'],
+  ['warehouses', 'warehouse'],
+  ['inventory', 'inventory'],
+  ['notifications', 'notifications'],
 ];
 
 function Brush(): React.JSX.Element {
@@ -88,7 +83,15 @@ function Door({
   return (
     <a className={`home-door home-door--${product.toLowerCase()}`} href={href} aria-label={label}>
       <span className="home-door__art">
-        {product === 'Business' ? <BusinessArt /> : <PersonalArt />}
+        {/* The approved hand-drawn illustration of each product. */}
+        <img
+          src={`/brand/${product.toLowerCase()}.webp`}
+          alt=""
+          width={product === 'Business' ? 359 : 344}
+          height={product === 'Business' ? 323 : 299}
+          decoding="async"
+          fetchPriority="high"
+        />
       </span>
       <span className="home-door__name" dir="ltr" lang="en">
         <span className="home-door__brand">1to1OS</span>{' '}
@@ -120,9 +123,9 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
   const plans: readonly Plan[] = [
-    { key: 'starter', monthly: '$0', annual: '$0', points: 2, href: paths.register },
-    { key: 'pro', monthly: '$36', annual: '$29', points: 2, href: paths.register, featured: true },
-    { key: 'ent', monthly: '$109', annual: '$89', points: 3, href: paths.contact },
+    { key: 'starter', monthly: '$0', annual: '$0', points: 1, href: paths.register },
+    { key: 'pro', monthly: '$36', annual: '$29', points: 1, href: paths.register, featured: true },
+    { key: 'ent', monthly: '$109', annual: '$89', points: 2, href: paths.contact },
   ];
 
   return (
@@ -134,26 +137,14 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
       <header className="home-header">
         <div className="home-header__inner">
           <a className="home-logo" href={paths.home} aria-label="1to1OS">
-            <ProductLogo />
+            <ProductLogo domain />
           </a>
           <nav className="home-nav" aria-label={h('nav.label')} dir={dir}>
             <a href={paths.home} aria-current="page">
               {h('nav.home')}
             </a>
             <a href="#features">{h('nav.features')}</a>
-            <HomeLoginMenu
-              label={h('nav.login')}
-              account={{
-                href: paths.login,
-                label: h('nav.loginAccount'),
-                hint: h('nav.loginAccountHint'),
-              }}
-              employee={{
-                href: paths.employeeLogin,
-                label: h('nav.loginEmployee'),
-                hint: h('nav.loginEmployeeHint'),
-              }}
-            />
+            <a href={paths.about}>{h('nav.about')}</a>
           </nav>
         </div>
       </header>
@@ -169,10 +160,25 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
             <span className="home-title__end">{t('entry.headlineEnd')}</span>
           </h1>
           <div className="home-doors" role="group" aria-label={t('entry.choose')}>
-            {/* Business first: on the right in Arabic, on the left in English. */}
-            <Door href={paths.business} product="Business" label={t('entry.openBusiness')} />
+            {/* Personal on the left and Business on the right, in every language. */}
             <Door href={paths.personal} product="Personal" label={t('entry.openPersonal')} />
+            <Door href={paths.business} product="Business" label={t('entry.openBusiness')} />
           </div>
+          <svg
+            className="home-hero__waves"
+            viewBox="0 0 1440 120"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              className="home-hero__wave home-hero__wave--start"
+              d="M0 120V64C110 30 230 26 330 72c30 14 52 32 64 48Z"
+            />
+            <path
+              className="home-hero__wave home-hero__wave--end"
+              d="M1440 120V46c-120-20-250-6-360 40-30 12-50 22-64 34Z"
+            />
+          </svg>
         </section>
 
         <section
@@ -188,22 +194,12 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
             {TOOLS.map(([key, icon]) => (
               <li key={key}>
                 <span className="home-tools__icon">
-                  <FreehandIcon name={icon} size={34} />
+                  <NavGlyph name={icon} size={38} />
                 </span>
-                <span className="home-tools__name" dir={key === 'qr' ? 'ltr' : undefined}>
-                  {h(`features.${key}`)}
-                </span>
+                <span className="home-tools__name">{h(`features.${key}`)}</span>
               </li>
             ))}
           </ul>
-        </section>
-
-        <section id="demo" className="home-section home-demo" aria-labelledby="home-demo-title">
-          <div className="home-section__head">
-            <h2 id="home-demo-title">{h('demo.title')}</h2>
-            <p>{h('demo.lead')}</p>
-          </div>
-          <HomeDemo locale={locale} />
         </section>
 
         <section
@@ -278,6 +274,7 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
             <a href={paths.about}>{h('footer.about')}</a>
             <a href={paths.contact}>{h('footer.contact')}</a>
             <a href={paths.login}>{h('nav.login')}</a>
+            <a href={paths.employeeLogin}>{h('nav.loginEmployee')}</a>
             <a href={paths.register}>{h('footer.register')}</a>
           </nav>
           <div className="home-footer__prefs" role="group" aria-label={h('footer.prefs')}>

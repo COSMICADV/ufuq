@@ -1,12 +1,13 @@
 /**
  * Illustrations for the 1to1OS Business page, drawn for the project in the same
- * hand as `product-art.tsx`: navy ink with round caps, a light blue hatching,
+ * hand-drawn style of the product pictures: navy ink with round caps, a light blue hatching,
  * and a brighter blue for the detail that carries the meaning.
  *
- * - `OpenCaseArt`: an open work case holding two employee badges, a task list
- *   and inventory boxes — the subscription and what it holds.
  * - `SectionArt`: one picture per section of the subscription, all on the same
  *   canvas so they read at one size.
+ *
+ * (The open work case at the top of the page is the approved illustration
+ * itself, served as an image: `public/brand/business-open-case.webp`.)
  *
  * Colours come from the same CSS variables as the product art (`--art-ink`,
  * `--art-blue`, `--art-sky`, `--art-paper`), with the brand values as defaults.
@@ -111,129 +112,6 @@ function Box({
         strokeWidth="3.2"
       />
     </g>
-  );
-}
-
-export function OpenCaseArt({ className }: Props): React.JSX.Element {
-  return (
-    <svg
-      className={cx('business-art', className)}
-      viewBox="0 0 440 330"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      {/* Shading on the ground under the case */}
-      <path d={hatch(56, 272, 330, 30, 10)} stroke={SKY} strokeWidth="3" />
-      {/* The lid, open behind */}
-      <path
-        d="M84 190c4-46 9.6-92 17.2-136.4 1.4-8.2 6.4-12.6 14.6-13.2 70-4.6 141-5.8 210.6-3 8.2.4 13 4.8 14.4 13 5.6 45.4 9.6 92.6 11.8 139.6"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="4.2"
-      />
-      <path
-        d="M104 186c3.4-38 8-76 14-112.4 1-5.6 4.4-8.6 10-9 62.6-4 126-5 188.4-2.6 5.6.2 8.8 3.2 9.8 8.8 4.6 37.6 8 76.4 10 115.2"
-        stroke={INK}
-        strokeWidth="3.2"
-      />
-      <path d={hatch(128, 74, 192, 104, 10)} stroke={SKY} strokeWidth="3" />
-      {/* Hinges on the lid's top edge */}
-      <path
-        d="M154 40.6c-.4-4.2.2-7.6 1.6-10 7.6-1 15.4-1 23 0 1.2 2.6 1.6 5.8 1 9.4"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="3.6"
-      />
-      <path
-        d="M268 38.4c-.4-4.2.2-7.6 1.6-10 7.6-1 15.4-1 23 0 1.2 2.6 1.6 5.8 1 9.4"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="3.6"
-      />
-      {/* What the case holds */}
-      <Badge x={136} y={168} tilt={-7} />
-      <Badge x={196} y={166} tilt={3} />
-      <g>
-        <path
-          d="M232 92c22-1.6 44.6-1.6 66.4 0 3.4.2 5.4 2.4 5.6 5.8 1.2 32 1.2 64.6 0 97-.2 3.4-2.2 5.4-5.6 5.6-22 1.4-44.4 1.4-66.4 0-3.4-.2-5.4-2.2-5.6-5.6-1.2-32.4-1.2-65 0-97 .2-3.4 2.2-5.6 5.6-5.8Z"
-          fill={PAPER}
-          stroke={INK}
-          strokeWidth="3.8"
-        />
-        <path
-          d="M252 96.4c-.4-4.6 0-8.6 1.2-12 7.8-1.2 16-1.2 23.8 0 1.2 3.4 1.6 7.4 1.2 12-8.6 1.4-17.6 1.4-26.2 0Z"
-          fill={PAPER}
-          stroke={INK}
-          strokeWidth="3.4"
-        />
-        <path d="M265 80.6v.1" stroke={INK} strokeWidth="5" />
-        {[118, 146, 174].map((y) => (
-          <g key={y}>
-            <path
-              d={`M240 ${y - 8}c4.6-.4 9.4-.4 14 0 .4 4.6.4 9.4 0 14-4.6.4-9.4.4-14 0-.4-4.6-.4-9.4 0-14Z`}
-              stroke={INK}
-              strokeWidth="3.2"
-            />
-            <path
-              d={`M241.6 ${y - 1}c1.8 1.6 3.4 3.4 4.6 5.2 3.2-5.4 7-10 11.6-14`}
-              stroke={BLUE}
-              strokeWidth="3.6"
-            />
-            <path d={`M264 ${y}c9.4-.6 19-.6 28.4 0`} stroke={INK} strokeWidth="3.2" />
-          </g>
-        ))}
-      </g>
-      <Box x={300} y={118} w={68} h={66} />
-      <Box x={286} y={158} w={64} h={46} />
-      {/* The base, in front, hiding what sits inside it */}
-      <path
-        d="M62 194.8c105.6-3.4 211.4-3.6 317 .2 4.8.2 7.2 2.6 7.2 7.2l-.2 6.4c-.2 4.6-2.6 6.8-7.2 7-105.6 3.4-211.6 3.4-317 0-4.6-.2-7-2.6-7-7.2v-6.2c0-4.8 2.4-7.2 7.2-7.4Z"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="4.2"
-      />
-      <path
-        d="M72 216c-.6 14.6-.4 29.4.6 43.6.6 7.6 4.6 11.6 12.2 12 90.4 4.8 181 4.8 271.4 0 7.6-.4 11.6-4.4 12.2-12 1-14.2 1.2-29 .6-43.6"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="4.2"
-      />
-      <path d={hatch(82, 226, 276, 38, 11)} stroke={SKY} strokeWidth="2.8" />
-      {/* Latches and the handle */}
-      <path
-        d="M118 214c4.4-.4 9-.4 13.4 0 .4 4.6.4 9.2 0 13.6-4.4.4-9 .4-13.4 0-.4-4.4-.4-9 0-13.6Z"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="3.4"
-      />
-      <path
-        d="M309 214c4.4-.4 9-.4 13.4 0 .4 4.6.4 9.2 0 13.6-4.4.4-9 .4-13.4 0-.4-4.4-.4-9 0-13.6Z"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="3.4"
-      />
-      <path d="M124.8 220.6v.1M315.8 220.6v.1" stroke={INK} strokeWidth="4" />
-      <path
-        d="M186 226c-1.6 8.6-1.2 17 .8 24.6 1.6 5.6 5.4 8.4 11.2 8.6 14.6.6 29.4.6 44 0 5.8-.2 9.6-3 11.2-8.6 2-7.6 2.4-16 .8-24.6"
-        fill={PAPER}
-        stroke={INK}
-        strokeWidth="4"
-      />
-      <path
-        d="M200 228.4c-.6 5.6-.2 11 1.2 15.4 13 .8 25.6.8 38.4 0 1.4-4.4 1.8-9.8 1.2-15.4"
-        stroke={INK}
-        strokeWidth="3.2"
-      />
-      {/* Sparks */}
-      <g stroke={BLUE} strokeWidth="4.2">
-        <path d="M368 30 360 8" />
-        <path d="M382 44l16-14" />
-        <path d="M388 64l20-5" />
-      </g>
-    </svg>
   );
 }
 

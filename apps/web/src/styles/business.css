@@ -1,11 +1,40 @@
 /*
- * 1to1OS Business — the page before subscribing. Shares the home page's frame
+ * 1to1OS Business — the page before subscribing.
+ *
+ * Colours are read from the approved mockup: a deep navy ink, one strong blue,
+ * a pale blue strip on a white page. Shares the home page's frame
  * and colours (home.css, .home); these rules add the hero, the button and the
  * strip of sections. Logical properties throughout, for Arabic and English.
  */
 
+.biz {
+  --home-ink: #00052b;
+  --home-blue: #005cfc;
+  --home-muted: #0a1230;
+  --art-ink: #00052b;
+  --art-blue: #005cfc;
+  --glyph-ink: #00052b;
+  background: #fcfdfe;
+}
+:root[data-theme='dark'] .biz {
+  --home-ink: #eaf1ff;
+  --home-blue: #4aa3ff;
+  --home-muted: var(--text-secondary);
+  --art-ink: #eaf1ff;
+  --art-blue: #4aa3ff;
+  background: var(--bg-page);
+}
 .biz-logo {
-  font-size: 30px;
+  font-size: clamp(24px, 2.2vw, 38px);
+}
+/* The Business mark as in its mockup: the words alone, no brush or sparks. */
+.biz-logo .os-logo__underline,
+.biz-logo .os-logo__spark {
+  display: none;
+}
+.biz-logo .os-logo,
+.biz-logo .os-logo__brand {
+  padding: 0;
 }
 .biz .os-logo__product {
   color: var(--home-blue);
@@ -20,31 +49,52 @@
   margin-inline: 6px;
   border-radius: 2px;
   background: var(--home-blue);
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* ---- First screen: the words at the start of the line, the case at the end ------------ */
 .biz-hero {
+  /* Words on the right and the case on the left, in every language. */
+  direction: rtl;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   align-items: center;
   gap: clamp(24px, 4vw, 64px);
-  inline-size: min(var(--home-width), 100% - 48px);
+  inline-size: min(1560px, 100% - clamp(32px, 7.6vw, 128px));
   margin-inline: auto;
-  padding-block: clamp(24px, 5vh, 56px) clamp(32px, 5vh, 56px);
+  padding-block: clamp(4px, 1.5vh, 20px) clamp(16px, 3vh, 32px);
 }
 .biz-hero__text {
+  direction: rtl;
   display: grid;
   justify-items: start;
   gap: 20px;
 }
+[dir='ltr'] .biz-hero__text {
+  direction: ltr;
+  justify-items: end;
+  text-align: right;
+}
+/* The headline: the home title's family and letter spacing, at the size and weight of its mockup. */
 .biz-title {
   margin: 0;
   color: var(--home-ink);
-  font-size: clamp(40px, 5.4vw, 72px);
+  font-family: var(--font-ui);
+  font-size: clamp(34px, 4.4vw, 76px);
   font-weight: var(--weight-heading);
-  line-height: 1.25;
+  line-height: 1.22;
   letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.biz-title__line {
+  display: block;
+}
+@media (min-width: 901px) {
+  /* On wide screens each line of the headline, and each section name, stays whole. */
+  .biz-title__line,
+  .biz-strip span {
+    white-space: nowrap;
+  }
 }
 .biz-title__mark {
   position: relative;
@@ -66,22 +116,23 @@
 }
 .biz-lead {
   margin: 0;
-  color: var(--home-ink);
-  font-size: clamp(19px, 1.8vw, 24px);
-  line-height: 1.6;
+  color: var(--home-muted);
+  font-size: clamp(19px, 2vw, 34px);
+  line-height: 1.5;
 }
 .biz-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: 260px;
-  min-block-size: 60px;
+  min-inline-size: clamp(240px, 22vw, 380px);
+  min-block-size: clamp(56px, 5vw, 84px);
   margin-block-start: 8px;
-  padding: 0 32px;
-  border-radius: 16px;
+  padding: 0 clamp(28px, 2.4vw, 40px);
+  border-radius: 18px;
   background: var(--home-blue);
   color: #ffffff !important;
-  font-size: 20px;
+  font-family: var(--font-ui);
+  font-size: clamp(18px, 2vw, 34px);
   font-weight: var(--weight-ui);
   text-decoration: none;
   box-shadow: 0 10px 24px rgb(7 133 255 / 0.28);
@@ -91,7 +142,7 @@
     transform 0.2s ease;
 }
 .biz-cta:hover {
-  background: #0072e0;
+  background: #004fd8;
   box-shadow: 0 14px 30px rgb(7 133 255 / 0.34);
 }
 .biz-cta:active {
@@ -99,30 +150,32 @@
 }
 .biz-hero__art .business-art {
   display: block;
-  inline-size: 100%;
+  inline-size: min(100%, 640px);
   block-size: auto;
 }
 
 /* ---- The sections in the subscription ---------------------------------------------- */
 .biz-sections {
-  inline-size: min(var(--home-width), 100% - 48px);
+  inline-size: min(1600px, 100% - clamp(32px, 3.6vw, 64px));
   margin-inline: auto;
-  padding: clamp(24px, 3vw, 36px) clamp(16px, 3vw, 40px) clamp(28px, 3vw, 40px);
+  padding: clamp(20px, 2.2vw, 32px) clamp(16px, 3vw, 40px) clamp(24px, 2.4vw, 36px);
   border-radius: 32px;
-  background: #eef6ff;
+  background: #eaf3fc;
   scroll-margin-block-start: 24px;
 }
 :root[data-theme='dark'] .biz-sections {
   background: var(--bg-surface-raised);
 }
 .biz-sections h2 {
-  margin: 0 0 clamp(16px, 2.4vw, 28px);
+  margin: 0 0 clamp(12px, 1.6vw, 22px);
   color: var(--home-ink);
-  font-size: clamp(24px, 2.6vw, 34px);
+  font-size: clamp(24px, 2.6vw, 42px);
   font-weight: var(--weight-heading);
   text-align: center;
 }
 .biz-strip {
+  /* Team first, at the right, in every language. */
+  direction: rtl;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
@@ -139,13 +192,17 @@
 }
 .biz-strip .section-art {
   display: block;
-  inline-size: min(100%, 150px);
+  inline-size: min(100%, 170px);
   block-size: auto;
   aspect-ratio: 120 / 96;
 }
+[dir='ltr'] .biz-strip li {
+  direction: ltr;
+}
 .biz-strip span {
   color: var(--home-ink);
-  font-size: clamp(16px, 1.6vw, 21px);
+  font-family: var(--font-ui);
+  font-size: clamp(16px, 1.6vw, 26px);
   font-weight: var(--weight-subheading);
   line-height: 1.4;
 }
@@ -160,7 +217,8 @@
     gap: 24px;
   }
   /* The headline and the button first; the picture after them. */
-  .biz-hero__text {
+  .biz-hero__text,
+  [dir='ltr'] .biz-hero__text {
     justify-items: center;
     text-align: center;
   }
@@ -241,4 +299,43 @@
     padding-inline: 6px;
     font-size: 14px;
   }
+}
+
+/* Type as in the mockup: heavy rounded headline, bold links, button and names. */
+.home.biz .biz-title {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.home.biz .biz-cta,
+.home.biz .biz-strip span,
+.home.biz .biz-sections h2 {
+  font-weight: 800;
+}
+.home.biz .biz-nav > a {
+  color: var(--home-ink);
+  font-weight: 700;
+}
+.home.biz .biz-lead {
+  font-weight: 600;
+}
+.home.biz .biz-logo .os-logo__brand,
+.home.biz .biz-logo .os-logo__product {
+  font-family: var(--font-ui);
+  font-weight: 800;
+}
+.home.biz .home-header {
+  background: rgb(252 253 254 / 0.9);
+}
+:root[data-theme='dark'] .home.biz .home-header {
+  background: rgb(var(--rgb-page) / 0.86);
+}
+
+.biz-hero__art .business-art {
+  block-size: auto;
+}
+/* On the dark theme the drawing keeps its paper behind it. */
+:root[data-theme='dark'] .biz-hero__art .business-art {
+  padding: 12px;
+  border-radius: 24px;
+  background: #f6f9fd;
 }

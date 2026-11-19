@@ -271,6 +271,28 @@ body {
   color: var(--os-navy);
   opacity: 0.9;
 }
+/* Section icons: navy outline, pale fill, one blue detail; blue when selected. */
+.glyph {
+  --glyph-ink: var(--os-navy);
+  --glyph-fill: #e3eeff;
+  --glyph-accent: var(--os-accent);
+  --glyph-paper: var(--bg-surface);
+  flex: none;
+}
+.product-nav a[aria-current] .glyph,
+.product-bottom [aria-current] .glyph {
+  --glyph-ink: var(--os-accent);
+  --glyph-fill: rgb(var(--rgb-accent) / 0.18);
+}
+:root[data-theme='dark'] .glyph {
+  --glyph-ink: var(--text-secondary);
+  --glyph-fill: #1a2b4f;
+}
+:root[data-theme='dark'] .product-nav a[aria-current] .glyph,
+:root[data-theme='dark'] .product-bottom [aria-current] .glyph {
+  --glyph-ink: var(--os-accent);
+  --glyph-fill: rgb(var(--rgb-accent) / 0.22);
+}
 :root[data-theme='dark'] .product-nav a .fh {
   color: var(--text-secondary);
 }
@@ -809,7 +831,7 @@ body {
   background: #ffffff;
   box-shadow: 0 12px 32px rgb(var(--rgb-shadow) / 0.08);
 }
-.os-auth__doors .product-art {
+.os-auth__doors img {
   display: block;
   inline-size: auto;
   block-size: 130px;
@@ -1053,7 +1075,7 @@ body {
     border-radius: 18px;
     gap: 8px;
   }
-  .os-auth__doors .product-art {
+  .os-auth__doors img {
     block-size: 72px;
   }
   .os-auth__doors figcaption {

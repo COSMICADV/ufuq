@@ -6,7 +6,7 @@ import { LanguageSwitch } from '../language-switch';
 import { ThemePicker } from '../theme-picker';
 import { publicPath } from '../../lib/public-content';
 
-import { OpenCaseArt, SectionArt } from './business-art';
+import { SectionArt } from './business-art';
 import type { SectionKey } from './business-art';
 
 /**
@@ -64,7 +64,7 @@ export function BusinessPage({ locale }: { readonly locale: Locale }): React.JSX
         <section className="biz-hero" aria-labelledby="biz-title">
           <div className="biz-hero__text">
             <h1 id="biz-title" className="biz-title">
-              {b('headlineStart')}
+              <span className="biz-title__line">{b('headlineLine1')}</span> {b('headlineStart')}
               <span className="biz-title__mark">
                 {b('headlineMark')}
                 <svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
@@ -79,7 +79,16 @@ export function BusinessPage({ locale }: { readonly locale: Locale }): React.JSX
             </a>
           </div>
           <div className="biz-hero__art">
-            <OpenCaseArt />
+            {/* The approved illustration: an open work case with badges, a task list and boxes. */}
+            <img
+              className="business-art"
+              src="/brand/business-open-case.webp"
+              alt=""
+              width={1412}
+              height={971}
+              decoding="async"
+              fetchPriority="high"
+            />
           </div>
         </section>
 

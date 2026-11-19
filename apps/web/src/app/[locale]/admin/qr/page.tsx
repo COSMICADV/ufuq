@@ -5,11 +5,11 @@ interface PageProps {
   readonly params: Promise<{ readonly locale: string }>;
 }
 
-/** `/admin/qr` — QR Studio moved to a page of its own (`/qr`); old links land there. */
+/** `/admin/qr` — QR Studio is hidden for now (see `/qr`); old links land on the workspace. */
 export default async function Page({ params }: PageProps): Promise<never> {
   const { locale } = await params;
   if (!isLocale(locale)) {
     notFound();
   }
-  redirect(`/${locale}/qr`);
+  redirect(`/${locale}/admin`);
 }

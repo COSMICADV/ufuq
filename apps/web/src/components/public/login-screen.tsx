@@ -9,7 +9,6 @@ import { ThemePicker } from '../theme-picker';
 import { PUBLIC_PAGES, publicPath } from '../../lib/public-content';
 
 import { PublicForm } from './public-form';
-import { BusinessArt, PersonalArt } from './product-art';
 
 /**
  * Sign-in, redrawn in the 1to1OS design: the form on a white card, the two
@@ -76,13 +75,13 @@ export function LoginScreen({
           </p>
           <div className="os-auth__doors">
             <figure>
-              <PersonalArt />
+              <img src="/brand/personal.webp" alt="" width={344} height={299} />
               <figcaption dir="ltr">
                 1to1OS <em>Personal</em>
               </figcaption>
             </figure>
             <figure>
-              <BusinessArt />
+              <img src="/brand/business.webp" alt="" width={359} height={323} />
               <figcaption dir="ltr">
                 1to1OS <em>Business</em>
               </figcaption>

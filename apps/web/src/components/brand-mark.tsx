@@ -42,9 +42,12 @@ export function Wordmark(): React.JSX.Element {
  */
 export function ProductLogo({
   product,
+  domain = false,
   className,
 }: {
   readonly product?: 'Business' | 'Personal';
+  /** Show the site's address form, "1to1OS .com", without the spark. */
+  readonly domain?: boolean;
   readonly className?: string;
 }): React.JSX.Element {
   return (
@@ -61,11 +64,14 @@ export function ProductLogo({
         </svg>
       </span>
       {product ? <span className="os-logo__product">{product}</span> : null}
-      <svg className="os-logo__spark" viewBox="0 0 20 20" aria-hidden="true">
-        <path d="M6 9 4.6 3.4" />
-        <path d="M9.6 10.6l3.6-4" />
-        <path d="M11 14.2l5-1" />
-      </svg>
+      {domain ? <span className="os-logo__domain">.com</span> : null}
+      {domain ? null : (
+        <svg className="os-logo__spark" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M6 9 4.6 3.4" />
+          <path d="M9.6 10.6l3.6-4" />
+          <path d="M11 14.2l5-1" />
+        </svg>
+      )}
     </span>
   );
 }

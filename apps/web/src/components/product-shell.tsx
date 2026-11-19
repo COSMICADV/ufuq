@@ -9,7 +9,8 @@ import type { Locale } from '@ufuq/i18n';
 
 import { ProductLogo } from './brand-mark';
 import { FreehandIcon } from './freehand-icon';
-import type { FreehandIconName } from './freehand-icon';
+import { NavGlyph } from './nav-glyph';
+import type { NavGlyphName } from './nav-glyph';
 import { AppTopbar } from './notifications/app-topbar';
 import { createTranslator } from '@ufuq/i18n';
 import { LanguageSwitch } from './language-switch';
@@ -91,12 +92,6 @@ const navigation = [
     'stock.view',
   ],
   [
-    'qr',
-    'استوديو QR',
-    'QR Studio',
-    'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h3v3h-3ZM17 17h4v4h-4ZM14 20v1',
-  ],
-  [
     'notifications',
     'الإشعارات',
     'Notifications',
@@ -113,23 +108,22 @@ const navigation = [
   ],
 ] as const;
 
-/** The Freehand icon each section is drawn with (the paths above stay as the fallback). */
-const NAV_ICONS: Readonly<Record<string, FreehandIconName>> = {
-  '': 'home',
-  employees: 'users',
-  attendance: 'clock',
-  tasks: 'checkbox',
-  goals: 'target',
-  requests: 'clipboard',
-  'requests?category=leave': 'calendar',
-  payroll: 'wallet',
-  reports: 'chart',
-  warehouse: 'building',
-  inventory: 'box',
-  qr: 'qr',
-  notifications: 'bell',
-  'settings/company': 'gear',
-  salary: 'wallet',
+/** The icon each section is drawn with (the paths above stay as the fallback). */
+const NAV_ICONS: Readonly<Record<string, NavGlyphName>> = {
+  '': 'overview',
+  employees: 'employees',
+  attendance: 'attendance',
+  tasks: 'tasks',
+  goals: 'goals',
+  requests: 'requests',
+  'requests?category=leave': 'leave',
+  payroll: 'payroll',
+  reports: 'reports',
+  warehouse: 'warehouse',
+  inventory: 'inventory',
+  notifications: 'notifications',
+  'settings/company': 'settings',
+  salary: 'payroll',
 };
 
 function NavIcon({
@@ -139,8 +133,8 @@ function NavIcon({
   readonly path: string;
   readonly section?: string;
 }): React.JSX.Element {
-  const freehand = section === undefined ? undefined : NAV_ICONS[section];
-  if (freehand !== undefined) return <FreehandIcon name={freehand} size={22} />;
+  const glyph = section === undefined ? undefined : NAV_ICONS[section];
+  if (glyph !== undefined) return <NavGlyph name={glyph} size={24} />;
   return (
     <svg
       width="20"
@@ -198,22 +192,17 @@ export function ProductShell({
   const items = navigation.filter(([path, , , , ...permissions]) => {
     if (ready === null) return path === '' || path === 'notifications';
     if (surface === 'app') {
-      if (
-        ['employees', 'warehouse', 'inventory', 'settings/company', 'payroll', 'qr'].includes(path)
-      )
+      if (['employees', 'warehouse', 'inventory', 'settings/company', 'payroll'].includes(path))
         return false;
       if (path === '' || path === 'reports' || path === 'attendance') return true;
     }
-    // QR Studio is for the company's owner and admins (the API checks the same roles).
-    if (path === 'qr') return ready.roleKey === 'super_admin' || ready.roleKey === 'admin';
     return (
       permissions.length === 0 ||
       permissions.some((permission) => ready.permissions.has(permission))
     );
   });
   const links = items.map(([path, arabic, english, icon]) => {
-    // QR Studio opens as a page of its own, outside the workspace.
-    const href = path === 'qr' ? `/${locale}/qr` : `${base}${path ? `/${path}` : ''}`;
+    const href = `${base}${path ? `/${path}` : ''}`;
     const current =
       path === 'settings/company'
         ? pathname.startsWith(`${base}/settings/`)
