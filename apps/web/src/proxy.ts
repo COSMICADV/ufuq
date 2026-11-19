@@ -28,6 +28,7 @@ export default function proxy(request: NextRequest): NextResponse {
     '/contact',
     '/login',
     '/register',
+    '/business',
   ]);
   if (publicPaths.has(pathname)) {
     url.pathname = pathname === '/' ? '/ar' : `/ar${pathname}`;

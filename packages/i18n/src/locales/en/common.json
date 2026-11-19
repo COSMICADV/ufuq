@@ -2390,5 +2390,22 @@
     "attendance_adjustment": "Attendance adjustment",
     "payroll_breakdown": "{month} make-up",
     "my_salary_by_month": "My net salary by month"
+  },
+  "entry": {
+    "title": "1to1OS — Your life and work in one system",
+    "description": "1to1OS Personal organises your money and spending; 1to1OS Business runs your company. Choose the one that fits you.",
+    "headlineStart": "Your life and ",
+    "headlineMark": "work",
+    "headlineJoin": ",",
+    "headlineEnd": " in one system",
+    "choose": "Choose a system",
+    "openPersonal": "Open 1to1OS Personal",
+    "openBusiness": "Open 1to1OS Business",
+    "nav": {
+      "label": "Main navigation",
+      "home": "Home",
+      "features": "Features",
+      "about": "About"
+    }
   }
 }

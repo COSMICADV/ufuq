@@ -1,17 +1,27 @@
 import { notFound } from 'next/navigation';
-import { isLocale } from '@ufuq/i18n';
+import { createTranslator, isLocale } from '@ufuq/i18n';
 import type { Metadata } from 'next';
 import { publicMetadata } from '../../components/public/public-site';
-import { LandingPage } from '../../components/public/landing-page';
-import '../../styles/landing.css';
+import { EntryPage } from '../../components/public/entry-page';
+import '../../styles/entry.css';
+
 type Props = { readonly params: Promise<{ readonly locale: string }> };
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  return isLocale(locale) ? publicMetadata(locale, 'home') : {};
+  if (!isLocale(locale)) return {};
+  const t = createTranslator(locale);
+  const base = publicMetadata(locale, 'home');
+  return {
+    ...base,
+    title: t('entry.title'),
+    description: t('entry.description'),
+    openGraph: { ...base.openGraph, title: t('entry.title'), description: t('entry.description') },
+  };
 }
-/** The home page is the standalone landing design; the other public pages keep PublicSite. */
+
 export default async function Page({ params }: Props): Promise<React.JSX.Element> {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  return <LandingPage locale={locale} />;
+  return <EntryPage locale={locale} />;
 }

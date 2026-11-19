@@ -2390,5 +2390,22 @@
     "attendance_adjustment": "تسوية الحضور",
     "payroll_breakdown": "تفاصيل {month}",
     "my_salary_by_month": "صافي مرتبي حسب الشهر"
+  },
+  "entry": {
+    "title": "1to1OS — حياتك وشغلك في نظام واحد",
+    "description": "1to1OS Personal لتنظيم فلوسك ومصاريفك، و1to1OS Business لإدارة شركتك. اختار النظام اللي يناسبك.",
+    "headlineStart": "حياتك ",
+    "headlineMark": "وشغلك",
+    "headlineJoin": "..",
+    "headlineEnd": " في نظام واحد",
+    "choose": "اختار النظام",
+    "openPersonal": "افتح 1to1OS Personal",
+    "openBusiness": "افتح 1to1OS Business",
+    "nav": {
+      "label": "التنقل الرئيسي",
+      "home": "الرئيسية",
+      "features": "المزايا",
+      "about": "عنّا"
+    }
   }
 }
