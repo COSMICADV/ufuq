@@ -15,7 +15,13 @@
 
 import type { PermissionKey } from './permissions.js';
 
-export const SYSTEM_ROLE_KEYS = ['super_admin', 'admin', 'manager', 'employee', 'personal'] as const;
+export const SYSTEM_ROLE_KEYS = [
+  'super_admin',
+  'admin',
+  'manager',
+  'employee',
+  'personal',
+] as const;
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 const SYSTEM_ROLE_KEY_SET: ReadonlySet<string> = new Set(SYSTEM_ROLE_KEYS);
@@ -55,8 +61,9 @@ export const SYSTEM_ROLES: readonly SystemRoleDefinition[] = [
   { key: 'admin', nameEn: 'Admin', nameAr: 'مدير الشركة' },
   { key: 'manager', nameEn: 'Manager', nameAr: 'مدير' },
   { key: 'employee', nameEn: 'Employee', nameAr: 'موظف' },
-  // 1to1OS Personal: the one user of a personal account. It holds no grant
-  // below, so every Business endpoint refuses it; it is never assignable.
+  // 1to1OS Personal: the one user of a personal account. It holds only the
+  // `personal.*` grants below, so every Business endpoint refuses it; it is
+  // never assignable.
   { key: 'personal', nameEn: 'Personal', nameAr: 'شخصي' },
 ] as const;
 
@@ -82,6 +89,7 @@ function grants(
  * `permissionsForRole` reports as "not permitted" rather than as an error.
  */
 export const ROLE_PERMISSIONS: readonly RolePermissionGrant[] = [
+  ...grants('personal', [['personal.finance', 'self']]),
   ...grants('admin', [
     ['employee.view', 'company'],
     ['employee.create', 'company'],

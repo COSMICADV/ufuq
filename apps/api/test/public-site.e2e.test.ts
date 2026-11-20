@@ -628,7 +628,7 @@ describe('1to1OS Personal — individual sign-up', () => {
     expect(signedIn.status).toBe(200);
     const me = await agent.get('/api/v1/auth/me');
     expect(me.body.data.role.key).toBe('personal');
-    expect(me.body.data.permissions).toEqual([]);
+    expect(me.body.data.permissions).toEqual([{ key: 'personal.finance', scope: 'self' }]);
     expect(me.body.data.employee).toBeNull();
     for (const path of ['/employees', '/attendance', '/payroll/periods'])
       expect((await agent.get(`/api/v1${path}`)).status).toBe(403);
@@ -828,6 +828,238 @@ describe('Forgot password — the reset link is emailed', () => {
       .send({ email: 'nobody@nowhere.test' });
     expect(asked.status).toBeLessThan(300);
     expect(messages).toHaveLength(0);
+  });
+});
+
+describe('1to1OS Personal — Expenses', () => {
+  interface CsrfAgent {
+    get: (url: string) => request.Test;
+    post: (url: string) => request.Test;
+    patch: (url: string) => request.Test;
+    delete: (url: string) => request.Test;
+  }
+  /** A signed-in browser: writes carry the double-submit CSRF header, as the web does. */
+  function withCsrf(agent: ReturnType<typeof request.agent>, cookies: string[]): CsrfAgent {
+    const csrf = cookies.map((c) => /ufuq_csrf=([^;]+)/.exec(c)?.[1]).find(Boolean) ?? '';
+    return {
+      get: (url) => agent.get(url),
+      post: (url) => agent.post(url).set('X-CSRF-Token', csrf),
+      patch: (url) => agent.patch(url).set('X-CSRF-Token', csrf),
+      delete: (url) => agent.delete(url).set('X-CSRF-Token', csrf),
+    };
+  }
+  async function personalAgent(email: string): Promise<CsrfAgent> {
+    expect(
+      (
+        await post('register-personal', {
+          name: 'Finance Person',
+          email,
+          password: 'finance-passphrase-1',
+          started_at: Date.now() - 3000,
+          website: '',
+        })
+      ).status,
+    ).toBe(201);
+    const agent = request.agent(app.getHttpServer());
+    const login = await agent
+      .post('/api/v1/auth/login')
+      .send({ email, password: 'finance-passphrase-1' });
+    expect(login.status).toBe(200);
+    return withCsrf(agent, login.headers['set-cookie'] as unknown as string[]);
+  }
+  const F = '/api/v1/personal/finance';
+
+  it('starts with the default categories and a cash wallet in EGP', async () => {
+    const agent = await personalAgent('fin.defaults@personal.test');
+    const categories = await agent.get(`${F}/categories`).set('Accept-Language', 'ar');
+    expect(categories.status).toBe(200);
+    const keys = (categories.body.data as { key: string | null; kind: string }[])
+      .filter((c) => c.kind === 'expense')
+      .map((c) => c.key);
+    expect(keys).toEqual([
+      'food',
+      'groceries',
+      'transport',
+      'fuel',
+      'car_maintenance',
+      'home',
+      'bills',
+      'health',
+      'shopping',
+      'education',
+      'entertainment',
+      'subscriptions',
+      'other',
+    ]);
+    const accounts = await agent.get(`${F}/accounts`).set('Accept-Language', 'ar');
+    expect(accounts.body.data).toMatchObject([
+      { name: 'محفظة الكاش', type: 'cash', currency: 'EGP', balance: '0.00' },
+    ]);
+    // Opening Expenses again does not duplicate anything.
+    expect((await agent.get(`${F}/categories`)).body.data).toHaveLength(
+      categories.body.data.length,
+    );
+    expect((await agent.get(`${F}/accounts`)).body.data).toHaveLength(1);
+  });
+
+  it('keeps balances exact: income, expense, transfer and a credit card are each counted once', async () => {
+    const agent = await personalAgent('fin.balances@personal.test');
+    const cats = (await agent.get(`${F}/categories`)).body.data as { id: string; key: string }[];
+    const food = cats.find((c) => c.key === 'food')?.id;
+    const salary = cats.find((c) => c.key === 'salary')?.id;
+    const bank = (
+      await agent
+        .post(`${F}/accounts`)
+        .send({ name: 'CIB', type: 'bank', opening_balance: '1000.10' })
+    ).body.data;
+    const card = (
+      await agent.post(`${F}/accounts`).send({ name: 'Visa', type: 'credit_card', owed: '200' })
+    ).body.data;
+    expect(card.balance).toBe('-200.00');
+    const savings = (await agent.post(`${F}/accounts`).send({ name: 'Savings', type: 'savings' }))
+      .body.data;
+    const at = '2026-11-20T10:00:00.000Z';
+    const tx = async (body: Record<string, unknown>) => {
+      const res = await agent.post(`${F}/transactions`).send({ occurred_at: at, ...body });
+      expect(res.status).toBe(201);
+      return res.body.data;
+    };
+    await tx({ type: 'income', amount: '15000', account_id: bank.id, category_id: salary });
+    await tx({
+      type: 'expense',
+      amount: '0.10',
+      account_id: bank.id,
+      category_id: food,
+      merchant: 'Bakery',
+    });
+    await tx({ type: 'expense', amount: '350.25', account_id: card.id, category_id: food });
+    // Paying the card and saving are transfers, not expenses.
+    await tx({ type: 'transfer', amount: '550.25', account_id: bank.id, to_account_id: card.id });
+    await tx({ type: 'transfer', amount: '2000', account_id: bank.id, to_account_id: savings.id });
+
+    const byName = Object.fromEntries(
+      ((await agent.get(`${F}/accounts`)).body.data as { name: string; balance: string }[]).map(
+        (a) => [a.name, a.balance],
+      ),
+    );
+    expect(byName).toMatchObject({ CIB: '13449.75', Visa: '0.00', Savings: '2000.00' });
+
+    const summary = (await agent.get(`${F}/summary?period=custom&from=2026-11-01&to=2026-11-30`))
+      .body.data;
+    expect(summary.income).toBe('15000.00');
+    expect(summary.expense).toBe('350.35');
+    expect(summary.net).toBe('14649.65');
+    // Cash 0 + bank 13449.75 + savings 2000 (the card is not cash you hold).
+    expect(summary.available).toEqual([{ currency: 'EGP', amount: '15449.75' }]);
+    expect(summary.credit_owed).toEqual([]);
+    expect(summary.by_category).toMatchObject([{ key: 'food', amount: '350.35' }]);
+  });
+
+  it('refuses malformed and mismatched transactions', async () => {
+    const agent = await personalAgent('fin.rules@personal.test');
+    const cats = (await agent.get(`${F}/categories`)).body.data as { id: string; key: string }[];
+    const salary = cats.find((c) => c.key === 'salary')?.id;
+    const cash = ((await agent.get(`${F}/accounts`)).body.data as { id: string }[])[0]?.id;
+    const usd = (
+      await agent.post(`${F}/accounts`).send({ name: 'USD', type: 'bank', currency: 'USD' })
+    ).body.data;
+    const at = '2026-11-20T10:00:00.000Z';
+    const bad = async (body: Record<string, unknown>, field: string) => {
+      const res = await agent.post(`${F}/transactions`).send({ occurred_at: at, ...body });
+      expect(res.status).toBe(422);
+      expect(Object.keys(res.body.error.fields ?? {})).toContain(field);
+    };
+    await bad({ type: 'expense', amount: '0', account_id: cash }, 'amount');
+    await bad({ type: 'expense', amount: '1.005', account_id: cash }, 'amount');
+    await bad(
+      { type: 'expense', amount: '10', account_id: cash, category_id: salary },
+      'category_id',
+    );
+    await bad({ type: 'transfer', amount: '10', account_id: cash }, 'to_account_id');
+    await bad(
+      { type: 'transfer', amount: '10', account_id: cash, to_account_id: cash },
+      'to_account_id',
+    );
+    await bad(
+      { type: 'transfer', amount: '10', account_id: cash, to_account_id: usd.id },
+      'to_account_id',
+    );
+    await bad(
+      { type: 'expense', amount: '10', account_id: cash, company_id: COMPANY_A },
+      'company_id',
+    );
+  });
+
+  it('archives a used account instead of losing its history, and edits and deletes transactions', async () => {
+    const agent = await personalAgent('fin.edit@personal.test');
+    const cash = ((await agent.get(`${F}/accounts`)).body.data as { id: string }[])[0]?.id;
+    const created = (
+      await agent.post(`${F}/transactions`).send({
+        type: 'income',
+        amount: '100',
+        account_id: cash,
+        occurred_at: '2026-11-20T10:00:00.000Z',
+      })
+    ).body.data;
+    const edited = await agent
+      .patch(`${F}/transactions/${String(created.id)}`)
+      .send({ amount: '120.50' });
+    expect(edited.body.data.amount).toBe('120.50');
+    expect((await agent.delete(`${F}/accounts/${String(cash)}`)).body.data).toEqual({
+      archived: true,
+    });
+    expect(
+      ((await agent.get(`${F}/accounts`)).body.data as { balance: string }[])[0]?.balance,
+    ).toBe('120.50');
+    expect((await agent.delete(`${F}/transactions/${String(created.id)}`)).status).toBe(204);
+    const list = await agent.get(`${F}/transactions`);
+    expect(list.body.data).toEqual([]);
+    // With no transactions left, the account is unused and is deleted outright.
+    expect((await agent.delete(`${F}/accounts/${String(cash)}`)).body.data).toEqual({
+      archived: false,
+    });
+    expect((await agent.get(`${F}/transactions`)).body.data).toEqual([]);
+  });
+
+  it('keeps every Personal account to its own money, and Business accounts out', async () => {
+    const owner = await personalAgent('fin.owner@personal.test');
+    const cash = ((await owner.get(`${F}/accounts`)).body.data as { id: string }[])[0]?.id;
+    const tx = (
+      await owner.post(`${F}/transactions`).send({
+        type: 'income',
+        amount: '5',
+        account_id: cash,
+        occurred_at: '2026-11-20T10:00:00.000Z',
+      })
+    ).body.data;
+    const stranger = await personalAgent('fin.stranger@personal.test');
+    expect((await stranger.get(`${F}/transactions/${String(tx.id)}`)).status).toBe(404);
+    expect(
+      (await stranger.patch(`${F}/transactions/${String(tx.id)}`).send({ amount: '1' })).status,
+    ).toBe(404);
+    expect((await stranger.delete(`${F}/transactions/${String(tx.id)}`)).status).toBe(404);
+    expect((await stranger.get(`${F}/transactions`)).body.data).toEqual([]);
+    const own = (await stranger.get(`${F}/accounts`)).body.data as { id: string }[];
+    const write = await stranger.post(`${F}/transactions`).send({
+      type: 'expense',
+      amount: '1',
+      account_id: cash,
+      occurred_at: '2026-11-20T10:00:00.000Z',
+    });
+    expect(write.status).toBe(422);
+    expect(own.map((a) => a.id)).not.toContain(cash);
+
+    const business = request.agent(app.getHttpServer());
+    expect(
+      (
+        await business
+          .post('/api/v1/auth/login')
+          .send({ email: ADMIN_A_EMAIL, password: ADMIN_A_PASSWORD })
+      ).status,
+    ).toBe(200);
+    expect((await business.get(`${F}/summary`)).status).toBe(403);
+    expect((await business.get(`${F}/accounts`)).status).toBe(403);
+    expect((await request(app.getHttpServer()).get(`${F}/summary`)).status).toBe(401);
   });
 });
 

@@ -30,6 +30,7 @@ import { WarehouseModule } from './warehouse/warehouse.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { QrModule } from './qr/qr.module.js';
+import { PersonalFinanceModule } from './personal-finance/finance.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 
@@ -107,6 +108,7 @@ export class AppModule {
         ReportsModule.register({ scheduler: options.backgroundJobs }),
         NotificationsModule.register({ scheduler: options.backgroundJobs }),
         QrModule.register(env),
+        PersonalFinanceModule,
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

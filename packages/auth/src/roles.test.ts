@@ -28,8 +28,8 @@ describe('assignable roles — DOCUMENT 02 §7', () => {
 });
 
 describe('the personal role', () => {
-  it('holds no Business permission and cannot be assigned', () => {
-    expect(permissionsForRole('personal').size).toBe(0);
+  it('holds only Personal permissions and cannot be assigned', () => {
+    expect([...permissionsForRole('personal').keys()]).toEqual(['personal.finance']);
     expect(isAssignableRoleKey('personal')).toBe(false);
   });
 });

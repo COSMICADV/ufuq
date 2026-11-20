@@ -480,6 +480,9 @@ model Company {
   notificationPreferences CompanyNotificationSetting[]
 
   qrCodes    QrCode[]
+  financeAccounts     FinanceAccount[]
+  financeCategories   FinanceCategory[]
+  financeTransactions FinanceTransaction[]
   qrScans    QrScan[]
   qrFeedback QrFeedback[]
   qrFiles    QrFile[]
@@ -837,6 +840,9 @@ model User {
   notifications       Notification[]
   notificationPrefs   CompanyNotificationSetting[]  @relation("notification_setting_updated_by")
   qrCodes             QrCode[]                      @relation("qr_code_created_by")
+  financeAccounts     FinanceAccount[]
+  financeCategories   FinanceCategory[]
+  financeTransactions FinanceTransaction[]
   qrFiles             QrFile[]                      @relation("qr_file_created_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
@@ -2056,4 +2062,111 @@ model QrFile {
 
   @@index([companyId, createdAt])
   @@map("qr_files")
+}
+
+// ---------------------------------------------------------------------------
+// 1to1OS Personal — Expenses (migration 20261121000000_personal_finance).
+// Money is NUMERIC(15,2); balances are computed from the transactions.
+// ---------------------------------------------------------------------------
+
+enum FinanceAccountType {
+  cash
+  bank
+  debit_card
+  credit_card
+  ewallet
+  savings
+
+  @@map("finance_account_type")
+}
+
+enum FinanceCategoryKind {
+  expense
+  income
+
+  @@map("finance_category_kind")
+}
+
+enum FinanceTransactionType {
+  expense
+  income
+  transfer
+
+  @@map("finance_transaction_type")
+}
+
+model FinanceAccount {
+  id             String             @id @db.Uuid
+  companyId      String             @map("company_id") @db.Uuid
+  userId         String             @map("user_id") @db.Uuid
+  name           String             @db.VarChar(120)
+  type           FinanceAccountType
+  currency       String             @default("EGP") @db.Char(3)
+  openingBalance Decimal            @default(0) @map("opening_balance") @db.Decimal(15, 2)
+  archivedAt     DateTime?          @map("archived_at") @db.Timestamptz(3)
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outgoing     FinanceTransaction[] @relation("finance_tx_account")
+  incoming     FinanceTransaction[] @relation("finance_tx_to_account")
+
+  @@unique([companyId, name])
+  @@map("finance_accounts")
+}
+
+model FinanceCategory {
+  id         String              @id @db.Uuid
+  companyId  String              @map("company_id") @db.Uuid
+  userId     String              @map("user_id") @db.Uuid
+  kind       FinanceCategoryKind
+  parentId   String?             @map("parent_id") @db.Uuid
+  key        String?             @db.VarChar(40)
+  name       String?             @db.VarChar(80)
+  position   Int                 @default(0)
+  archivedAt DateTime?           @map("archived_at") @db.Timestamptz(3)
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent       FinanceCategory?     @relation("finance_category_parent", fields: [parentId], references: [id], onDelete: Restrict)
+  children     FinanceCategory[]    @relation("finance_category_parent")
+  transactions FinanceTransaction[]
+
+  @@unique([companyId, key])
+  @@index([companyId, kind])
+  @@map("finance_categories")
+}
+
+model FinanceTransaction {
+  id          String                 @id @db.Uuid
+  companyId   String                 @map("company_id") @db.Uuid
+  userId      String                 @map("user_id") @db.Uuid
+  type        FinanceTransactionType
+  amount      Decimal                @db.Decimal(15, 2)
+  currency    String                 @db.Char(3)
+  accountId   String                 @map("account_id") @db.Uuid
+  toAccountId String?                @map("to_account_id") @db.Uuid
+  categoryId  String?                @map("category_id") @db.Uuid
+  occurredAt  DateTime               @map("occurred_at") @db.Timestamptz(3)
+  merchant    String?                @db.VarChar(160)
+  notes       String?                @db.VarChar(1000)
+  linkType    String?                @map("link_type") @db.VarChar(20)
+  linkId      String?                @map("link_id") @db.Uuid
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account   FinanceAccount   @relation("finance_tx_account", fields: [accountId], references: [id], onDelete: Restrict)
+  toAccount FinanceAccount?  @relation("finance_tx_to_account", fields: [toAccountId], references: [id], onDelete: Restrict)
+  category  FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, occurredAt])
+  @@index([accountId])
+  @@index([toAccountId])
+  @@index([categoryId])
+  @@map("finance_transactions")
 }
