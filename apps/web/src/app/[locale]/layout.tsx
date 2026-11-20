@@ -62,8 +62,10 @@ export default async function LocaleLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* The approved type: Fredoka (variable) for Latin, Baloo Bhaijaan 2 for
+            Arabic; 400, 500 and 600 only (design-tokens --font-ui). */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700&family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Nunito:ital,wght@0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600&family=Fredoka:wght@400..600&display=swap"
           rel="stylesheet"
         />
       </head>

@@ -28,7 +28,7 @@ a {
 }
 .button {
   min-block-size: 44px;
-  font-weight: 600;
+  font-weight: var(--weight-ui);
   line-height: 1.5;
   padding-block: 10px;
   text-decoration: none;
@@ -255,7 +255,7 @@ tbody tr:last-child td {
   color: inherit;
   text-decoration: none;
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .product-brand small {
   display: block;
@@ -297,7 +297,7 @@ tbody tr:last-child td {
 .product-nav a[aria-current] {
   background: var(--brand-indigo);
   color: var(--text-on-primary);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .product-nav a:focus-visible,
 .product-brand:focus-visible {
@@ -376,7 +376,7 @@ tbody tr:last-child td {
 .page-heading h1,
 .settings__heading h1 {
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.025em;
 }
 .page-heading p,
@@ -445,7 +445,7 @@ tbody tr:last-child td {
 }
 .kpi__value {
   color: var(--text-primary);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.01em;
 }
 .kpi__delta {
   color: var(--success-text);
@@ -774,7 +774,7 @@ tbody tr:last-child td {
   max-inline-size: 860px;
   font-size: clamp(30px, 3.5vw, 48px);
   line-height: 1.55;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 .public-intro p {
@@ -993,7 +993,7 @@ tbody tr:last-child td {
   }
   .public-mobile-nav summary {
     color: var(--text-primary);
-    font-weight: 600;
+    font-weight: var(--weight-ui);
   }
   .public-mobile-nav nav {
     gap: 4px;
@@ -1210,7 +1210,7 @@ dialog.modal {
 .not-found-card .not-found-code {
   color: var(--brand-indigo);
   font-size: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
 }
 .not-found-card h1 {
   font-size: var(--font-h1);

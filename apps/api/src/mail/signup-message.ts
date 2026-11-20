@@ -31,7 +31,7 @@ function escapeHtml(value: string): string {
 const BUTTON_STYLE =
   'display:inline-block;padding:12px 22px;border-radius:10px;background:#E2C0A8;color:#0F172A;font-weight:700;text-decoration:none';
 const CARD_STYLE =
-  'max-width:560px;margin:0 auto;padding:28px;border-radius:16px;background:#0F172A;color:#F1F5F9;font-family:Inter,Segoe UI,Arial,sans-serif';
+  'max-width:560px;margin:0 auto;padding:28px;border-radius:16px;background:#0F172A;color:#F1F5F9;font-family:Fredoka,"Baloo Bhaijaan 2",Segoe UI,Arial,sans-serif';
 
 export interface SignupRequestInput {
   readonly to: string;

@@ -2,8 +2,8 @@
  * 1to1OS — the redesign's visual layer.
  *
  * White surfaces, navy ink and one blue accent, quiet like Apple's own
- * software: generous white space, 18–24px radii, soft shadows, Cairo for
- * Arabic. Loaded last, after v2.css and theme.css, and written against the
+ * software: generous white space, 18–24px radii, soft shadows, Fredoka and
+ * Baloo Bhaijaan 2. Loaded last, after v2.css and theme.css, and written against the
  * design tokens only, so the four themes (light, violet, green, dark) recolour
  * every rule here. Logical properties throughout: Arabic (RTL) and the
  * left-to-right languages share each rule.
@@ -48,9 +48,9 @@ body {
   position: relative;
   padding-block-end: 0.28em;
   color: var(--os-navy);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1em;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.01em;
 }
 :root[data-theme='dark'] .os-logo__brand {
   color: #ffffff;
@@ -156,7 +156,7 @@ body {
 }
 .field__label {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .card {
   border: 1px solid var(--border-subtle);
@@ -170,7 +170,7 @@ body {
 .card__header h2,
 .card__header h3 {
   color: var(--heading);
-  font-weight: 700;
+  font-weight: 600;
 }
 .kpi {
   position: relative;
@@ -182,7 +182,7 @@ body {
 }
 .kpi__value {
   color: var(--heading);
-  font-weight: 700;
+  font-weight: 600;
 }
 .badge {
   border-radius: 999px;
@@ -305,7 +305,7 @@ body {
 .product-shell--app .product-sidebar .product-nav a[aria-current] {
   background: var(--os-soft);
   color: var(--os-accent);
-  font-weight: 700;
+  font-weight: var(--weight-ui);
 }
 .product-nav a[aria-current] .fh,
 .product-nav a:hover .fh {
@@ -394,7 +394,7 @@ body {
   border-radius: 999px;
   color: var(--text-secondary);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--weight-ui);
   text-decoration: none;
 }
 .product-header .language-switch [aria-current='true'],
@@ -414,7 +414,7 @@ body {
   background: var(--bg-surface);
   color: var(--text-primary);
   font-family: inherit;
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .theme-picker__toggle:hover {
   border-color: rgb(var(--rgb-accent) / 0.4);
@@ -450,7 +450,7 @@ body {
 .settings__heading h1 {
   color: var(--heading);
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.35;
 }
 .page-heading p,
@@ -486,7 +486,7 @@ body {
   margin: 0;
   color: var(--heading);
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .os-hero__wave {
   font-size: 0.85em;
@@ -505,7 +505,7 @@ body {
   border-radius: 14px;
   background: var(--os-soft);
   color: var(--os-navy) !important;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px !important;
 }
 :root[data-theme='dark'] .os-hero__date {
@@ -547,7 +547,7 @@ body {
 }
 .insights__header h2 {
   color: var(--heading);
-  font-weight: 700;
+  font-weight: 600;
 }
 .rate-tile {
   border-radius: 20px;
@@ -620,7 +620,7 @@ body {
 .settings__sections a.is-active {
   background: var(--os-soft);
   color: var(--os-accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 .settings__sections a.is-active .fh,
 .settings__sections a:hover .fh {
@@ -703,7 +703,7 @@ body {
   margin: 0;
   color: var(--heading);
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
 }
 .os-auth__lead {
@@ -781,7 +781,7 @@ body {
 }
 .os-auth .public-form__links a {
   color: var(--os-accent);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
   text-decoration: none;
 }
 .os-auth .public-form__links a:hover {
@@ -806,7 +806,7 @@ body {
   margin: 0;
   color: var(--os-navy);
   font-size: clamp(28px, 3vw, 40px);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   text-align: center;
 }
@@ -841,7 +841,7 @@ body {
   color: #0b1f4d;
   font-family: var(--font-ui);
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 .os-auth__doors em {
@@ -913,7 +913,7 @@ body {
     border-radius: 999px;
     color: var(--text-secondary);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: var(--weight-ui);
     text-decoration: none;
   }
   .product-drawer__prefs .language-switch [aria-current='true'] {
@@ -942,7 +942,7 @@ body {
     color: var(--text-secondary);
     font-family: inherit;
     font-size: 11.5px;
-    font-weight: 600;
+    font-weight: var(--weight-ui);
   }
   .product-bottom .fh {
     color: var(--os-navy);
@@ -1084,9 +1084,9 @@ body {
 }
 
 /* ---- Typography: one system across 1to1OS -------------------------------------------
- * Cairo for Arabic, Inter for English, French, Italian and German (see
- * --font-ui). Four weights only: headings 700, subheadings 600, body 400,
- * buttons and navigation 500. Active and hover states change colour, never
+ * Baloo Bhaijaan 2 for Arabic, Fredoka for English and every Latin-script
+ * language (see --font-ui). Three weights only: headings and card titles 600,
+ * buttons, navigation and form labels 500, body, tables and descriptions 400. Active and hover states change colour, never
  * weight, so nothing shifts when a link is selected.
  */
 body,
@@ -1098,7 +1098,7 @@ body,
 :where(input, select, textarea, button, optgroup) {
   font-family: inherit;
 }
-:where(p, li, dd, td, label, input, select, textarea, small, figcaption) {
+:where(p, li, dd, td, input, select, textarea, small, figcaption) {
   font-weight: var(--weight-body);
 }
 h1,
@@ -1118,13 +1118,25 @@ h3,
 h4,
 h5,
 h6,
-th,
 .card__header h3,
 .rate-tile__label,
 .kpi__label,
-.field__label,
 .os-hero__date {
   font-weight: var(--weight-subheading);
+}
+/* Form labels and table headers: Medium. */
+th,
+label,
+.field__label {
+  font-weight: var(--weight-ui);
+}
+/* Strong text is SemiBold at most, and no weight is ever faked. */
+b,
+strong {
+  font-weight: var(--weight-subheading);
+}
+html {
+  font-synthesis-weight: none;
 }
 .button,
 button,
@@ -1181,7 +1193,7 @@ button,
   background: var(--bg-surface);
   color: var(--text-primary);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--weight-ui);
   list-style: none;
   cursor: pointer;
   user-select: none;
@@ -1231,7 +1243,7 @@ button,
 }
 .lang-menu__list [aria-current='true'] {
   color: var(--os-accent, var(--accent));
-  font-weight: 700;
+  font-weight: var(--weight-ui);
 }
 /* Footers and drawers sit low on the page: open the list upward there. */
 .home-footer .lang-menu__list,

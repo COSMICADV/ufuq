@@ -23,14 +23,16 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
   /*
-   * One stack for every language: Inter carries no Arabic glyphs, so Latin
-   * text (English, French, Italian, German, and Latin words inside Arabic)
-   * is set in Inter and Arabic text falls through to Cairo, glyph by glyph.
+   * The approved type (1to1OS typography update): Fredoka for English and
+   * every Latin-script language, Baloo Bhaijaan 2 for Arabic. Fredoka has no
+   * Arabic glyphs, so Latin text is set in Fredoka and Arabic text falls
+   * through to Baloo Bhaijaan 2, glyph by glyph, in one stack. Three weights
+   * only: 400, 500, 600 — never 700 or heavier.
    */
-  --font-latin: Inter;
-  --font-arabic: Cairo;
-  --font-ui: Inter, Cairo, system-ui, sans-serif;
-  --weight-heading: 700;
+  --font-latin: Fredoka;
+  --font-arabic: 'Baloo Bhaijaan 2';
+  --font-ui: Fredoka, 'Baloo Bhaijaan 2', system-ui, sans-serif;
+  --weight-heading: 600;
   --weight-subheading: 600;
   --weight-body: 400;
   --weight-ui: 500;

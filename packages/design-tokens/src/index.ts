@@ -96,8 +96,8 @@ export const layout = {
   pagePaddingMobile: 16,
 } as const;
 
-export const fontFamilies = { ar: 'Cairo', en: 'Inter' } as const;
+export const fontFamilies = { ar: 'Baloo Bhaijaan 2', en: 'Fredoka' } as const;
 
-/** Headings 700, subheadings 600, body 400, buttons and navigation 500. */
-export const fontWeights = { heading: '700', subheading: '600', body: '400', ui: '500' } as const;
+/** Headings and card titles 600, body 400, buttons, navigation and labels 500. No 700+. */
+export const fontWeights = { heading: '600', subheading: '600', body: '400', ui: '500' } as const;
 export const motion = { duration: 180 } as const;

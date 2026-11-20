@@ -18,7 +18,7 @@
 }
 .public-brand {
   font-size: var(--font-h2);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   text-decoration: none;
 }

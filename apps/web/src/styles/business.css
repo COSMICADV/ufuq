@@ -41,7 +41,7 @@
   font-size: 1em;
   font-style: normal;
   font-weight: var(--weight-heading);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
 }
 .biz-nav__sep {
   inline-size: 2px;
@@ -303,17 +303,17 @@
 
 /* Type as in the mockup: heavy rounded headline, bold links, button and names. */
 .home.biz .biz-title {
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 .home.biz .biz-cta,
 .home.biz .biz-strip span,
 .home.biz .biz-sections h2 {
-  font-weight: 800;
+  font-weight: 600;
 }
 .home.biz .biz-nav > a {
   color: var(--home-ink);
-  font-weight: 700;
+  font-weight: var(--weight-ui);
 }
 .home.biz .biz-lead {
   font-weight: 600;
@@ -321,7 +321,7 @@
 .home.biz .biz-logo .os-logo__brand,
 .home.biz .biz-logo .os-logo__product {
   font-family: var(--font-ui);
-  font-weight: 800;
+  font-weight: 600;
 }
 .home.biz .home-header {
   background: rgb(252 253 254 / 0.9);
@@ -338,4 +338,8 @@
   padding: 12px;
   border-radius: 24px;
   background: #f6f9fd;
+}
+/* The call to action is a button: Medium, like every button. */
+.home.biz .biz-cta {
+  font-weight: var(--weight-ui);
 }

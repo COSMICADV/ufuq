@@ -145,7 +145,7 @@ textarea:focus-visible {
   gap: var(--space-1);
 }
 .field__label {
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .field__required,
 .field__error {
@@ -1065,7 +1065,7 @@ a.button {
   background: var(--sage-200);
   color: var(--green-primary-700);
   font-size: var(--font-caption);
-  font-weight: 700;
+  font-weight: 600;
 }
 .avatar--lg {
   inline-size: 64px;
@@ -2700,7 +2700,7 @@ a.button {
   margin: 0;
 }
 .payroll-breakdown__total {
-  font-weight: 700;
+  font-weight: 600;
 }
 .payroll-payslips {
   display: grid;
@@ -2783,7 +2783,7 @@ a.button {
 .warehouse-nav a.is-current {
   border-color: var(--green-primary-600);
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .warehouse-kpis {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
@@ -3259,7 +3259,7 @@ a.button {
   align-items: center;
   min-block-size: 44px;
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .monthly-report {
   display: grid;
@@ -3453,7 +3453,7 @@ a.button {
 }
 .app-topbar__home {
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
 .app-topbar__actions {
@@ -3495,7 +3495,7 @@ a.button {
   background: var(--green-primary-600);
   color: var(--text-on-primary);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 18px;
   text-align: center;
 }
@@ -3524,7 +3524,7 @@ a.button {
 .notification-filter button.is-active {
   background: var(--sage-100);
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .notification-pull {
   display: flex;
@@ -3597,7 +3597,7 @@ a.button {
   overflow-wrap: anywhere;
 }
 .notification-item.is-unread .notification-item__title {
-  font-weight: 700;
+  font-weight: 600;
 }
 .notification-item__body {
   color: var(--text-secondary);

@@ -101,7 +101,18 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
       <header className="home-header">
         <div className="home-header__inner">
           <a className="home-logo" href="/" aria-label={`1to1OS — ${t('entry.languages')}`}>
-            <ProductLogo domain />
+            <ProductLogo domain className="home-logo__wide" />
+            {/* Phones: the larger, centred logo of the mobile design. */}
+            <span className="home-mlogo" dir="ltr" translate="no" aria-hidden="true">
+              <span className="home-mlogo__one">1</span>
+              <span className="home-mlogo__rest">to</span>
+              <span className="home-mlogo__one">1</span>
+              <span className="home-mlogo__rest">OS</span>
+              <span className="home-mlogo__com">.COM</span>
+              <svg viewBox="0 0 100 10" preserveAspectRatio="none">
+                <path d="M3 7C30 3.6 64 3 97 5" />
+              </svg>
+            </span>
           </a>
           <div className="home-header__tools">
             <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
@@ -120,6 +131,14 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
             </span>
             <span className="home-title__end">{t('entry.headlineEnd')}</span>
           </h1>
+          <svg
+            className="home-title__brush"
+            viewBox="0 0 100 10"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path d="M3 6.6C30 3.2 66 2.8 97 4.8" />
+          </svg>
           <div className="home-doors" role="group" aria-label={t('entry.choose')}>
             {/* Personal on the left and Business on the right, in every language. */}
             <Door href={paths.personal} product="Personal" label={t('entry.openPersonal')} />
@@ -142,6 +161,10 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
           </svg>
         </section>
       </main>
+      <footer className="home-legal" lang="en" dir="ltr">
+        <p>©1to1OS.com — A Product by Cosmic Advertising Solutions Cairo, Egypt.</p>
+        <p>Tax Registration No.: 337-690-510</p>
+      </footer>
     </div>
   );
 }

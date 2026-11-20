@@ -316,7 +316,7 @@
   font-family: var(--font-ui);
   font-size: clamp(26px, 3vw, 46px);
   font-weight: var(--weight-ui);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -820,17 +820,14 @@
 }
 
 /* ---- Marketing type ---------------------------------------------------------------------
- * The public pages (home and Business) follow their approved mockups: the same
- * families as the product (Inter, Cairo) set heavier — headlines 800; navigation,
- * buttons and section labels 700; the lead line 500. The product's own screens
- * keep the 700/600/500/400 scale.
+ * The public pages use the product's own type (--font-ui: Fredoka with Baloo
+ * Bhaijaan 2) and its scale: headings 600; navigation and buttons 500; the
+ * lead line 500. No weight above 600 anywhere.
  */
 .home {
-  --mk-heading: 800;
-  --mk-ui: 700;
+  --mk-heading: 600;
+  --mk-ui: 500;
   --mk-lead: 500;
-  /* Rounded Latin letters, as in the mockups; Arabic still falls through to Cairo. */
-  --font-ui: Nunito, Cairo, system-ui, sans-serif;
 }
 .home .home-title,
 .home .biz-title,
@@ -865,7 +862,7 @@
 }
 
 /* ---- The choice screen, as in its mockup ------------------------------------------------
- * Colours read from the approved home mockup, rounded Nunito for the Latin words
+ * Colours read from the approved home mockup, the product's type (--font-ui) for the words
  * (its true italic for the product names), and the mockup's weights.
  */
 .home:not(.biz) {
@@ -889,16 +886,16 @@
   background: rgb(var(--rgb-page) / 0.86);
 }
 .home:not(.biz) .home-title {
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 .home:not(.biz) .home-nav > a,
 .home:not(.biz) .home-nav > a[aria-current='page'] {
   color: var(--home-ink);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .home:not(.biz) .home-logo .os-logo__brand {
-  font-weight: 700;
+  font-weight: 600;
 }
 .home .home-door__name {
   font-weight: 600;
@@ -964,12 +961,6 @@
     padding-block-start: clamp(20px, 6vh, 72px);
   }
 }
-/* Arabic on the home page in the mockup's rounded face (Baloo Bhaijaan 2), the
- * Arabic companion of the rounded Latin; Nunito has no Arabic glyphs, so Latin
- * words keep Nunito and Arabic words fall through to Baloo. */
-.home:not(.biz) {
-  --font-ui: Nunito, 'Baloo Bhaijaan 2', Cairo, system-ui, sans-serif;
-}
 .home:not(.biz):lang(ar) .home-title {
   font-weight: 600;
   letter-spacing: normal;
@@ -993,7 +984,7 @@
   color: var(--home-ink);
   font-family: var(--font-ui);
   font-size: clamp(14px, 1.05vw, 17px);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .home .lang-menu__toggle > svg:first-child {
   color: var(--home-blue);
@@ -1025,9 +1016,6 @@
 .lang-page__dot {
   margin-inline: 0.6em;
   color: var(--home-blue);
-}
-.lang-page__also [lang='ar'] {
-  font-family: 'Baloo Bhaijaan 2', Cairo, sans-serif;
 }
 .lang-cards {
   display: grid;
@@ -1076,9 +1064,8 @@
   border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%;
   background: var(--home-sky, #ddedfc);
   color: var(--home-ink);
-  font-family: Nunito, sans-serif;
   font-size: clamp(18px, 1.6vw, 26px);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 .lang-card__name {
@@ -1086,12 +1073,8 @@
   display: inline-block;
   padding-block-end: 0.28em;
   font-size: clamp(24px, 2.2vw, 38px);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
-}
-.lang-card[lang='ar'] .lang-card__name,
-.lang-card[lang='ar'] .lang-card__go {
-  font-family: 'Baloo Bhaijaan 2', Cairo, sans-serif;
 }
 .lang-card__name .home-door__brush {
   position: absolute;
@@ -1106,7 +1089,7 @@
   gap: 6px;
   color: var(--home-blue);
   font-size: clamp(14px, 1.1vw, 18px);
-  font-weight: 700;
+  font-weight: var(--weight-ui);
 }
 .lang-card[dir='rtl'] .lang-card__go svg {
   transform: scaleX(-1);
@@ -1164,4 +1147,179 @@
   flex-wrap: wrap;
   justify-content: center;
   margin-inline: auto;
+}
+
+/* ---- The product choice on phones, as in the mobile design --------------
+ * The large centred logo ("1" navy, "to1OS" blue, ".COM", brush under it),
+ * the headline on two lines over a pale brush stroke, the two doors (drawing,
+ * a hairline, "1to1OS" over the product in blue italic, a grey chevron), the
+ * waves along the bottom and the company line under them. */
+.home-mlogo,
+.home-title__brush {
+  display: none;
+}
+.home-legal {
+  position: relative;
+  z-index: 1;
+  padding: 18px 16px 22px;
+  color: var(--home-ink, #021e52);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0.8;
+}
+.home-legal p {
+  margin: 0;
+}
+.lang-page .home-legal {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .home:not(.biz):not(.lang-page) {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100dvh;
+  }
+  .home:not(.biz):not(.lang-page) main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+  .home:not(.biz):not(.lang-page) .home-header__inner {
+    justify-content: center;
+    padding-block: 34px 4px;
+  }
+  .home:not(.biz):not(.lang-page) .home-header__tools,
+  .home:not(.biz):not(.lang-page) .home-logo__wide {
+    display: none;
+  }
+  .home:not(.biz):not(.lang-page) .home-logo {
+    margin: 0;
+    text-decoration: none;
+  }
+  .home-mlogo {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    padding-block-end: 0.22em;
+    font-family: var(--font-ui);
+    font-size: clamp(54px, 17vw, 70px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .home:not(.biz):not(.lang-page) .home-mlogo {
+    display: inline-flex;
+  }
+  /* The logo's own colours: both "1"s navy, "to" and "OS" blue. */
+  .home-mlogo__one {
+    color: #102451;
+  }
+  .home-mlogo__one:first-child {
+    margin-inline-end: 0.1em;
+  }
+  .home-mlogo__rest {
+    color: #457bf8;
+  }
+  .home-mlogo__com {
+    margin-inline-start: 0.12em;
+    color: #102451;
+    font-size: 0.3em;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  .home-mlogo svg {
+    position: absolute;
+    inset-inline-start: 34%;
+    inset-block-end: 0;
+    inline-size: 46%;
+    block-size: 0.14em;
+    overflow: visible;
+  }
+  .home-mlogo path,
+  .home-title__brush path {
+    fill: none;
+    stroke: var(--home-blue, #007cfc);
+    stroke-width: 3;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .home:not(.biz):not(.lang-page) .home-hero {
+    position: relative;
+    flex: 1;
+    min-block-size: 0;
+    gap: 0;
+    padding-block: 26px 0;
+  }
+  .home:not(.biz):not(.lang-page) .home-title {
+    font-size: clamp(34px, 10.4vw, 44px);
+    line-height: 1.35;
+  }
+  .home-title__brush {
+    display: block;
+    align-self: center;
+    inline-size: 40%;
+    block-size: 10px;
+    margin-block: 8px 30px;
+    overflow: visible;
+  }
+  .home-title__brush path {
+    stroke: color-mix(in srgb, var(--home-blue, #007cfc) 55%, white);
+    stroke-width: 6;
+  }
+
+  .home:not(.biz):not(.lang-page) .home-doors {
+    gap: 22px;
+  }
+  .home:not(.biz):not(.lang-page) .home-door {
+    gap: 0;
+    padding: 22px 18px;
+    border-radius: 30px;
+  }
+  .home:not(.biz):not(.lang-page) .home-door__art {
+    inline-size: 38%;
+    block-size: 96px;
+    padding-inline-end: 14px;
+  }
+  .home:not(.biz):not(.lang-page) .home-door__name {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-inline-start: 22px;
+    border-inline-start: 1px solid var(--border-subtle, #e6ecf5);
+    font-size: clamp(26px, 8vw, 32px);
+    font-weight: 600;
+  }
+  .home:not(.biz):not(.lang-page) .home-door__product {
+    font-weight: 600;
+  }
+  .home:not(.biz):not(.lang-page) .home-door__go {
+    inline-size: 28px;
+    block-size: 28px;
+    background: none;
+    color: #8a95a8;
+  }
+
+  .home:not(.biz):not(.lang-page) .home-hero__waves {
+    display: block;
+    position: absolute;
+    inset-block-end: -96px;
+    left: 50%;
+    inline-size: 100vw;
+    block-size: 110px;
+    transform: translateX(-50%);
+    z-index: 0;
+  }
+  .home:not(.biz):not(.lang-page) .home-legal {
+    margin-block-start: auto;
+    padding-block: 40px 18px;
+    background: linear-gradient(transparent, var(--home-sky, #ddedfc) 60%);
+    font-size: clamp(9px, 2.75vw, 11.5px);
+  }
+  .home:not(.biz):not(.lang-page) .home-legal p {
+    white-space: nowrap;
+  }
 }

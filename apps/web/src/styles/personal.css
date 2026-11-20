@@ -6,8 +6,7 @@
  * name in every language, as in the reference.
  *
  * Colours come from the theme tokens, so the violet, green and dark themes
- * apply here too; the rounded Nunito / Baloo Bhaijaan 2 pairing matches the
- * reference and the product-choice screen.
+ * apply here too; type is the product's own (--font-ui).
  */
 
 .pshell,
@@ -20,7 +19,7 @@
   --p-pill: color-mix(in srgb, var(--p-blue) 16%, var(--p-card));
   --p-pill-line: color-mix(in srgb, var(--p-blue) 26%, var(--p-card));
   --p-shadow: 0 18px 50px rgb(16 36 84 / 0.08), 0 2px 6px rgb(16 36 84 / 0.05);
-  font-family: Nunito, 'Baloo Bhaijaan 2', Cairo, system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 
 .pshell {
@@ -75,16 +74,15 @@
 .plogo__os {
   color: var(--p-ink);
   font-family: var(--font-ui);
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .plogo__p {
   position: relative;
   padding-block-end: 0.3em;
   color: var(--p-blue);
-  font-family: Nunito, system-ui, sans-serif;
   font-style: italic;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 .plogo__p svg {
@@ -140,7 +138,7 @@
   color: var(--p-ink);
   font: inherit;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: var(--weight-ui);
   line-height: 1.2;
   text-align: start;
   text-decoration: none;
@@ -201,7 +199,7 @@
   color: var(--p-ink);
   font: inherit;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--weight-ui);
   text-align: start;
   cursor: pointer;
 }
@@ -255,7 +253,7 @@
 .pscreen-head h1 {
   margin: 0;
   font-size: clamp(30px, 3vw, 44px);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.2;
 }
 .pscreen-hello p,
@@ -273,7 +271,7 @@
 .pscreen-sub {
   margin: 8px 0 -6px;
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .pcards {
@@ -310,7 +308,7 @@
 }
 .pcard__name {
   font-size: 21px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .pcard__about {
   color: var(--p-muted);
@@ -333,7 +331,7 @@
 .pempty h2 {
   margin: 8px 0 0;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .pempty p {
   max-inline-size: 46ch;
@@ -351,7 +349,7 @@
   background: var(--p-pill);
   color: var(--p-blue);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .psettings {
@@ -364,7 +362,7 @@
 .psettings h2 {
   margin: 0 0 12px;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .psettings dl {
   display: grid;
@@ -391,7 +389,7 @@
 }
 .psettings dd {
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
 }
 .psettings__out {
   display: flex;
@@ -503,5 +501,5 @@
 }
 .pstart__signin a {
   color: var(--p-blue);
-  font-weight: 700;
+  font-weight: 600;
 }

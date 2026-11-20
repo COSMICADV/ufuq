@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   ghostText: { color: colors.greenPrimary600, fontWeight: '500' },
   disabled: { opacity: 0.4 },
   field: { gap: spacing[1] },
-  label: { color: colors.textPrimary, fontSize: typography.body, fontWeight: '600' },
+  label: { color: colors.textPrimary, fontSize: typography.body, fontWeight: '500' },
   required: { color: colors.dangerText },
   helper: { color: colors.textSecondary, fontSize: typography.caption },
   input: {
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   tableCell: { width: 150, padding: spacing[3], color: colors.textPrimary },
   tableHeaderText: { color: colors.textSecondary, fontSize: typography.caption, fontWeight: '600' },
   alert: { gap: spacing[1], padding: spacing[4], borderStartWidth: 3, borderRadius: radii.md },
-  alertTitle: { fontWeight: '700' },
+  alertTitle: { fontWeight: '600' },
   empty: { alignItems: 'center', gap: spacing[2], padding: spacing[8] },
   emptyIcon: { color: colors.sage300, fontSize: 96, lineHeight: 96 },
   skeleton: { gap: spacing[2] },
@@ -437,5 +437,5 @@ const styles = StyleSheet.create({
     borderTopEndRadius: radii.xl,
     backgroundColor: colors.surfaceRaised,
   },
-  modalTitle: { color: colors.textPrimary, fontSize: typography.h2, fontWeight: '700' },
+  modalTitle: { color: colors.textPrimary, fontSize: typography.h2, fontWeight: '600' },
 });

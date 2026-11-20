@@ -13,7 +13,7 @@
   display: inline-flex;
   align-items: baseline;
   font-family: var(--font-ui);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--text-primary);
   unicode-bidi: isolate;
@@ -46,7 +46,7 @@
   background: linear-gradient(90deg, var(--grad-from), var(--grad-to));
   color: var(--text-on-primary);
   border-color: transparent;
-  font-weight: 700;
+  font-weight: var(--weight-ui);
   box-shadow: 0 10px 15px -3px rgb(var(--rgb-accent) / 0.12);
 }
 .button--primary:hover {
@@ -136,8 +136,8 @@
 }
 .public-intro h1 {
   color: var(--heading);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .public-hero {
   background: transparent;
@@ -422,7 +422,7 @@
 }
 .theme-picker__option[aria-checked='true'] {
   background: rgb(var(--rgb-accent) / 0.14);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 .theme-picker__check {
   margin-inline-start: auto;
@@ -559,7 +559,7 @@
 .rate-ring__value {
   position: relative;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
@@ -847,7 +847,7 @@
 .product-header .language-switch > [aria-current] {
   background: rgb(var(--rgb-accent) / 0.16);
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--weight-ui);
 }
 
 /* ---- No empty gaps between cards ------------------------------------------------------
@@ -913,7 +913,7 @@
 .earned__total {
   margin: 0;
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--heading);
 }
 .earned__total .payroll-amount {
