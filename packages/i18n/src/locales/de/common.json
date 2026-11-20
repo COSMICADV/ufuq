@@ -2765,6 +2765,67 @@
     "page": "Seite {page} von {pages}",
     "prev": "Zurück",
     "next": "Weiter",
-    "currency_setting": "Hauptwährung"
+    "currency_setting": "Hauptwährung",
+    "receipt": {
+      "title": "Belege",
+      "empty": "Noch keine Belege. Fotografieren oder laden Sie einen hoch.",
+      "read": "Beleg lesen",
+      "reading": "Der Beleg wird auf Ihrem Gerät gelesen…",
+      "review": "Gelesenes prüfen",
+      "review_help": "Nur Angehaktes wird übernommen, und Sie können es vor dem Speichern noch ändern.",
+      "total_guess": "Keine eindeutige „Summe“-Zeile gefunden – das ist der höchste Betrag auf dem Beleg. Bitte prüfen.",
+      "from_history": "Wie beim letzten Mal bei diesem Händler",
+      "from_receipt": "Aus dem Beleg vorgeschlagen",
+      "tax": "Steuer",
+      "tax_to_notes": "Wird zu den Notizen hinzugefügt",
+      "nothing_found": "Aus diesem Foto ließ sich nichts lesen. Geben Sie die Daten ein oder fotografieren Sie den Beleg deutlicher.",
+      "currency_mismatch": "Der Beleg ist in {currency} und weicht von der Kontowährung ab. Prüfen Sie Betrag und Konto.",
+      "apply": "Auswahl übernehmen",
+      "upload_failed": "Die Buchung wurde gespeichert, aber einige Belege konnten nicht hochgeladen werden. Drücken Sie Speichern, um es erneut zu versuchen.",
+      "read_failed": "Der Beleg konnte nicht gelesen werden. Sie können die Daten selbst eingeben.",
+      "limit": "Bis zu {max} Belege pro Buchung.",
+      "count": "{count} Belege"
+    },
+    "batch": {
+      "open": "Belege scannen",
+      "title": "Belege scannen",
+      "help": "Fotografieren oder laden Sie einen oder mehrere Belege hoch. Jeder wird auf Ihrem Gerät gelesen und wird zu einer Ausgabe zur Prüfung; gespeichert wird erst, wenn Sie Speichern drücken.",
+      "paid_from": "Bezahlt von",
+      "limit": "Bis zu {max} Belege auf einmal.",
+      "some_failed": "Einige Belege konnten nicht gespeichert oder ihre Fotos nicht hochgeladen werden. Prüfen Sie die markierten.",
+      "receipt_n": "Beleg {n}",
+      "date": "Datum",
+      "save": "Speichern ({count})",
+      "fix_amounts": "Geben Sie für jeden ausgewählten Beleg Betrag und Datum ein oder heben Sie die Auswahl auf.",
+      "status": {
+        "queued": "Wartet",
+        "reading": "Wird gelesen…",
+        "ready": "Gelesen – bitte prüfen",
+        "unread": "Daten eingeben",
+        "saving": "Wird gespeichert…",
+        "saved": "Gespeichert",
+        "failed": "Speichern fehlgeschlagen"
+      }
+    }
+  },
+  "capture": {
+    "take_photo": "Foto aufnehmen",
+    "upload": "Bild oder PDF hochladen",
+    "upload_image": "Bild hochladen",
+    "error_image": "Dieses Bild lässt sich nicht öffnen. Versuchen Sie ein anderes.",
+    "preview": "Fotovorschau",
+    "crop": "Zuschneidebereich — Ecken ziehen",
+    "rotate_left": "Nach links drehen",
+    "rotate_right": "Nach rechts drehen",
+    "reset_crop": "Zuschnitt zurücksetzen",
+    "cancel": "Abbrechen",
+    "retake": "Neu aufnehmen",
+    "use": "Foto verwenden",
+    "view": "Ansehen",
+    "remove": "Entfernen",
+    "edit": "Foto bearbeiten",
+    "edit_title": "Foto ansehen und bearbeiten",
+    "error_size": "Die Datei ist größer als 10 MB.",
+    "error_type": "Nicht unterstützte Datei. Verwenden Sie ein Bild (JPG, PNG oder WebP) oder ein PDF."
   }
 }

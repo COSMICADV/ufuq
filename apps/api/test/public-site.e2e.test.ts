@@ -16,6 +16,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { existsSync, writeFileSync } from 'node:fs';
+import { OBJECT_STORAGE } from '../src/attachments/object-storage.js';
 import { AuditDispatcher } from '../src/auth/audit-dispatcher.js';
 import { MAIL_TRANSPORT } from '../src/mail/mail-transport.js';
 import type { MailMessage } from '../src/mail/mail-transport.js';
@@ -27,7 +28,9 @@ import { PRISMA_CLIENT } from '../src/common/db.tokens.js';
 import { ErrorFilter } from '../src/common/error.filter.js';
 import { REDIS_CLIENT } from '../src/common/redis.tokens.js';
 import { createValidationPipe } from '../src/common/validation-pipe.js';
+import { SAMPLES } from './attachment-samples.js';
 import { FakeRedis } from './fake-redis.js';
+import { InMemoryObjectStorage } from './in-memory-storage.js';
 import { allMigrationsSql } from './all-migrations.js';
 
 // Every migration, not only Phase 3's: the application under test reads the
@@ -206,6 +209,8 @@ beforeAll(async () => {
     .useValue(transport)
     .overrideProvider(REDIS_CLIENT)
     .useValue(redis)
+    .overrideProvider(OBJECT_STORAGE)
+    .useValue(new InMemoryObjectStorage())
     .compile();
 
   app = moduleRef.createNestApplication();
@@ -1060,6 +1065,70 @@ describe('1to1OS Personal — Expenses', () => {
     expect((await business.get(`${F}/summary`)).status).toBe(403);
     expect((await business.get(`${F}/accounts`)).status).toBe(403);
     expect((await request(app.getHttpServer()).get(`${F}/summary`)).status).toBe(401);
+  });
+
+  it('keeps receipts private to the transaction, counts them, and retires them with it', async () => {
+    const owner = await personalAgent('fin.receipts@personal.test');
+    const cash = ((await owner.get(`${F}/accounts`)).body.data as { id: string }[])[0]?.id;
+    const created = await owner.post(`${F}/transactions`).send({
+      type: 'expense',
+      amount: '120.50',
+      account_id: cash,
+      occurred_at: '2026-11-20T10:00:00.000Z',
+      merchant: 'Seoudi',
+    });
+    expect(created.status).toBe(201);
+    const id = String(created.body.data.id);
+    expect(created.body.data.receipt_count).toBe(0);
+
+    const upload = (bytes: Buffer, name: string, type: string) =>
+      owner
+        .post('/api/v1/attachments')
+        .field('related_type', 'finance_transaction')
+        .field('related_id', id)
+        .attach('file', bytes, { filename: name, contentType: type });
+    const first = await upload(SAMPLES.png.bytes, 'receipt-1.png', 'image/png');
+    expect(first.status).toBe(201);
+    expect((await upload(SAMPLES.pdf.bytes, 'receipt-2.pdf', 'application/pdf')).status).toBe(201);
+    // A PDF dressed as an image is still refused by the shared byte check.
+    expect((await upload(SAMPLES.pdf.bytes, 'fake.png', 'image/png')).status).toBe(422);
+
+    const one = await owner.get(`${F}/transactions/${id}`);
+    expect(one.body.data.receipt_count).toBe(2);
+    expect((one.body.data.receipts as { original_name: string }[]).map((r) => r.original_name).sort()).toEqual([
+      'receipt-1.png',
+      'receipt-2.pdf',
+    ]);
+    const listed = (await owner.get(`${F}/transactions`)).body.data as { id: string; receipt_count: number }[];
+    expect(listed.find((t) => t.id === id)?.receipt_count).toBe(2);
+    const fileId = String(first.body.data.id);
+    const download = await owner.get(`/api/v1/attachments/${fileId}`);
+    expect(download.status).toBe(200);
+    expect(download.headers['cache-control']).toBe('private, no-store');
+
+    // Nobody else sees it: another Personal account, a Business admin, or no one signed in.
+    const stranger = await personalAgent('fin.receipts.stranger@personal.test');
+    expect((await stranger.get(`/api/v1/attachments/${fileId}`)).status).toBe(404);
+    expect(
+      (
+        await stranger
+          .post('/api/v1/attachments')
+          .field('related_type', 'finance_transaction')
+          .field('related_id', id)
+          .attach('file', SAMPLES.png.bytes, { filename: 'x.png', contentType: 'image/png' })
+      ).status,
+    ).toBe(404);
+    const business = request.agent(app.getHttpServer());
+    await business.post('/api/v1/auth/login').send({ email: ADMIN_A_EMAIL, password: ADMIN_A_PASSWORD });
+    expect((await business.get(`/api/v1/attachments/${fileId}`)).status).toBe(404);
+    expect((await request(app.getHttpServer()).get(`/api/v1/attachments/${fileId}`)).status).toBe(401);
+
+    // Removing one receipt, then the transaction itself, retires the files.
+    expect((await owner.delete(`/api/v1/attachments/${fileId}`)).status).toBe(204);
+    expect((await owner.get(`${F}/transactions/${id}`)).body.data.receipt_count).toBe(1);
+    expect((await owner.delete(`${F}/transactions/${id}`)).status).toBe(204);
+    const second = String((one.body.data.receipts as { id: string; original_name: string }[]).find((r) => r.original_name === 'receipt-2.pdf')?.id);
+    expect((await owner.get(`/api/v1/attachments/${second}`)).status).toBe(404);
   });
 });
 

@@ -1,13 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
 import { ApiError, fetchOne, sendNoContent } from '../../../lib/api-client';
 import { categoryLabel, nowLocalInput, readAmount } from '../../../lib/finance';
 import type { Account, Category, Transaction, TransactionType } from '../../../lib/finance';
+import { MAX_RECEIPTS, releasePage, toPage, uploadReceipt } from '../../../lib/receipts';
+import type { Page, Receipt } from '../../../lib/receipts';
+import { CaptureButtons } from '../../capture/capture-buttons';
+import { PhotoEditor } from '../../capture/photo-editor';
+import { PendingReceipt, StoredReceipt } from '../../capture/receipt-thumbs';
 import { Button, Field, Input, Modal, Select, Textarea } from '../../design-system';
+import { ReceiptReview } from './receipt-review';
+import type { ReviewedValues } from './receipt-review';
+import { receiptWhen, scanPage } from './receipt-scan';
+import type { ScanResult } from './receipt-scan';
 
 const TYPES: readonly TransactionType[] = ['expense', 'income', 'transfer'];
 
@@ -53,12 +62,36 @@ export function TransactionDialog({
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pages, setPages] = useState<readonly Page[]>([]);
+  const [stored, setStored] = useState<readonly Receipt[]>([]);
+  const [editor, setEditor] = useState<{ file: File; replace: string | null; camera: boolean } | null>(null);
+  const [scan, setScan] = useState<ScanResult | 'reading' | null>(null);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [receiptError, setReceiptError] = useState('');
+  const savedId = useRef<string | null>(null);
+  const retake = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setErrors({});
     setFormError('');
     setConfirmDelete(false);
+    setPages((old) => {
+      old.forEach(releasePage);
+      return [];
+    });
+    setStored([]);
+    setEditor(null);
+    setScan(null);
+    setReceiptError('');
+    savedId.current = null;
+    if (editing && editing.type !== 'transfer') {
+      void fetchOne<Transaction>(`/personal/finance/transactions/${editing.id}`, { locale })
+        .then((full) => {
+          setStored(full.receipts ?? []);
+        })
+        .catch(() => undefined);
+    }
     if (editing) {
       setType(editing.type);
       setAmount(editing.amount);
@@ -78,7 +111,7 @@ export function TransactionDialog({
       setMerchant('');
       setNotes('');
     }
-  }, [open, editing, initialType, accounts]);
+  }, [open, editing, initialType]);
 
   const kindCategories = useMemo(() => {
     if (type === 'transfer') return [];
@@ -117,10 +150,34 @@ export function TransactionDialog({
     };
     setSaving(true);
     try {
-      if (editing) {
-        await fetchOne(`/personal/finance/transactions/${editing.id}`, { locale, method: 'PATCH', body });
-      } else {
-        await fetchOne('/personal/finance/transactions', { locale, method: 'POST', body: { type, ...body } });
+      const id = editing?.id ?? savedId.current;
+      const saved = id
+        ? await fetchOne<Transaction>(`/personal/finance/transactions/${id}`, { locale, method: 'PATCH', body })
+        : await fetchOne<Transaction>('/personal/finance/transactions', {
+            locale,
+            method: 'POST',
+            body: { type, ...body },
+          });
+      savedId.current = saved.id;
+      // Receipts go up one by one after the transaction exists; a page that
+      // fails stays here so pressing Save again retries only what is left.
+      let left = pages;
+      if (type !== 'transfer') {
+        for (const page of pages) {
+          try {
+            await uploadReceipt(locale, saved.id, page);
+            releasePage(page);
+            left = left.filter((p) => p.key !== page.key);
+          } catch {
+            // kept for retry
+          }
+        }
+      }
+      setPages(left);
+      if (left.length > 0) {
+        setReceiptError(t('finance.receipt.upload_failed'));
+        onSaved();
+        return;
       }
       onSaved();
       onClose();
@@ -138,6 +195,105 @@ export function TransactionDialog({
       setSaving(false);
     }
   };
+
+  const room = MAX_RECEIPTS - stored.length - pages.length;
+
+  const addFiles = async (files: readonly File[]): Promise<void> => {
+    setReceiptError('');
+    const added: Page[] = [];
+    for (const file of files.slice(0, Math.max(0, room))) {
+      try {
+        added.push(await toPage(file));
+      } catch (error) {
+        setReceiptError(
+          error instanceof Error && error.message === 'too_large'
+            ? t('capture.error_size')
+            : t('capture.error_type'),
+        );
+      }
+    }
+    if (files.length > room) setReceiptError(t('finance.receipt.limit', { max: String(MAX_RECEIPTS) }));
+    setPages((old) => [...old, ...added]);
+  };
+
+  const useEdited = async (file: File, result: { blob: Blob; canvas: HTMLCanvasElement }, replace: string | null): Promise<void> => {
+    const page = await toPage(file, result);
+    setPages((old) => {
+      if (replace === null) return [...old, page];
+      return old.map((p) => {
+        if (p.key !== replace) return p;
+        releasePage(p);
+        return page;
+      });
+    });
+    setEditor(null);
+  };
+
+  const read = async (): Promise<void> => {
+    const page = pages.find((p) => !p.pdf);
+    if (!page) return;
+    setScan('reading');
+    setScanProgress(0);
+    try {
+      setScan(await scanPage(locale, page, categories, setScanProgress));
+    } catch {
+      setScan(null);
+      setReceiptError(t('finance.receipt.read_failed'));
+    }
+  };
+
+  const apply = (values: ReviewedValues): void => {
+    if (values.amount) setAmount(values.amount);
+    if (values.date) setWhen(receiptWhen(values.date, values.time));
+    if (values.merchant) setMerchant(values.merchant);
+    if (values.categoryId) setCategoryId(values.categoryId);
+    if (values.taxNote) setNotes((n) => (n ? `${n}\n${values.taxNote ?? ''}` : (values.taxNote ?? '')));
+    setScan(null);
+  };
+
+  const removeStored = async (receipt: Receipt): Promise<void> => {
+    try {
+      await sendNoContent(`/attachments/${receipt.id}`, { locale, method: 'DELETE' });
+      setStored((old) => old.filter((r) => r.id !== receipt.id));
+      onSaved();
+    } catch {
+      setReceiptError(t('finance.error.generic'));
+    }
+  };
+
+  if (editor) {
+    return (
+      <Modal
+        open={open}
+        title={t('capture.edit_title')}
+        onClose={() => {
+          setEditor(null);
+        }}
+        closeLabel={t('finance.close')}
+      >
+        <PhotoEditor
+          locale={locale}
+          file={editor.file}
+          onCancel={() => {
+            setEditor(null);
+          }}
+          {...(editor.camera
+            ? {
+                onRetake: () => {
+                  setEditor(null);
+                  setTimeout(() => {
+                    retake.current?.();
+                  }, 60);
+                },
+              }
+            : {})}
+          onUse={(result) => {
+            void useEdited(editor.file, result, editor.replace);
+          }}
+        />
+      </Modal>
+    );
+  }
 
   const remove = async (): Promise<void> => {
     if (!editing) return;
@@ -331,6 +487,99 @@ export function TransactionDialog({
             }}
           />
         </Field>
+        {type === 'transfer' ? null : (
+          <section className="fin-receipts" aria-label={t('finance.receipt.title')}>
+            <div className="fin-receipts__head">
+              <h3>{t('finance.receipt.title')}</h3>
+              <small>
+                {stored.length + pages.length}/{MAX_RECEIPTS}
+              </small>
+            </div>
+            {stored.length + pages.length > 0 ? (
+              <div className="fin-receipts__list">
+                {stored.map((r) => (
+                  <StoredReceipt
+                    key={r.id}
+                    locale={locale}
+                    receipt={r}
+                    onRemove={() => {
+                      void removeStored(r);
+                    }}
+                  />
+                ))}
+                {pages.map((p) => (
+                  <PendingReceipt
+                    key={p.key}
+                    locale={locale}
+                    page={p}
+                    onEdit={() => {
+                      setEditor({ file: p.original, replace: p.key, camera: false });
+                    }}
+                    onRemove={() => {
+                      releasePage(p);
+                      setPages((old) => old.filter((x) => x.key !== p.key));
+                      setScan(null);
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="fin-muted">{t('finance.receipt.empty')}</p>
+            )}
+            {room > 0 ? (
+              <CaptureButtons
+                locale={locale}
+                onCamera={(file) => {
+                  retake.current = () => {
+                    document.querySelector<HTMLInputElement>('.fin-receipts input[capture]')?.click();
+                  };
+                  setEditor({ file, replace: null, camera: true });
+                }}
+                onFiles={(files) => {
+                  void addFiles(files);
+                }}
+              />
+            ) : null}
+            {pages.some((p) => !p.pdf) && scan === null ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="fin-receipts__read"
+                onClick={() => {
+                  void read();
+                }}
+              >
+                {t('finance.receipt.read')}
+              </Button>
+            ) : null}
+            {scan === 'reading' ? (
+              <div className="receipt-reading" role="status">
+                <span>{t('finance.receipt.reading')}</span>
+                <span className="fin-bar" aria-hidden="true">
+                  <span style={{ inlineSize: `${String(scanProgress * 100)}%` }} />
+                </span>
+              </div>
+            ) : null}
+            {scan !== null && scan !== 'reading' ? (
+              <ReceiptReview
+                locale={locale}
+                reading={scan.reading}
+                category={type === 'expense' ? scan.category : null}
+                categorySource={scan.categorySource}
+                accountCurrency={account?.currency ?? null}
+                onApply={apply}
+                onDismiss={() => {
+                  setScan(null);
+                }}
+              />
+            ) : null}
+            {receiptError ? (
+              <p className="fin-form__error" role="alert">
+                {receiptError}
+              </p>
+            ) : null}
+          </section>
+        )}
         <div className="fin-form__actions">
           {editing ? (
             <Button

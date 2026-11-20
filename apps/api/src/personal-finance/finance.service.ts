@@ -23,6 +23,8 @@ import type { PrismaClient, TenantClient , Prisma } from '@ufuq/db';
 import type { Locale } from '@ufuq/i18n';
 import { Decimal } from '@ufuq/money';
 
+import type { AttachmentPayload } from '../attachments/attachment-payload.js';
+import { AttachmentsService } from '../attachments/attachments.service.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import type { ResolvedPage } from '../company-structure/dto/pagination.dto.js';
@@ -89,6 +91,10 @@ export interface TransactionPayload {
   readonly occurred_at: string;
   readonly merchant: string | null;
   readonly notes: string | null;
+  /** How many receipts (live attachments) the transaction carries. */
+  readonly receipt_count: number;
+  /** The receipts themselves — on a single transaction only. */
+  readonly receipts?: readonly AttachmentPayload[];
 }
 
 export interface SummaryPayload {
@@ -110,6 +116,8 @@ export interface SummaryPayload {
   readonly other_currencies: boolean;
 }
 
+const RECEIPT_TYPE = 'finance_transaction';
+
 const TRANSACTION_INCLUDE = {
   account: { select: { name: true } },
   toAccount: { select: { name: true } },
@@ -120,7 +128,7 @@ type TransactionRow = Prisma.FinanceTransactionGetPayload<{
   include: typeof TRANSACTION_INCLUDE;
 }>;
 
-function transactionPayload(row: TransactionRow): TransactionPayload {
+function transactionPayload(row: TransactionRow, receiptCount = 0): TransactionPayload {
   return {
     id: row.id,
     type: row.type,
@@ -136,7 +144,33 @@ function transactionPayload(row: TransactionRow): TransactionPayload {
     occurred_at: row.occurredAt.toISOString(),
     merchant: row.merchant,
     notes: row.notes,
+    receipt_count: receiptCount,
   };
+}
+
+/** Live receipt counts for a page of transactions, in one query. */
+async function receiptCounts(
+  tx: TenantClient,
+  ids: readonly string[],
+): Promise<ReadonlyMap<string, number>> {
+  if (ids.length === 0) return new Map();
+  const groups = await tx.attachment.groupBy({
+    by: ['relatedId'],
+    where: { relatedType: RECEIPT_TYPE, relatedId: { in: [...ids] }, deletedAt: null },
+    _count: { _all: true },
+  });
+  return new Map(groups.map((g) => [g.relatedId, g._count._all]));
+}
+
+async function withCounts(
+  tx: TenantClient,
+  rows: readonly TransactionRow[],
+): Promise<TransactionPayload[]> {
+  const counts = await receiptCounts(
+    tx,
+    rows.map((r) => r.id),
+  );
+  return rows.map((r) => transactionPayload(r, counts.get(r.id) ?? 0));
 }
 
 const CASH_WALLET: Record<Locale, string> = {
@@ -149,7 +183,10 @@ const CASH_WALLET: Record<Locale, string> = {
 
 @Injectable()
 export class PersonalFinanceService extends TenantScopedService {
-  constructor(@Inject(PRISMA_CLIENT) prisma: PrismaClient) {
+  constructor(
+    @Inject(PRISMA_CLIENT) prisma: PrismaClient,
+    @Inject(AttachmentsService) private readonly attachments: AttachmentsService,
+  ) {
     super(prisma);
   }
 
@@ -565,7 +602,7 @@ export class PersonalFinanceService extends TenantScopedService {
         }),
         tx.financeTransaction.count({ where }),
       ]);
-      return { items: rows.map(transactionPayload), total };
+      return { items: await withCounts(tx, rows), total };
     });
   }
 
@@ -576,7 +613,8 @@ export class PersonalFinanceService extends TenantScopedService {
         include: TRANSACTION_INCLUDE,
       });
       if (!row) throw notFound();
-      return transactionPayload(row);
+      const receipts = await this.attachments.listFor(tx, RECEIPT_TYPE, row.id);
+      return { ...transactionPayload(row, receipts.length), receipts };
     });
   }
 
@@ -652,7 +690,7 @@ export class PersonalFinanceService extends TenantScopedService {
         },
         include: TRANSACTION_INCLUDE,
       });
-      return transactionPayload(row);
+      return (await withCounts(tx, [row]))[0] ?? transactionPayload(row);
     });
   }
 
@@ -660,6 +698,11 @@ export class PersonalFinanceService extends TenantScopedService {
     await this.tenant(ctx, async (tx) => {
       const deleted = await tx.financeTransaction.deleteMany({ where: { id } });
       if (deleted.count === 0) throw notFound();
+      // Its receipts leave with it (soft-deleted, as every attachment removal is).
+      await tx.attachment.updateMany({
+        where: { relatedType: RECEIPT_TYPE, relatedId: id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
     });
   }
 
@@ -737,6 +780,7 @@ export class PersonalFinanceService extends TenantScopedService {
         orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
         take: 8,
       });
+      const recentPayloads = await withCounts(tx, recent);
 
       return {
         currency,
@@ -753,7 +797,7 @@ export class PersonalFinanceService extends TenantScopedService {
           amount: money(row.total).toString(),
         })),
         accounts,
-        recent: recent.map(transactionPayload),
+        recent: recentPayloads,
         other_currencies: others > 0,
       };
     });

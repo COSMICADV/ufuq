@@ -11,6 +11,7 @@ import type { Account, Category, Period, Summary, Transaction } from '../../../l
 import { personalHref } from '../../../lib/personal';
 import { Button } from '../../design-system';
 import { ExpensesHeader, RING_COLORS, SpendingRing, TransactionRow } from './finance-parts';
+import { ReceiptBatch } from './receipt-batch';
 import { TransactionDialog } from './transaction-dialog';
 
 /**
@@ -27,6 +28,7 @@ export function ExpensesDashboard({ locale }: { readonly locale: Locale }): Reac
   const [categories, setCategories] = useState<readonly Category[]>([]);
   const [timeZone, setTimeZone] = useState('Africa/Cairo');
   const [failed, setFailed] = useState(false);
+  const [batch, setBatch] = useState(false);
   const [dialog, setDialog] = useState<{ open: boolean; editing: Transaction | null }>({
     open: false,
     editing: null,
@@ -70,13 +72,23 @@ export function ExpensesDashboard({ locale }: { readonly locale: Locale }): Reac
       <ExpensesHeader
         locale={locale}
         action={
-          <Button
-            onClick={() => {
-              setDialog({ open: true, editing: null });
-            }}
-          >
-            + {t('finance.add')}
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setBatch(true);
+              }}
+            >
+              {t('finance.batch.open')}
+            </Button>
+            <Button
+              onClick={() => {
+                setDialog({ open: true, editing: null });
+              }}
+            >
+              + {t('finance.add')}
+            </Button>
+          </>
         }
       />
 
@@ -266,6 +278,18 @@ export function ExpensesDashboard({ locale }: { readonly locale: Locale }): Reac
         editing={dialog.editing}
         onClose={() => {
           setDialog({ open: false, editing: null });
+        }}
+        onSaved={() => {
+          void load();
+        }}
+      />
+      <ReceiptBatch
+        locale={locale}
+        open={batch}
+        accounts={accounts}
+        categories={categories}
+        onClose={() => {
+          setBatch(false);
         }}
         onSaved={() => {
           void load();

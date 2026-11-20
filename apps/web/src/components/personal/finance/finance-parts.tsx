@@ -8,6 +8,7 @@ import type { Locale } from '@ufuq/i18n';
 import { categoryLabel, money } from '../../../lib/finance';
 import type { Transaction } from '../../../lib/finance';
 import { personalHref } from '../../../lib/personal';
+import { FreehandIcon } from '../../freehand-icon';
 import { PersonalIcon } from '../personal-shell';
 
 /** The four Expenses screens, as tabs under the section heading. */
@@ -76,7 +77,15 @@ export function TransactionRow({
     <>
       <span className={`fin-row__dot fin-row__dot--${tx.type}`} aria-hidden="true" />
       <span className="fin-row__main">
-        <span className="fin-row__title">{title}</span>
+        <span className="fin-row__title">
+          {title}
+          {tx.receipt_count > 0 ? (
+            <span className="fin-row__receipt" title={t('finance.receipt.count', { count: String(tx.receipt_count) })}>
+              <FreehandIcon name="document" size={16} />
+              <span className="visually-hidden">{t('finance.receipt.count', { count: String(tx.receipt_count) })}</span>
+            </span>
+          ) : null}
+        </span>
         <span className="fin-row__meta">
           {[tx.merchant, tx.type === 'transfer' ? null : tx.account_name, formatDateTime(new Date(tx.occurred_at), { locale, timeZone })]
             .filter(Boolean)

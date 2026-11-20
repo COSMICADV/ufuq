@@ -10,6 +10,7 @@ import { categoryLabel } from '../../../lib/finance';
 import type { Account, Category, Transaction, TransactionType } from '../../../lib/finance';
 import { Button, Select } from '../../design-system';
 import { ExpensesHeader, TransactionRow } from './finance-parts';
+import { ReceiptBatch } from './receipt-batch';
 import { TransactionDialog } from './transaction-dialog';
 
 /** Every transaction, newest first, with filters; open one to edit or delete it. */
@@ -28,6 +29,7 @@ export function TransactionsScreen({ locale }: { readonly locale: Locale }): Rea
   const [to, setTo] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
+  const [batch, setBatch] = useState(false);
   const [dialog, setDialog] = useState<{ open: boolean; editing: Transaction | null }>({
     open: false,
     editing: null,
@@ -92,13 +94,23 @@ export function TransactionsScreen({ locale }: { readonly locale: Locale }): Rea
       <ExpensesHeader
         locale={locale}
         action={
-          <Button
-            onClick={() => {
-              setDialog({ open: true, editing: null });
-            }}
-          >
-            + {t('finance.add')}
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setBatch(true);
+              }}
+            >
+              {t('finance.batch.open')}
+            </Button>
+            <Button
+              onClick={() => {
+                setDialog({ open: true, editing: null });
+              }}
+            >
+              + {t('finance.add')}
+            </Button>
+          </>
         }
       />
 
@@ -245,6 +257,16 @@ export function TransactionsScreen({ locale }: { readonly locale: Locale }): Rea
         editing={dialog.editing}
         onClose={() => {
           setDialog({ open: false, editing: null });
+        }}
+        onSaved={refresh}
+      />
+      <ReceiptBatch
+        locale={locale}
+        open={batch}
+        accounts={accounts}
+        categories={categories}
+        onClose={() => {
+          setBatch(false);
         }}
         onSaved={refresh}
       />

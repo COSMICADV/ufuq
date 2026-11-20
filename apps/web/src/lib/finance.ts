@@ -54,6 +54,13 @@ export interface Transaction {
   readonly occurred_at: string;
   readonly merchant: string | null;
   readonly notes: string | null;
+  readonly receipt_count: number;
+  readonly receipts?: readonly {
+    readonly id: string;
+    readonly original_name: string;
+    readonly mime_type: string;
+    readonly size_bytes: number;
+  }[];
 }
 
 export interface Summary {

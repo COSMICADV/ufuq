@@ -2765,6 +2765,67 @@
     "page": "Page {page} sur {pages}",
     "prev": "Précédent",
     "next": "Suivant",
-    "currency_setting": "Devise principale"
+    "currency_setting": "Devise principale",
+    "receipt": {
+      "title": "Reçus",
+      "empty": "Aucun reçu. Prenez une photo ou importez-en un.",
+      "read": "Lire le reçu",
+      "reading": "Lecture du reçu sur votre appareil…",
+      "review": "Vérifiez ce qui a été lu",
+      "review_help": "Seul ce que vous cochez est utilisé, et vous pouvez encore le modifier avant d’enregistrer.",
+      "total_guess": "Aucune ligne « Total » claire : c’est le montant le plus élevé du reçu. Vérifiez-le.",
+      "from_history": "Comme la dernière fois chez ce commerçant",
+      "from_receipt": "Suggérée d’après le reçu",
+      "tax": "Taxe",
+      "tax_to_notes": "Ajoutée aux notes",
+      "nothing_found": "Rien n’a pu être lu sur cette photo. Saisissez les informations ou photographiez le reçu plus nettement.",
+      "currency_mismatch": "Le reçu est en {currency}, différente de la devise du compte. Vérifiez le montant et le compte.",
+      "apply": "Utiliser la sélection",
+      "upload_failed": "L’opération est enregistrée, mais certains reçus n’ont pas pu être importés. Appuyez sur Enregistrer pour réessayer.",
+      "read_failed": "Le reçu n’a pas pu être lu. Vous pouvez saisir les informations vous-même.",
+      "limit": "Jusqu’à {max} reçus par opération.",
+      "count": "{count} reçus"
+    },
+    "batch": {
+      "open": "Scanner des reçus",
+      "title": "Scanner des reçus",
+      "help": "Photographiez ou importez un ou plusieurs reçus. Chacun est lu sur votre appareil et devient une dépense à vérifier ; rien n’est enregistré avant d’appuyer sur Enregistrer.",
+      "paid_from": "Payé depuis",
+      "limit": "Jusqu’à {max} reçus à la fois.",
+      "some_failed": "Certains reçus n’ont pas pu être enregistrés ou leurs photos importées. Vérifiez ceux qui sont signalés.",
+      "receipt_n": "Reçu {n}",
+      "date": "Date",
+      "save": "Enregistrer ({count})",
+      "fix_amounts": "Indiquez le montant et la date de chaque reçu sélectionné, ou décochez-le.",
+      "status": {
+        "queued": "En attente",
+        "reading": "Lecture…",
+        "ready": "Lu — à vérifier",
+        "unread": "Saisissez les informations",
+        "saving": "Enregistrement…",
+        "saved": "Enregistré",
+        "failed": "Échec de l’enregistrement"
+      }
+    }
+  },
+  "capture": {
+    "take_photo": "Prendre une photo",
+    "upload": "Importer une image ou un PDF",
+    "upload_image": "Importer une image",
+    "error_image": "Impossible d’ouvrir cette image. Essayez-en une autre.",
+    "preview": "Aperçu de la photo",
+    "crop": "Zone de recadrage — faites glisser les coins",
+    "rotate_left": "Pivoter à gauche",
+    "rotate_right": "Pivoter à droite",
+    "reset_crop": "Annuler le recadrage",
+    "cancel": "Annuler",
+    "retake": "Reprendre",
+    "use": "Utiliser la photo",
+    "view": "Voir",
+    "remove": "Retirer",
+    "edit": "Modifier la photo",
+    "edit_title": "Aperçu et modification de la photo",
+    "error_size": "Le fichier dépasse 10 Mo.",
+    "error_type": "Fichier non pris en charge. Utilisez une image (JPG, PNG ou WebP) ou un PDF."
   }
 }

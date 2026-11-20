@@ -2765,6 +2765,67 @@
     "page": "Pagina {page} di {pages}",
     "prev": "Precedente",
     "next": "Successiva",
-    "currency_setting": "Valuta principale"
+    "currency_setting": "Valuta principale",
+    "receipt": {
+      "title": "Ricevute",
+      "empty": "Nessuna ricevuta. Scatta una foto o caricane una.",
+      "read": "Leggi ricevuta",
+      "reading": "Lettura della ricevuta sul tuo dispositivo…",
+      "review": "Controlla cosa è stato letto",
+      "review_help": "Viene usato solo ciò che selezioni e puoi ancora modificarlo prima di salvare.",
+      "total_guess": "Nessuna riga «Totale» chiara: questo è l’importo più alto sulla ricevuta. Controllalo.",
+      "from_history": "Come l’ultima volta presso questo esercente",
+      "from_receipt": "Suggerita dalla ricevuta",
+      "tax": "Imposta",
+      "tax_to_notes": "Aggiunta alle note",
+      "nothing_found": "Non è stato possibile leggere nulla da questa foto. Inserisci i dati o fotografa la ricevuta più chiaramente.",
+      "currency_mismatch": "La ricevuta è in {currency}, diversa dalla valuta del conto. Controlla importo e conto.",
+      "apply": "Usa selezionati",
+      "upload_failed": "L’operazione è stata salvata, ma alcune ricevute non sono state caricate. Premi Salva per riprovare.",
+      "read_failed": "Impossibile leggere la ricevuta. Puoi inserire i dati tu stesso.",
+      "limit": "Fino a {max} ricevute per operazione.",
+      "count": "{count} ricevute"
+    },
+    "batch": {
+      "open": "Scansiona ricevute",
+      "title": "Scansiona ricevute",
+      "help": "Fotografa o carica una o più ricevute. Ognuna viene letta sul tuo dispositivo e diventa una spesa da controllare; nulla viene salvato finché non premi Salva.",
+      "paid_from": "Pagato da",
+      "limit": "Fino a {max} ricevute alla volta.",
+      "some_failed": "Alcune ricevute non sono state salvate o le foto non sono state caricate. Controlla quelle segnalate.",
+      "receipt_n": "Ricevuta {n}",
+      "date": "Data",
+      "save": "Salva ({count})",
+      "fix_amounts": "Inserisci importo e data per ogni ricevuta selezionata, oppure deselezionala.",
+      "status": {
+        "queued": "In attesa",
+        "reading": "Lettura…",
+        "ready": "Letta — da controllare",
+        "unread": "Inserisci i dati",
+        "saving": "Salvataggio…",
+        "saved": "Salvata",
+        "failed": "Salvataggio non riuscito"
+      }
+    }
+  },
+  "capture": {
+    "take_photo": "Scatta foto",
+    "upload": "Carica immagine o PDF",
+    "upload_image": "Carica immagine",
+    "error_image": "Impossibile aprire questa immagine. Provane un’altra.",
+    "preview": "Anteprima foto",
+    "crop": "Area di ritaglio — trascina gli angoli",
+    "rotate_left": "Ruota a sinistra",
+    "rotate_right": "Ruota a destra",
+    "reset_crop": "Annulla ritaglio",
+    "cancel": "Annulla",
+    "retake": "Riscatta",
+    "use": "Usa la foto",
+    "view": "Visualizza",
+    "remove": "Rimuovi",
+    "edit": "Modifica foto",
+    "edit_title": "Anteprima e modifica della foto",
+    "error_size": "Il file supera i 10 MB.",
+    "error_type": "File non supportato. Usa un’immagine (JPG, PNG o WebP) o un PDF."
   }
 }

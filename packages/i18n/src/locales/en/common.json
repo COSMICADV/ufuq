@@ -2765,6 +2765,67 @@
     "page": "Page {page} of {pages}",
     "prev": "Previous",
     "next": "Next",
-    "currency_setting": "Main currency"
+    "currency_setting": "Main currency",
+    "receipt": {
+      "title": "Receipts",
+      "empty": "No receipts yet. Take a photo or upload one.",
+      "read": "Read receipt",
+      "reading": "Reading the receipt on your device…",
+      "review": "Review what was read",
+      "review_help": "Only what you tick is used, and you can still edit it before saving.",
+      "total_guess": "No clear “Total” line was found, so this is the largest amount on the receipt. Please check it.",
+      "from_history": "Same as last time at this merchant",
+      "from_receipt": "Suggested from the receipt",
+      "tax": "Tax",
+      "tax_to_notes": "Added to notes",
+      "nothing_found": "Nothing could be read from this photo. Enter the details, or photograph the receipt more clearly.",
+      "currency_mismatch": "The receipt is in {currency}, which differs from the account’s currency. Check the amount and account.",
+      "apply": "Use selected",
+      "upload_failed": "The transaction was saved, but some receipts could not be uploaded. Press Save to try again.",
+      "read_failed": "The receipt could not be read. You can enter the details yourself.",
+      "limit": "Up to {max} receipts per transaction.",
+      "count": "{count} receipts"
+    },
+    "batch": {
+      "open": "Scan receipts",
+      "title": "Scan receipts",
+      "help": "Photograph or upload one or more receipts. Each is read on your device and becomes an expense for you to review; nothing is saved until you press Save.",
+      "paid_from": "Paid from",
+      "limit": "Up to {max} receipts at a time.",
+      "some_failed": "Some receipts could not be saved or their photos uploaded. Check the marked ones.",
+      "receipt_n": "Receipt {n}",
+      "date": "Date",
+      "save": "Save ({count})",
+      "fix_amounts": "Fill in the amount and date for every selected receipt, or untick it.",
+      "status": {
+        "queued": "Waiting",
+        "reading": "Reading…",
+        "ready": "Read — please review",
+        "unread": "Enter the details",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "failed": "Could not save"
+      }
+    }
+  },
+  "capture": {
+    "take_photo": "Take photo",
+    "upload": "Upload image or PDF",
+    "upload_image": "Upload image",
+    "error_image": "This image could not be opened. Try another one.",
+    "preview": "Photo preview",
+    "crop": "Crop area — drag the corners",
+    "rotate_left": "Rotate left",
+    "rotate_right": "Rotate right",
+    "reset_crop": "Reset crop",
+    "cancel": "Cancel",
+    "retake": "Retake",
+    "use": "Use photo",
+    "view": "View",
+    "remove": "Remove",
+    "edit": "Edit photo",
+    "edit_title": "Preview and edit photo",
+    "error_size": "The file is larger than 10 MB.",
+    "error_type": "Unsupported file. Use an image (JPG, PNG or WebP) or a PDF."
   }
 }

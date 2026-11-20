@@ -25,6 +25,7 @@ import type { Env } from '@ufuq/config';
 import { AuthModule } from '../auth/auth.module.js';
 import { RateLimitService } from '../auth/rate-limit.service.js';
 import { ProductAttachmentPolicy } from '../inventory/product-attachment-policy.js';
+import { ReceiptAttachmentPolicy } from '../personal-finance/receipt-attachment-policy.js';
 import { LeaveAttachmentPolicy } from '../leave/leave-attachment-policy.js';
 import { RequestAttachmentPolicy } from '../requests/request-attachment-policy.js';
 import { TaskAttachmentPolicy } from '../tasks/task-attachment-policy.js';
@@ -58,6 +59,7 @@ export class AttachmentsModule {
         RequestAttachmentPolicy,
         LeaveAttachmentPolicy,
         ProductAttachmentPolicy,
+        ReceiptAttachmentPolicy,
         {
           provide: ATTACHMENT_POLICIES,
           useFactory: (
@@ -65,12 +67,14 @@ export class AttachmentsModule {
             requests: RequestAttachmentPolicy,
             leave: LeaveAttachmentPolicy,
             products: ProductAttachmentPolicy,
-          ) => [tasks, requests, leave, products],
+            receipts: ReceiptAttachmentPolicy,
+          ) => [tasks, requests, leave, products, receipts],
           inject: [
             TaskAttachmentPolicy,
             RequestAttachmentPolicy,
             LeaveAttachmentPolicy,
             ProductAttachmentPolicy,
+            ReceiptAttachmentPolicy,
           ],
         },
         {
