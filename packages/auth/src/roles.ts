@@ -89,7 +89,10 @@ function grants(
  * `permissionsForRole` reports as "not permitted" rather than as an error.
  */
 export const ROLE_PERMISSIONS: readonly RolePermissionGrant[] = [
-  ...grants('personal', [['personal.finance', 'self']]),
+  ...grants('personal', [
+    ['personal.finance', 'self'],
+    ['personal.health', 'self'],
+  ]),
   ...grants('admin', [
     ['employee.view', 'company'],
     ['employee.create', 'company'],

@@ -87,7 +87,77 @@
     "nav_settings": "Settings"
   },
   "health": {
-    "ok": "System is running"
+    "ok": "System is running",
+    "tabs": {
+      "overview": "Overview",
+      "records": "Health records"
+    },
+    "add": "Add document",
+    "take_photo": "Photograph a document",
+    "document": "Health document",
+    "pages": "Pages",
+    "pages_empty": "Photograph the document or upload an image or PDF. You can add several pages.",
+    "page_count": "{count} pages",
+    "download": "Download",
+    "recent": "Recent documents",
+    "empty": "No health documents yet. Photograph a prescription or a lab result to start.",
+    "search": "Search titles and notes",
+    "all_categories": "All",
+    "documents_count": "{count} documents",
+    "coming_phase": "Coming — phase {phase}",
+    "privacy": "Your medical files are yours alone: they have no public link, no other account can see them, and every opening is recorded.",
+    "section": {
+      "records": "Health records",
+      "medications": "Medications",
+      "lab_tests": "Lab tests",
+      "appointments": "Doctor visits",
+      "notifications": "Notifications"
+    },
+    "upcoming": {
+      "medications_today": "Today’s medications",
+      "medications_today_soon": "Medication schedules and reminders arrive in phase 2.",
+      "appointments_next": "Upcoming appointments",
+      "appointments_next_soon": "Doctor visits and follow-ups arrive in phase 4.",
+      "lab_tests_pending": "Pending lab tests",
+      "lab_tests_pending_soon": "Lab-test appointments and results arrive in phase 3."
+    },
+    "category": {
+      "prescription": "Prescription",
+      "lab_result": "Lab result",
+      "medical_report": "Medical report",
+      "imaging": "Imaging",
+      "vaccination": "Vaccination",
+      "insurance": "Insurance",
+      "other": "Other"
+    },
+    "field": {
+      "title": "Document name",
+      "title_hint": "e.g. Complete blood count",
+      "category": "Type",
+      "date": "Document date",
+      "notes": "Notes"
+    },
+    "error": {
+      "title": "Give the document a name.",
+      "no_pages": "Photograph the document or upload at least one page.",
+      "page_limit": "Up to {max} pages per document.",
+      "upload_failed": "The details were saved, but some pages could not be uploaded. Press Save to try again.",
+      "generic": "Could not save. Please try again.",
+      "load": "Could not load your health records."
+    },
+    "trash": {
+      "title": "Trash ({count})",
+      "help": "Deleted documents stay here for 30 days, then are removed for good with their images.",
+      "empty": "The trash is empty.",
+      "move": "Move to trash",
+      "move_title": "Move this document to the trash?",
+      "move_help": "It stays in the trash for 30 days and can be restored, then it is removed for good.",
+      "read_only": "This document is in the trash. It will be removed for good in {days} days unless you restore it.",
+      "days_left": "Removed for good in {days} days",
+      "restore": "Restore",
+      "delete_now": "Delete for good",
+      "delete_help": "“{title}” and all its pages will be removed for good now. This cannot be undone."
+    }
   },
   "error": {
     "not_found": "The requested item was not found",

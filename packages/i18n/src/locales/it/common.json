@@ -87,7 +87,77 @@
     "nav_settings": "Impostazioni"
   },
   "health": {
-    "ok": "Il sistema è operativo"
+    "ok": "Il sistema è operativo",
+    "tabs": {
+      "overview": "Panoramica",
+      "records": "Documenti sanitari"
+    },
+    "add": "Aggiungi documento",
+    "take_photo": "Fotografa un documento",
+    "document": "Documento sanitario",
+    "pages": "Pagine",
+    "pages_empty": "Fotografa il documento o carica un’immagine o un PDF. Puoi aggiungere più pagine.",
+    "page_count": "{count} pagine",
+    "download": "Scarica",
+    "recent": "Documenti recenti",
+    "empty": "Ancora nessun documento sanitario. Fotografa una ricetta o un referto per iniziare.",
+    "search": "Cerca in titoli e note",
+    "all_categories": "Tutti",
+    "documents_count": "{count} documenti",
+    "coming_phase": "In arrivo — fase {phase}",
+    "privacy": "I tuoi file medici sono solo tuoi: nessun link pubblico, nessun altro account li vede e ogni apertura viene registrata.",
+    "section": {
+      "records": "Documenti sanitari",
+      "medications": "Farmaci",
+      "lab_tests": "Esami",
+      "appointments": "Visite mediche",
+      "notifications": "Notifiche"
+    },
+    "upcoming": {
+      "medications_today": "Farmaci di oggi",
+      "medications_today_soon": "Terapie e promemoria arrivano nella fase 2.",
+      "appointments_next": "Prossimi appuntamenti",
+      "appointments_next_soon": "Visite mediche e controlli arrivano nella fase 4.",
+      "lab_tests_pending": "Esami in attesa",
+      "lab_tests_pending_soon": "Appuntamenti per esami e risultati arrivano nella fase 3."
+    },
+    "category": {
+      "prescription": "Ricetta",
+      "lab_result": "Referto di laboratorio",
+      "medical_report": "Relazione medica",
+      "imaging": "Diagnostica per immagini",
+      "vaccination": "Vaccinazioni",
+      "insurance": "Assicurazione",
+      "other": "Altro"
+    },
+    "field": {
+      "title": "Nome del documento",
+      "title_hint": "es. Emocromo completo",
+      "category": "Tipo",
+      "date": "Data del documento",
+      "notes": "Note"
+    },
+    "error": {
+      "title": "Dai un nome al documento.",
+      "no_pages": "Fotografa il documento o carica almeno una pagina.",
+      "page_limit": "Fino a {max} pagine per documento.",
+      "upload_failed": "I dati sono stati salvati, ma alcune pagine non sono state caricate. Premi Salva per riprovare.",
+      "generic": "Impossibile salvare. Riprova.",
+      "load": "Impossibile caricare i documenti sanitari."
+    },
+    "trash": {
+      "title": "Cestino ({count})",
+      "help": "I documenti eliminati restano qui 30 giorni, poi vengono rimossi definitivamente con le loro immagini.",
+      "empty": "Il cestino è vuoto.",
+      "move": "Sposta nel cestino",
+      "move_title": "Spostare il documento nel cestino?",
+      "move_help": "Resta nel cestino 30 giorni e può essere ripristinato, poi viene rimosso definitivamente.",
+      "read_only": "Questo documento è nel cestino. Verrà rimosso definitivamente tra {days} giorni se non lo ripristini.",
+      "days_left": "Rimosso definitivamente tra {days} giorni",
+      "restore": "Ripristina",
+      "delete_now": "Elimina definitivamente",
+      "delete_help": "«{title}» e tutte le sue pagine verranno rimossi definitivamente ora. Operazione irreversibile."
+    }
   },
   "error": {
     "not_found": "L’elemento richiesto non è stato trovato",

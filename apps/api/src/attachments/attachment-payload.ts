@@ -55,16 +55,23 @@ export function attachmentPayload(row: AttachmentRow): AttachmentPayload {
  * the contents ("Never captured: … full attachment contents"), and not the
  * storage key either.
  */
-export function attachmentAuditSnapshot(row: {
-  readonly originalName: string;
-  readonly mimeType: string;
-  readonly sizeBytes: number;
-  readonly checksum: string;
-  readonly relatedType: string;
-  readonly relatedId: string;
-}): Prisma.InputJsonObject {
+export function attachmentAuditSnapshot(
+  row: {
+    readonly originalName: string;
+    readonly mimeType: string;
+    readonly sizeBytes: number;
+    readonly checksum: string;
+    readonly relatedType: string;
+    readonly relatedId: string;
+  },
+  /**
+   * A sensitive record's file name can itself be sensitive ("HIV test.pdf"),
+   * so the audit trail of a sensitive attachment never repeats it.
+   */
+  sensitive = false,
+): Prisma.InputJsonObject {
   return {
-    original_name: row.originalName,
+    original_name: sensitive ? '[sensitive]' : row.originalName,
     mime_type: row.mimeType,
     size_bytes: row.sizeBytes,
     checksum: row.checksum,

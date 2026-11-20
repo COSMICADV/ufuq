@@ -18,6 +18,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { existsSync, writeFileSync } from 'node:fs';
 import { OBJECT_STORAGE } from '../src/attachments/object-storage.js';
 import { AuditDispatcher } from '../src/auth/audit-dispatcher.js';
+import { PersonalHealthService } from '../src/personal-health/health.service.js';
 import { MAIL_TRANSPORT } from '../src/mail/mail-transport.js';
 import type { MailMessage } from '../src/mail/mail-transport.js';
 
@@ -41,6 +42,7 @@ let pglite: PGlite;
 let socket: PGLiteSocketServer;
 let app: INestApplication;
 let redis: FakeRedis;
+const storage = new InMemoryObjectStorage();
 
 const messages: MailMessage[] = [];
 let failMail = false;
@@ -210,7 +212,7 @@ beforeAll(async () => {
     .overrideProvider(REDIS_CLIENT)
     .useValue(redis)
     .overrideProvider(OBJECT_STORAGE)
-    .useValue(new InMemoryObjectStorage())
+    .useValue(storage)
     .compile();
 
   app = moduleRef.createNestApplication();
@@ -633,7 +635,10 @@ describe('1to1OS Personal — individual sign-up', () => {
     expect(signedIn.status).toBe(200);
     const me = await agent.get('/api/v1/auth/me');
     expect(me.body.data.role.key).toBe('personal');
-    expect(me.body.data.permissions).toEqual([{ key: 'personal.finance', scope: 'self' }]);
+    expect(me.body.data.permissions).toEqual([
+      { key: 'personal.finance', scope: 'self' },
+      { key: 'personal.health', scope: 'self' },
+    ]);
     expect(me.body.data.employee).toBeNull();
     for (const path of ['/employees', '/attendance', '/payroll/periods'])
       expect((await agent.get(`/api/v1${path}`)).status).toBe(403);
@@ -1258,6 +1263,146 @@ describe('1to1OS Personal — Expenses', () => {
       expect((await business.get(B)).status).toBe(403);
       expect((await request(app.getHttpServer()).get(B)).status).toBe(401);
     });
+  });
+});
+
+describe('1to1OS Personal — Health records', () => {
+  const H = '/api/v1/personal/health';
+  async function healthAgent(email: string) {
+    expect(
+      (
+        await post('register-personal', {
+          name: 'Health Person',
+          email,
+          password: 'health-passphrase-1',
+          started_at: Date.now() - 3000,
+          website: '',
+        })
+      ).status,
+    ).toBe(201);
+    const agent = request.agent(app.getHttpServer());
+    const login = await agent.post('/api/v1/auth/login').send({ email, password: 'health-passphrase-1' });
+    expect(login.status).toBe(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const csrf = cookies.map((c) => /ufuq_csrf=([^;]+)/.exec(c)?.[1]).find(Boolean) ?? '';
+    return {
+      get: (url: string) => agent.get(url),
+      post: (url: string) => agent.post(url).set('X-CSRF-Token', csrf),
+      patch: (url: string) => agent.patch(url).set('X-CSRF-Token', csrf),
+      delete: (url: string) => agent.delete(url).set('X-CSRF-Token', csrf),
+    };
+  }
+  type HealthAgent = Awaited<ReturnType<typeof healthAgent>>;
+  const page = (agent: HealthAgent, id: string, bytes = SAMPLES.png.bytes, name = 'page-1.png', type = 'image/png') =>
+    agent
+      .post('/api/v1/attachments')
+      .field('related_type', 'health_document')
+      .field('related_id', id)
+      .attach('file', bytes, { filename: name, contentType: type });
+
+  it('stores a document with several pages, lists, searches and edits it', async () => {
+    const me = await healthAgent('health.records@personal.test');
+    const created = await me.post(`${H}/documents`).send({
+      title: 'CBC blood test',
+      category: 'lab_result',
+      document_date: '2026-11-15',
+      notes: 'Fasting',
+    });
+    expect(created.status).toBe(201);
+    const id = String(created.body.data.id);
+    expect((await page(me, id)).status).toBe(201);
+    expect((await page(me, id, SAMPLES.pdf.bytes, 'page-2.pdf', 'application/pdf')).status).toBe(201);
+    // The shared byte check still refuses a disguised file.
+    expect((await page(me, id, SAMPLES.pdf.bytes, 'x.png', 'image/png')).status).toBe(422);
+
+    const one = await me.get(`${H}/documents/${id}`);
+    expect(one.body.data).toMatchObject({ title: 'CBC blood test', category: 'lab_result', document_date: '2026-11-15', page_count: 2, in_trash: false });
+    expect((one.body.data.pages as { mime_type: string }[]).map((p) => p.mime_type)).toEqual(['image/png', 'application/pdf']);
+    expect(one.body.data.cover_id).toBe((one.body.data.pages as { id: string }[])[0]?.id);
+
+    await me.post(`${H}/documents`).send({ title: 'Glasses prescription', category: 'prescription' });
+    const list = await me.get(`${H}/documents`);
+    expect(list.body.data).toHaveLength(2);
+    expect(list.body.data[0].title).toBe('CBC blood test'); // dated documents first
+    expect((await me.get(`${H}/documents?category=prescription`)).body.data).toHaveLength(1);
+    expect((await me.get(`${H}/documents?q=fasting`)).body.data).toHaveLength(1);
+
+    const edited = await me.patch(`${H}/documents/${id}`).send({ title: 'CBC', document_date: '' });
+    expect(edited.body.data).toMatchObject({ title: 'CBC', document_date: null, page_count: 2 });
+    expect((await me.post(`${H}/documents`).send({ title: '', category: 'lab_result' })).status).toBe(422);
+    expect((await me.post(`${H}/documents`).send({ title: 'x', category: 'horoscope' })).status).toBe(422);
+
+    const overview = await me.get(`${H}/overview`);
+    expect(overview.body.data).toMatchObject({ documents: 2, trash: 0 });
+    expect(overview.body.data.by_category.lab_result).toBe(1);
+  });
+
+  it('keeps pages private, audits every view without the file name', async () => {
+    const owner = await healthAgent('health.private@personal.test');
+    const id = String((await owner.post(`${H}/documents`).send({ title: 'MRI report', category: 'imaging' })).body.data.id);
+    const uploaded = await page(owner, id, SAMPLES.png.bytes, 'HIV result.png');
+    const fileId = String(uploaded.body.data.id);
+    const download = await owner.get(`/api/v1/attachments/${fileId}`);
+    expect(download.status).toBe(200);
+    expect(download.headers['cache-control']).toBe('private, no-store');
+
+    const stranger = await healthAgent('health.stranger@personal.test');
+    expect((await stranger.get(`${H}/documents/${id}`)).status).toBe(404);
+    expect((await stranger.get(`/api/v1/attachments/${fileId}`)).status).toBe(404);
+    expect((await page(stranger, id)).status).toBe(404);
+    expect((await stranger.get(`${H}/documents`)).body.data).toEqual([]);
+    const business = request.agent(app.getHttpServer());
+    await business.post('/api/v1/auth/login').send({ email: ADMIN_A_EMAIL, password: ADMIN_A_PASSWORD });
+    expect((await business.get(`${H}/overview`)).status).toBe(403);
+    expect((await business.get(`/api/v1/attachments/${fileId}`)).status).toBe(404);
+    expect((await request(app.getHttpServer()).get(`${H}/documents`)).status).toBe(401);
+
+    const prisma = app.get<PrismaClient>(PRISMA_CLIENT);
+    const companyId = (await owner.get('/api/v1/auth/me')).body.data.company.id as string;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const audits = await withTenant(prisma, companyId, (tx) =>
+      tx.auditLog.findMany({ where: { entityId: fileId }, select: { action: true, newValues: true } }),
+    );
+    expect(audits.map((a) => a.action).sort()).toEqual(['ATTACHMENT_ACCESSED', 'ATTACHMENT_UPLOADED']);
+    expect(JSON.stringify(audits)).not.toContain('HIV');
+    expect(JSON.stringify(audits)).toContain('[sensitive]');
+  });
+
+  it('moves to the trash, restores, and removes for good — by hand or after 30 days', async () => {
+    const me = await healthAgent('health.trash@personal.test');
+    const a = String((await me.post(`${H}/documents`).send({ title: 'Old X-ray', category: 'imaging' })).body.data.id);
+    const b = String((await me.post(`${H}/documents`).send({ title: 'Old prescription', category: 'prescription' })).body.data.id);
+    const pageA = String((await page(me, a)).body.data.id);
+    await page(me, b);
+    const before = storage.objects.size;
+
+    expect((await me.delete(`${H}/documents/${a}/permanent`)).status).toBe(422); // not in the trash yet
+    expect((await me.delete(`${H}/documents/${a}`)).status).toBe(204);
+    expect((await me.get(`${H}/documents`)).body.data).toHaveLength(0 + 1);
+    const trash = await me.get(`${H}/documents?trash=true`);
+    expect(trash.body.data[0]).toMatchObject({ id: a, in_trash: true, days_left: 30 });
+    // In the trash: still viewable, but no new pages and no edits.
+    expect((await me.get(`/api/v1/attachments/${pageA}`)).status).toBe(200);
+    expect((await page(me, a)).status).toBe(403);
+    expect((await me.patch(`${H}/documents/${a}`).send({ title: 'x' })).status).toBe(422);
+
+    expect((await me.post(`${H}/documents/${a}/restore`)).status).toBe(204);
+    expect((await me.get(`${H}/documents`)).body.data).toHaveLength(2);
+
+    // Removed by hand: the row, and the stored bytes.
+    expect((await me.delete(`${H}/documents/${a}`)).status).toBe(204);
+    expect((await me.delete(`${H}/documents/${a}/permanent`)).status).toBe(204);
+    expect((await me.get(`${H}/documents/${a}`)).status).toBe(404);
+    expect((await me.get(`/api/v1/attachments/${pageA}`)).status).toBe(404);
+    expect(storage.objects.size).toBe(before - 1);
+
+    // Removed by the daily job once 30 days have passed.
+    expect((await me.delete(`${H}/documents/${b}`)).status).toBe(204);
+    const health = app.get(PersonalHealthService);
+    expect(await health.purgeExpired(new Date(Date.now() + 29 * 86_400_000))).toBe(0);
+    expect(await health.purgeExpired(new Date(Date.now() + 31 * 86_400_000))).toBeGreaterThanOrEqual(1);
+    expect((await me.get(`${H}/documents?trash=true`)).body.data).toEqual([]);
+    expect(storage.objects.size).toBe(before - 2);
   });
 });
 

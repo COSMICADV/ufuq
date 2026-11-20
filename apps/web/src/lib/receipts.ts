@@ -65,13 +65,24 @@ export function releasePage(page: Page): void {
   if (page.url) URL.revokeObjectURL(page.url);
 }
 
+/** Upload one page as a private attachment of a record (a receipt, a medical document page…). */
+export async function uploadPage(
+  locale: Locale,
+  relatedType: 'finance_transaction' | 'health_document',
+  relatedId: string,
+  page: Page,
+  name: string = page.name,
+): Promise<Receipt> {
+  const form = new FormData();
+  form.append('related_type', relatedType);
+  form.append('related_id', relatedId);
+  form.append('file', page.blob, name);
+  return uploadForm<Receipt>('/attachments', form, { locale });
+}
+
 /** Upload one page as a receipt of a transaction. */
 export async function uploadReceipt(locale: Locale, transactionId: string, page: Page): Promise<Receipt> {
-  const form = new FormData();
-  form.append('related_type', 'finance_transaction');
-  form.append('related_id', transactionId);
-  form.append('file', page.blob, page.name);
-  return uploadForm<Receipt>('/attachments', form, { locale });
+  return uploadPage(locale, 'finance_transaction', transactionId, page);
 }
 
 /** A stored receipt's bytes, for a preview or a download — never a public URL. */

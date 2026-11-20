@@ -29,7 +29,7 @@ describe('assignable roles — DOCUMENT 02 §7', () => {
 
 describe('the personal role', () => {
   it('holds only Personal permissions and cannot be assigned', () => {
-    expect([...permissionsForRole('personal').keys()]).toEqual(['personal.finance']);
+    expect([...permissionsForRole('personal').keys()]).toEqual(['personal.finance', 'personal.health']);
     expect(isAssignableRoleKey('personal')).toBe(false);
   });
 });

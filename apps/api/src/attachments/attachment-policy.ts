@@ -27,6 +27,7 @@ export const RELATED_TYPES = [
   'leave_request',
   'product',
   'finance_transaction',
+  'health_document',
 ] as const;
 export type RelatedType = (typeof RELATED_TYPES)[number];
 

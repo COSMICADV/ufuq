@@ -10,14 +10,14 @@
 
 import { Readable } from 'node:stream';
 
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { Env } from '@ufuq/config';
 
 import type { ObjectStorage, StoredObjectInput } from './object-storage.js';
 
 /** The slice of `S3Client` used here — narrow, so a test can stand in for it. */
 export interface S3Sender {
-  send(command: PutObjectCommand | GetObjectCommand): Promise<unknown>;
+  send(command: PutObjectCommand | GetObjectCommand | DeleteObjectCommand): Promise<unknown>;
 }
 
 export function createS3Client(storage: Env['storage']): S3Client {
@@ -62,5 +62,9 @@ export class S3ObjectStorage implements ObjectStorage {
       return output.Body;
     }
     throw new Error('Object storage returned no readable body');
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 }

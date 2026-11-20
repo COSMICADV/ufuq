@@ -484,6 +484,7 @@ model Company {
   financeCategories   FinanceCategory[]
   financeTransactions FinanceTransaction[]
   financeBudgets      FinanceBudget[]
+  healthDocuments     HealthDocument[]
   qrScans    QrScan[]
   qrFeedback QrFeedback[]
   qrFiles    QrFile[]
@@ -845,6 +846,7 @@ model User {
   financeCategories   FinanceCategory[]
   financeTransactions FinanceTransaction[]
   financeBudgets      FinanceBudget[]
+  healthDocuments     HealthDocument[]
   qrFiles             QrFile[]                      @relation("qr_file_created_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
@@ -2207,4 +2209,40 @@ model FinanceBudget {
   @@index([companyId, archivedAt])
   @@index([categoryId])
   @@map("finance_budgets")
+}
+
+enum HealthDocumentCategory {
+  prescription
+  lab_result
+  medical_report
+  imaging
+  vaccination
+  insurance
+  other
+
+  @@map("health_document_category")
+}
+
+/// Health phase 1 (migration 20261124000000_personal_health). Pages are
+/// attachments (`related_type = 'health_document'`); `deletedAt` is the trash.
+model HealthDocument {
+  id           String                 @id @db.Uuid
+  companyId    String                 @map("company_id") @db.Uuid
+  userId       String                 @map("user_id") @db.Uuid
+  title        String                 @db.VarChar(160)
+  category     HealthDocumentCategory
+  documentDate DateTime?              @map("document_date") @db.Date
+  notes        String?                @db.VarChar(2000)
+  linkType     String?                @map("link_type") @db.VarChar(20)
+  linkId       String?                @map("link_id") @db.Uuid
+  deletedAt    DateTime?              @map("deleted_at") @db.Timestamptz(3)
+  createdAt    DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, deletedAt])
+  @@index([linkId])
+  @@map("health_documents")
 }

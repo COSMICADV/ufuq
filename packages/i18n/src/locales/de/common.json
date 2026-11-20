@@ -87,7 +87,77 @@
     "nav_settings": "Einstellungen"
   },
   "health": {
-    "ok": "Das System läuft"
+    "ok": "Das System läuft",
+    "tabs": {
+      "overview": "Übersicht",
+      "records": "Gesundheitsunterlagen"
+    },
+    "add": "Dokument hinzufügen",
+    "take_photo": "Dokument fotografieren",
+    "document": "Gesundheitsdokument",
+    "pages": "Seiten",
+    "pages_empty": "Fotografieren Sie das Dokument oder laden Sie ein Bild oder PDF hoch. Mehrere Seiten sind möglich.",
+    "page_count": "{count} Seiten",
+    "download": "Herunterladen",
+    "recent": "Neueste Dokumente",
+    "empty": "Noch keine Gesundheitsdokumente. Fotografieren Sie ein Rezept oder einen Laborbefund.",
+    "search": "Titel und Notizen durchsuchen",
+    "all_categories": "Alle",
+    "documents_count": "{count} Dokumente",
+    "coming_phase": "Demnächst — Phase {phase}",
+    "privacy": "Ihre medizinischen Dateien gehören nur Ihnen: kein öffentlicher Link, kein anderes Konto sieht sie, und jedes Öffnen wird protokolliert.",
+    "section": {
+      "records": "Gesundheitsunterlagen",
+      "medications": "Medikamente",
+      "lab_tests": "Laboruntersuchungen",
+      "appointments": "Arztbesuche",
+      "notifications": "Benachrichtigungen"
+    },
+    "upcoming": {
+      "medications_today": "Medikamente heute",
+      "medications_today_soon": "Medikationspläne und Erinnerungen kommen in Phase 2.",
+      "appointments_next": "Nächste Termine",
+      "appointments_next_soon": "Arztbesuche und Nachsorge kommen in Phase 4.",
+      "lab_tests_pending": "Offene Laboruntersuchungen",
+      "lab_tests_pending_soon": "Labortermine und Befunde kommen in Phase 3."
+    },
+    "category": {
+      "prescription": "Rezept",
+      "lab_result": "Laborbefund",
+      "medical_report": "Arztbericht",
+      "imaging": "Bildgebung",
+      "vaccination": "Impfungen",
+      "insurance": "Versicherung",
+      "other": "Sonstiges"
+    },
+    "field": {
+      "title": "Dokumentname",
+      "title_hint": "z. B. Großes Blutbild",
+      "category": "Art",
+      "date": "Datum des Dokuments",
+      "notes": "Notizen"
+    },
+    "error": {
+      "title": "Geben Sie dem Dokument einen Namen.",
+      "no_pages": "Fotografieren Sie das Dokument oder laden Sie mindestens eine Seite hoch.",
+      "page_limit": "Bis zu {max} Seiten pro Dokument.",
+      "upload_failed": "Die Angaben wurden gespeichert, aber einige Seiten konnten nicht hochgeladen werden. Drücken Sie Speichern, um es erneut zu versuchen.",
+      "generic": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+      "load": "Ihre Gesundheitsunterlagen konnten nicht geladen werden."
+    },
+    "trash": {
+      "title": "Papierkorb ({count})",
+      "help": "Gelöschte Dokumente bleiben 30 Tage hier und werden dann mit ihren Bildern endgültig entfernt.",
+      "empty": "Der Papierkorb ist leer.",
+      "move": "In den Papierkorb",
+      "move_title": "Dokument in den Papierkorb verschieben?",
+      "move_help": "Es bleibt 30 Tage im Papierkorb und kann wiederhergestellt werden, danach wird es endgültig entfernt.",
+      "read_only": "Dieses Dokument liegt im Papierkorb. Es wird in {days} Tagen endgültig entfernt, wenn Sie es nicht wiederherstellen.",
+      "days_left": "Endgültig entfernt in {days} Tagen",
+      "restore": "Wiederherstellen",
+      "delete_now": "Endgültig löschen",
+      "delete_help": "„{title}“ und alle Seiten werden jetzt endgültig entfernt. Das kann nicht rückgängig gemacht werden."
+    }
   },
   "error": {
     "not_found": "Das angeforderte Element wurde nicht gefunden",

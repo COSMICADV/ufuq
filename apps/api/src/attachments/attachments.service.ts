@@ -187,7 +187,7 @@ export class AttachmentsService extends TenantScopedService {
       action: 'ATTACHMENT_UPLOADED',
       entityType: 'attachment',
       entityId: id,
-      newValues: attachmentAuditSnapshot(row),
+      newValues: attachmentAuditSnapshot(row, this.policyFor(relatedType).sensitive),
       ipAddress: origin.ipAddress,
       userAgent: origin.userAgent,
     };
@@ -222,7 +222,7 @@ export class AttachmentsService extends TenantScopedService {
           action: 'ATTACHMENT_ACCESSED',
           entityType: 'attachment',
           entityId: found.id,
-          newValues: attachmentAuditSnapshot(found),
+          newValues: attachmentAuditSnapshot(found, true),
           ipAddress: origin.ipAddress,
           userAgent: origin.userAgent,
         });
@@ -250,7 +250,7 @@ export class AttachmentsService extends TenantScopedService {
         action: 'ATTACHMENT_DELETED',
         entityType: 'attachment',
         entityId: id,
-        oldValues: attachmentAuditSnapshot(row),
+        oldValues: attachmentAuditSnapshot(row, this.policyFor(row.relatedType).sensitive),
         ipAddress: origin.ipAddress,
         userAgent: origin.userAgent,
       });

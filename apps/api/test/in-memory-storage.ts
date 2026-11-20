@@ -24,4 +24,9 @@ export class InMemoryObjectStorage implements ObjectStorage {
     }
     return Promise.resolve(Readable.from([object.body]));
   }
+
+  delete(key: string): Promise<void> {
+    this.objects.delete(key);
+    return Promise.resolve();
+  }
 }

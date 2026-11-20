@@ -1,0 +1,213 @@
+/* 1to1OS Personal — Health. Reuses the Expenses card language (finance.css). */
+
+.health-sections {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.health-section {
+  display: grid;
+  gap: 12px;
+  block-size: 100%;
+  padding: 18px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--fin-radius);
+  background: var(--p-card);
+  box-shadow: var(--p-shadow);
+  color: var(--p-ink);
+  text-decoration: none;
+}
+a.health-section:hover {
+  border-color: var(--fin-blue);
+}
+.health-section.is-soon {
+  opacity: 0.6;
+  box-shadow: none;
+}
+.health-section__icon {
+  display: grid;
+  place-items: center;
+  inline-size: 52px;
+  block-size: 52px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--fin-blue) 10%, var(--p-card));
+  color: var(--fin-navy);
+}
+.health-section__text {
+  display: grid;
+  gap: 4px;
+}
+.health-section__text strong {
+  font-weight: 600;
+}
+.health-section__text small {
+  color: var(--p-muted);
+}
+.health-upcoming {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.health-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.health-card {
+  display: grid;
+  border: 1px solid var(--p-line);
+  border-radius: 18px;
+  background: var(--p-card);
+  overflow: hidden;
+}
+.health-card__open {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.health-card__open:hover {
+  background: color-mix(in srgb, var(--fin-blue) 4%, var(--p-card));
+}
+.health-card__cover {
+  display: grid;
+  place-items: center;
+  inline-size: 76px;
+  block-size: 92px;
+  overflow: hidden;
+  border: 1px solid var(--p-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--fin-blue) 6%, var(--p-card));
+  color: var(--fin-navy);
+}
+.health-card__cover img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+.health-card__body {
+  display: grid;
+  gap: 5px;
+  min-inline-size: 0;
+}
+.health-card__body strong {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.health-card__body small {
+  color: var(--p-muted);
+}
+.health-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-block-start: 1px solid var(--p-line);
+}
+.health-card__footer small {
+  color: var(--fin-minus);
+  font-weight: 500;
+}
+.health-card__footer span {
+  display: flex;
+  gap: 6px;
+}
+.health-chip {
+  justify-self: start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fin-blue) 12%, var(--p-card));
+  color: var(--fin-blue);
+  font-size: 12px;
+  font-weight: 500;
+}
+.health-chip--lab_result {
+  background: color-mix(in srgb, #7c5cff 13%, var(--p-card));
+  color: #6246ea;
+}
+.health-chip--imaging {
+  background: color-mix(in srgb, var(--fin-navy) 12%, var(--p-card));
+  color: var(--fin-navy);
+}
+.health-chip--medical_report,
+.health-chip--vaccination {
+  background: color-mix(in srgb, var(--fin-plus) 13%, var(--p-card));
+  color: var(--fin-plus);
+}
+.health-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+.health-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.health-toolbar > input {
+  flex: 0 1 320px;
+}
+.health-privacy {
+  margin: 0;
+  color: var(--p-muted);
+  font-size: 14px;
+}
+.health-page {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.health-page__download {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fin-blue, #1e7aff);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+@media (max-width: 1100px) {
+  .health-sections {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .health-upcoming {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .health-sections {
+    grid-template-columns: 1fr 1fr;
+  }
+  .health-sections > li:first-child {
+    grid-column: 1 / -1;
+  }
+  .health-section {
+    padding: 14px;
+  }
+  .health-toolbar > input {
+    flex: 1 1 100%;
+  }
+  .health-cards {
+    grid-template-columns: 1fr;
+  }
+}

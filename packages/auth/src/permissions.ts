@@ -155,6 +155,7 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   permission('audit.view', 'settings', 'View the audit log', 'عرض سجل التدقيق'),
   // 1to1OS Personal — held only by the `personal` role, on its own data.
   permission('personal.finance', 'personal', 'Manage personal finances', 'إدارة الماليات الشخصية'),
+  permission('personal.health', 'personal', 'Manage personal health records', 'إدارة السجلات الصحية الشخصية'),
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]['key'];

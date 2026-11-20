@@ -87,7 +87,77 @@
     "nav_settings": "Paramètres"
   },
   "health": {
-    "ok": "Le système fonctionne"
+    "ok": "Le système fonctionne",
+    "tabs": {
+      "overview": "Aperçu",
+      "records": "Dossiers médicaux"
+    },
+    "add": "Ajouter un document",
+    "take_photo": "Photographier un document",
+    "document": "Document médical",
+    "pages": "Pages",
+    "pages_empty": "Photographiez le document ou importez une image ou un PDF. Vous pouvez ajouter plusieurs pages.",
+    "page_count": "{count} pages",
+    "download": "Télécharger",
+    "recent": "Documents récents",
+    "empty": "Aucun document médical. Photographiez une ordonnance ou un résultat d’analyse pour commencer.",
+    "search": "Rechercher dans les titres et notes",
+    "all_categories": "Tous",
+    "documents_count": "{count} documents",
+    "coming_phase": "Bientôt — phase {phase}",
+    "privacy": "Vos fichiers médicaux n’appartiennent qu’à vous : aucun lien public, aucun autre compte ne les voit, et chaque ouverture est enregistrée.",
+    "section": {
+      "records": "Dossiers médicaux",
+      "medications": "Médicaments",
+      "lab_tests": "Analyses",
+      "appointments": "Visites médicales",
+      "notifications": "Notifications"
+    },
+    "upcoming": {
+      "medications_today": "Médicaments du jour",
+      "medications_today_soon": "Les traitements et rappels arrivent en phase 2.",
+      "appointments_next": "Prochains rendez-vous",
+      "appointments_next_soon": "Les visites médicales et suivis arrivent en phase 4.",
+      "lab_tests_pending": "Analyses en attente",
+      "lab_tests_pending_soon": "Les rendez-vous d’analyses et leurs résultats arrivent en phase 3."
+    },
+    "category": {
+      "prescription": "Ordonnance",
+      "lab_result": "Résultat d’analyse",
+      "medical_report": "Compte rendu médical",
+      "imaging": "Imagerie",
+      "vaccination": "Vaccination",
+      "insurance": "Assurance",
+      "other": "Autre"
+    },
+    "field": {
+      "title": "Nom du document",
+      "title_hint": "ex. Numération formule sanguine",
+      "category": "Type",
+      "date": "Date du document",
+      "notes": "Notes"
+    },
+    "error": {
+      "title": "Donnez un nom au document.",
+      "no_pages": "Photographiez le document ou importez au moins une page.",
+      "page_limit": "Jusqu’à {max} pages par document.",
+      "upload_failed": "Les informations sont enregistrées, mais certaines pages n’ont pas pu être importées. Appuyez sur Enregistrer pour réessayer.",
+      "generic": "Enregistrement impossible. Réessayez.",
+      "load": "Impossible de charger vos dossiers médicaux."
+    },
+    "trash": {
+      "title": "Corbeille ({count})",
+      "help": "Les documents supprimés restent ici 30 jours, puis sont définitivement supprimés avec leurs images.",
+      "empty": "La corbeille est vide.",
+      "move": "Mettre à la corbeille",
+      "move_title": "Mettre ce document à la corbeille ?",
+      "move_help": "Il reste 30 jours dans la corbeille et peut être restauré, puis il est supprimé définitivement.",
+      "read_only": "Ce document est dans la corbeille. Il sera supprimé définitivement dans {days} jours si vous ne le restaurez pas.",
+      "days_left": "Supprimé définitivement dans {days} jours",
+      "restore": "Restaurer",
+      "delete_now": "Supprimer définitivement",
+      "delete_help": "« {title} » et toutes ses pages seront supprimés définitivement maintenant. Action irréversible."
+    }
   },
   "error": {
     "not_found": "L’élément demandé est introuvable",

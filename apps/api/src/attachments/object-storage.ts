@@ -26,6 +26,11 @@ export interface ObjectStorage {
   put(input: StoredObjectInput): Promise<void>;
   /** The object's bytes as a stream. Rejects when the object does not exist. */
   get(key: string): Promise<Readable>;
+  /**
+   * Remove the object's bytes for good — used only where a record's own rules
+   * require it (a health document emptied from the trash). Missing is fine.
+   */
+  delete(key: string): Promise<void>;
 }
 
 /** DI token for the process-wide {@link ObjectStorage}. */
