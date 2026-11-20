@@ -2634,7 +2634,8 @@
       "overview": "Panoramica",
       "transactions": "Operazioni",
       "accounts": "I miei conti",
-      "categories": "Categorie"
+      "categories": "Categorie",
+      "budgets": "Budget"
     },
     "period": {
       "today": "Oggi",
@@ -2806,6 +2807,55 @@
         "saved": "Salvata",
         "failed": "Salvataggio non riuscito"
       }
+    },
+    "budget": {
+      "overall": "Budget complessivo",
+      "add": "Aggiungi budget",
+      "edit": "Modifica",
+      "history": "Storico",
+      "monthly_amount": "{amount} al mese",
+      "custom_range": "dal {from} al {to}",
+      "rollover_on": "Il residuo si riporta",
+      "of": "su",
+      "left": "Restano {amount}",
+      "overspent": "Superato di {amount}",
+      "carried_plus": "Include {amount} rimasti dal mese scorso",
+      "carried_minus": "Meno {amount} superati il mese scorso",
+      "not_running": "Non attivo questo mese.",
+      "state": {
+        "ok": "Nei limiti",
+        "warning": "Avviso",
+        "reached": "Limite raggiunto",
+        "over": "Superato"
+      },
+      "alert_level": "Hai usato il {level}% del budget «{name}».",
+      "alert_reached": "Hai raggiunto l’intero budget «{name}».",
+      "alert_over": "Hai superato il budget «{name}».",
+      "prev_month": "Mese precedente",
+      "next_month": "Mese successivo",
+      "empty_title": "Imposta il tuo budget",
+      "empty_help": "Metti un limite a tutte le spese mensili o a una categoria; le spese vengono calcolate automaticamente dalle tue operazioni.",
+      "preset_overall": "Budget mensile complessivo",
+      "preset_fuel": "Budget carburante",
+      "preset_home": "Budget casa",
+      "show_archived": "Mostra budget archiviati",
+      "scope": "Ambito del budget",
+      "scope_category": "Una categoria",
+      "scope_overall": "Tutte le spese",
+      "pick_category": "Scegli una categoria.",
+      "period": "Periodo",
+      "period_monthly": "Mensile (ricorrente)",
+      "period_custom": "Date precise",
+      "amount": "Limite",
+      "start_month": "Inizia a",
+      "rollover": "Riporta il residuo",
+      "rollover_help": "Ciò che resta questo mese si aggiunge al mese successivo; ciò che superi viene detratto.",
+      "alerts": "Avvisi",
+      "alerts_help": "Avvisami quando la spesa raggiunge queste quote del limite.",
+      "name_optional": "Nome (facoltativo)",
+      "error_dates": "Scegli una data di inizio e di fine, la fine dopo l’inizio.",
+      "error_duplicate": "È già attivo un budget mensile per questa categoria e valuta.",
+      "none_yet": "Nessun budget per questo mese."
     }
   },
   "capture": {

@@ -906,3 +906,259 @@ button.fin-row:hover {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ---- Budgets (phase 3) ---------------------------------------------------- */
+.budget-month {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  inline-size: fit-content;
+  padding: 4px;
+  border: 1px solid var(--p-line);
+  border-radius: 14px;
+  background: var(--p-card);
+}
+.budget-month strong {
+  min-inline-size: 150px;
+  text-align: center;
+  font-weight: 600;
+}
+.budget-alerts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.budget-alert {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, #ffb020 16%, var(--p-card));
+  color: var(--p-ink);
+  font-weight: 500;
+}
+.budget-alert--over,
+.budget-alert--reached {
+  background: color-mix(in srgb, var(--fin-minus) 13%, var(--p-card));
+}
+.budget-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.budget-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--fin-radius);
+  background: var(--p-card);
+  box-shadow: var(--p-shadow);
+}
+.budget-card.is-archived {
+  opacity: 0.65;
+}
+.budget-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.budget-card__head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+.budget-card__head small,
+.budget-card__carried {
+  color: var(--p-muted);
+}
+.budget-card__numbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.budget-card__numbers strong {
+  font-weight: 600;
+}
+.budget-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.budget-state {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--fin-plus) 13%, var(--p-card));
+  color: var(--fin-plus);
+}
+.budget-state--warning {
+  background: color-mix(in srgb, #ffb020 20%, var(--p-card));
+  color: #9a6400;
+}
+.budget-state--reached,
+.budget-state--over {
+  background: color-mix(in srgb, var(--fin-minus) 13%, var(--p-card));
+  color: var(--fin-minus);
+}
+.budget-bar {
+  position: relative;
+  display: block;
+  block-size: 12px;
+  border-radius: 999px;
+  background: var(--fin-track, #eef2f8);
+  overflow: hidden;
+}
+.budget-bar__fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: inherit;
+  background: var(--fin-blue, #1e7aff);
+}
+.budget-bar--warning .budget-bar__fill {
+  background: #ffb020;
+}
+.budget-bar--reached .budget-bar__fill,
+.budget-bar--over .budget-bar__fill {
+  background: var(--fin-minus, #d64545);
+}
+.budget-bar__tick {
+  position: absolute;
+  inset-block: 2px;
+  inline-size: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--p-ink, #0b1f4d) 35%, transparent);
+}
+.budget-empty {
+  justify-items: start;
+}
+.budget-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.budget-archived-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--p-muted);
+  font-weight: 500;
+}
+.fin-types--two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.budget-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.budget-toggle span {
+  display: grid;
+  gap: 2px;
+}
+.budget-toggle strong {
+  font-weight: 600;
+}
+.budget-toggle small,
+.budget-alert-picker small {
+  color: var(--p-muted, #4a5878);
+}
+.budget-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.budget-alert-picker {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.budget-alert-picker legend {
+  margin-block-end: 2px;
+  font-weight: 600;
+}
+.budget-alert-picker > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.budget-alert-picker .fin-chip {
+  padding: 6px 12px;
+}
+.budget-history {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.budget-history li {
+  display: grid;
+  gap: 6px;
+}
+.budget-history__top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.budget-history__top strong {
+  font-weight: 600;
+}
+.budget-mini {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.budget-mini li {
+  display: grid;
+  gap: 6px;
+}
+.budget-mini__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 500;
+}
+.budget-mini__top bdi {
+  color: var(--p-muted);
+  font-variant-numeric: tabular-nums;
+}
+.budget-mini__alert {
+  color: #9a6400;
+}
+.budget-mini__alert--over,
+.budget-mini__alert--reached {
+  color: var(--fin-minus);
+}
+@media (max-width: 640px) {
+  .fin-tabs {
+    flex-wrap: wrap;
+    inline-size: 100%;
+  }
+  .fin-tab {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .budget-cards {
+    grid-template-columns: 1fr;
+  }
+  .budget-dates {
+    grid-template-columns: 1fr;
+  }
+}

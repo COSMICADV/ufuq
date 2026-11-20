@@ -1130,6 +1130,135 @@ describe('1to1OS Personal — Expenses', () => {
     const second = String((one.body.data.receipts as { id: string; original_name: string }[]).find((r) => r.original_name === 'receipt-2.pdf')?.id);
     expect((await owner.get(`/api/v1/attachments/${second}`)).status).toBe(404);
   });
+  describe('budgets', () => {
+    const B = `${F}/budgets`;
+    it('measures budgets from the stored expenses: scope, rollover, alerts and other currencies', async () => {
+      const owner = await personalAgent('fin.budgets@personal.test');
+      const accounts = (await owner.get(`${F}/accounts`)).body.data as { id: string }[];
+      const cash = String(accounts[0]?.id);
+      const bank = String(
+        (await owner.post(`${F}/accounts`).send({ name: 'CIB', type: 'bank', opening_balance: '5000' })).body.data.id,
+      );
+      const usd = String(
+        (await owner.post(`${F}/accounts`).send({ name: 'USD', type: 'bank', currency: 'USD' })).body.data.id,
+      );
+      const categories = (await owner.get(`${F}/categories`)).body.data as { id: string; key: string | null; kind: string }[];
+      const cat = (key: string) => String(categories.find((c) => c.key === key)?.id);
+      const octane = String(
+        (await owner.post(`${F}/categories`).send({ kind: 'expense', name: 'Octane 95', parent_id: cat('fuel') })).body
+          .data.id,
+      );
+      const add = async (body: Record<string, unknown>) => {
+        const r = await owner.post(`${F}/transactions`).send(body);
+        expect(r.status).toBe(201);
+      };
+      await add({ type: 'expense', amount: '900', account_id: cash, category_id: cat('fuel'), occurred_at: '2026-10-15T10:00:00.000Z' });
+      await add({ type: 'expense', amount: '300', account_id: cash, category_id: cat('fuel'), occurred_at: '2026-11-05T10:00:00.000Z' });
+      await add({ type: 'expense', amount: '250', account_id: bank, category_id: octane, occurred_at: '2026-11-06T10:00:00.000Z' });
+      await add({ type: 'expense', amount: '100', account_id: bank, category_id: cat('groceries'), occurred_at: '2026-11-07T10:00:00.000Z' });
+      await add({ type: 'transfer', amount: '50', account_id: bank, to_account_id: cash, occurred_at: '2026-11-08T10:00:00.000Z' });
+      await add({ type: 'income', amount: '1000', account_id: bank, occurred_at: '2026-11-09T10:00:00.000Z' });
+      await add({ type: 'expense', amount: '40', account_id: usd, category_id: cat('fuel'), occurred_at: '2026-11-10T10:00:00.000Z' });
+      // Midnight in Cairo on 1 December belongs to December, not November.
+      await add({ type: 'expense', amount: '999', account_id: cash, category_id: cat('groceries'), occurred_at: '2026-11-30T22:30:00.000Z' });
+
+      const fuel = await owner.post(B).send({
+        period: 'monthly',
+        category_id: cat('fuel'),
+        amount: '1000',
+        start_month: '2026-10',
+        rollover: true,
+      });
+      expect(fuel.status).toBe(201);
+      expect(
+        (await owner.post(B).send({ period: 'monthly', amount: '600', start_month: '2026-11' })).status,
+      ).toBe(201);
+      expect(
+        (
+          await owner.post(B).send({
+            period: 'custom',
+            name: 'November groceries',
+            category_id: cat('groceries'),
+            amount: '120',
+            start_date: '2026-11-01',
+            end_date: '2026-11-30',
+            alert_thresholds: [80],
+          })
+        ).status,
+      ).toBe(201);
+
+      const list = await owner.get(`${B}?month=2026-11`);
+      expect(list.status).toBe(200);
+      const budgets = list.body.data.budgets as {
+        id: string;
+        name: string | null;
+        category_key: string | null;
+        current: Record<string, unknown> | null;
+      }[];
+      // Sorted by how much is used: overall 108%, groceries 83%, fuel 50%.
+      expect(budgets.map((b) => b.category_key ?? b.name)).toEqual([null, 'groceries', 'fuel']);
+      expect(budgets[0]?.current).toMatchObject({ spent: '650.00', limit: '600.00', remaining: '-50.00', percent: 108, level: 100, state: 'over' });
+      expect(budgets[1]?.current).toMatchObject({ spent: '100.00', percent: 83, level: 80, state: 'warning', from: '2026-11-01', to: '2026-11-30' });
+      expect(budgets[2]?.current).toMatchObject({ month: '2026-11', carried: '100.00', limit: '1100.00', spent: '550.00', remaining: '550.00', percent: 50, level: null, state: 'ok' });
+
+      const history = await owner.get(`${B}/${String(fuel.body.data.id)}/history`);
+      expect((history.body.data as { month: string; spent: string }[]).slice(-2).map((h) => [h.month, h.spent])).toEqual([
+        ['2026-11', '550.00'],
+        ['2026-10', '900.00'],
+      ]);
+      // October, before the overall budget started, shows only the fuel budget running.
+      const october = (await owner.get(`${B}?month=2026-10`)).body.data.budgets as { current: unknown }[];
+      expect(october.filter((b) => b.current !== null)).toHaveLength(1);
+    });
+
+    it('refuses duplicates and nonsense, archives and restores, and keeps a budgeted category', async () => {
+      const owner = await personalAgent('fin.budgets.rules@personal.test');
+      const categories = (await owner.get(`${F}/categories`)).body.data as { id: string; key: string | null }[];
+      const cat = (key: string) => String(categories.find((c) => c.key === key)?.id);
+      const first = await owner.post(B).send({ period: 'monthly', category_id: cat('home'), amount: '2000' });
+      expect(first.status).toBe(201);
+      const id = String(first.body.data.id);
+      const again = await owner.post(B).send({ period: 'monthly', category_id: cat('home'), amount: '50' });
+      expect(again.status).toBe(422);
+      expect(again.body.error.fields.category_id).toEqual(['already_taken']);
+      expect((await owner.post(B).send({ period: 'monthly', category_id: cat('salary'), amount: '5' })).status).toBe(422);
+      expect((await owner.post(B).send({ period: 'custom', amount: '5', start_date: '2026-11-01' })).status).toBe(422);
+      expect(
+        (await owner.post(B).send({ period: 'custom', amount: '5', start_date: '2026-11-10', end_date: '2026-11-01' })).status,
+      ).toBe(422);
+      expect((await owner.post(B).send({ period: 'monthly', amount: '0' })).status).toBe(422);
+      expect((await owner.post(B).send({ period: 'monthly', amount: '5', alert_thresholds: [33] })).status).toBe(422);
+
+      const edited = await owner.patch(`${B}/${id}`).send({ amount: '2500', alert_thresholds: [100, 90, 90], rollover: true });
+      expect(edited.body.data).toMatchObject({ amount: '2500.00', alert_thresholds: [90, 100], rollover: true });
+      expect((await owner.patch(`${B}/${id}`).send({ end_date: '2026-12-01' })).status).toBe(422);
+
+      expect((await owner.delete(`${B}/${id}`)).status).toBe(204);
+      expect(((await owner.get(B)).body.data.budgets as unknown[]).length).toBe(0);
+      expect(((await owner.get(`${B}?include_archived=true`)).body.data.budgets as { archived: boolean }[])[0]?.archived).toBe(true);
+      // While it is archived another home budget may run; restoring then clashes.
+      const replacement = await owner.post(B).send({ period: 'monthly', category_id: cat('home'), amount: '10' });
+      expect(replacement.status).toBe(201);
+      expect((await owner.post(`${B}/${id}/restore`)).status).toBe(422);
+      expect((await owner.delete(`${B}/${String(replacement.body.data.id)}`)).status).toBe(204);
+      expect((await owner.post(`${B}/${id}/restore`)).status).toBe(204);
+
+      // A category a budget points at is archived, never deleted from under it.
+      const mine = String((await owner.post(`${F}/categories`).send({ kind: 'expense', name: 'Gym' })).body.data.id);
+      expect((await owner.post(B).send({ period: 'monthly', category_id: mine, amount: '300' })).status).toBe(201);
+      expect((await owner.delete(`${F}/categories/${mine}`)).body.data.archived).toBe(true);
+
+      const stranger = await personalAgent('fin.budgets.stranger@personal.test');
+      expect((await stranger.get(`${B}/${id}`)).status).toBe(404);
+      expect((await stranger.patch(`${B}/${id}`).send({ amount: '1' })).status).toBe(404);
+      expect((await stranger.delete(`${B}/${id}`)).status).toBe(404);
+      expect(((await stranger.get(B)).body.data.budgets as unknown[]).length).toBe(0);
+      const business = request.agent(app.getHttpServer());
+      await business.post('/api/v1/auth/login').send({ email: ADMIN_A_EMAIL, password: ADMIN_A_PASSWORD });
+      expect((await business.get(B)).status).toBe(403);
+      expect((await request(app.getHttpServer()).get(B)).status).toBe(401);
+    });
+  });
 });
 
 if (process.env.PHASE16_PREVIEW === '1')

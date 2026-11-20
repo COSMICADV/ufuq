@@ -470,7 +470,8 @@ export class PersonalFinanceService extends TenantScopedService {
       if (!row) throw notFound();
       const used =
         (await tx.financeTransaction.count({ where: { categoryId: id } })) +
-        (await tx.financeCategory.count({ where: { parentId: id } }));
+        (await tx.financeCategory.count({ where: { parentId: id } })) +
+        (await tx.financeBudget.count({ where: { categoryId: id } }));
       if (used > 0 || row.key !== null) {
         await tx.financeCategory.update({ where: { id }, data: { archivedAt: new Date() } });
         return { archived: true };

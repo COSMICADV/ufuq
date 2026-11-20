@@ -7,7 +7,9 @@ import type { Locale } from '@ufuq/i18n';
 
 import { fetchOne } from '../../../lib/api-client';
 import { categoryLabel, money, PERIODS, share } from '../../../lib/finance';
-import type { Account, Category, Period, Summary, Transaction } from '../../../lib/finance';
+import type { Account, BudgetList, Category, Period, Summary, Transaction } from '../../../lib/finance';
+import { budgetTitle } from '../../../lib/finance';
+import { BudgetBar, budgetAlert } from './budgets-screen';
 import { personalHref } from '../../../lib/personal';
 import { Button } from '../../design-system';
 import { ExpensesHeader, RING_COLORS, SpendingRing, TransactionRow } from './finance-parts';
@@ -26,6 +28,7 @@ export function ExpensesDashboard({ locale }: { readonly locale: Locale }): Reac
   const [to, setTo] = useState('');
   const [summary, setSummary] = useState<Summary | null>(null);
   const [categories, setCategories] = useState<readonly Category[]>([]);
+  const [budgets, setBudgets] = useState<BudgetList | null>(null);
   const [timeZone, setTimeZone] = useState('Africa/Cairo');
   const [failed, setFailed] = useState(false);
   const [batch, setBatch] = useState(false);
@@ -40,11 +43,13 @@ export function ExpensesDashboard({ locale }: { readonly locale: Locale }): Reac
       setFailed(false);
       const query: Record<string, string> = { period };
       if (period === 'custom') Object.assign(query, { from, to });
-      const [next, cats, settings] = await Promise.all([
+      const [next, cats, settings, plan] = await Promise.all([
         fetchOne<Summary>('/personal/finance/summary', { locale, query }),
         fetchOne<Category[]>('/personal/finance/categories', { locale }),
         fetchOne<{ time_zone: string }>('/personal/finance/settings', { locale }),
+        fetchOne<BudgetList>('/personal/finance/budgets', { locale }).catch(() => null),
       ]);
+      setBudgets(plan);
       setSummary(next);
       setCategories(cats);
       setTimeZone(settings.time_zone);
@@ -239,6 +244,42 @@ export function ExpensesDashboard({ locale }: { readonly locale: Locale }): Reac
                     />
                   ))}
                 </div>
+              )}
+            </section>
+
+            <section className="fin-card" aria-labelledby="fin-budgets">
+              <div className="fin-card__head">
+                <h2 id="fin-budgets">{t('finance.tabs.budgets')}</h2>
+                <Link href={`${personalHref(locale, 'expenses')}/budgets`}>{t('finance.manage')}</Link>
+              </div>
+              {(budgets?.budgets ?? []).filter((b) => b.current !== null).length === 0 ? (
+                <p className="fin-muted">
+                  {t('finance.budget.none_yet')}{' '}
+                  <Link href={`${personalHref(locale, 'expenses')}/budgets`}>{t('finance.budget.add')}</Link>
+                </p>
+              ) : (
+                <ul className="budget-mini">
+                  {(budgets?.budgets ?? [])
+                    .filter((b) => b.current !== null)
+                    .slice(0, 4)
+                    .map((b) => {
+                      const c = b.current;
+                      if (!c) return null;
+                      const alert = budgetAlert(b, t);
+                      return (
+                        <li key={b.id}>
+                          <div className="budget-mini__top">
+                            <span>{budgetTitle(b, t)}</span>
+                            <bdi dir="ltr">
+                              {money(c.spent, b.currency, locale)} / {money(c.limit, b.currency, locale)}
+                            </bdi>
+                          </div>
+                          <BudgetBar period={c} thresholds={b.alert_thresholds} />
+                          {alert ? <small className={`budget-mini__alert budget-mini__alert--${c.state}`}>{alert}</small> : null}
+                        </li>
+                      );
+                    })}
+                </ul>
               )}
             </section>
 

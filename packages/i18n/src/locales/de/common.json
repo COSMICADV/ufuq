@@ -2634,7 +2634,8 @@
       "overview": "Übersicht",
       "transactions": "Buchungen",
       "accounts": "Meine Konten",
-      "categories": "Kategorien"
+      "categories": "Kategorien",
+      "budgets": "Budgets"
     },
     "period": {
       "today": "Heute",
@@ -2806,6 +2807,55 @@
         "saved": "Gespeichert",
         "failed": "Speichern fehlgeschlagen"
       }
+    },
+    "budget": {
+      "overall": "Gesamtbudget",
+      "add": "Budget hinzufügen",
+      "edit": "Bearbeiten",
+      "history": "Verlauf",
+      "monthly_amount": "{amount} pro Monat",
+      "custom_range": "{from} bis {to}",
+      "rollover_on": "Rest wird übertragen",
+      "of": "von",
+      "left": "{amount} übrig",
+      "overspent": "{amount} überschritten",
+      "carried_plus": "Enthält {amount} Rest aus dem Vormonat",
+      "carried_minus": "Abzüglich {amount} Überschreitung aus dem Vormonat",
+      "not_running": "In diesem Monat nicht aktiv.",
+      "state": {
+        "ok": "Im Rahmen",
+        "warning": "Hinweis",
+        "reached": "Limit erreicht",
+        "over": "Überschritten"
+      },
+      "alert_level": "Sie haben {level} % des Budgets „{name}“ verbraucht.",
+      "alert_reached": "Sie haben das Budget „{name}“ voll ausgeschöpft.",
+      "alert_over": "Sie haben das Budget „{name}“ überschritten.",
+      "prev_month": "Vorheriger Monat",
+      "next_month": "Nächster Monat",
+      "empty_title": "Legen Sie Ihr Budget fest",
+      "empty_help": "Begrenzen Sie alle monatlichen Ausgaben oder eine Kategorie; die Ausgaben werden automatisch aus Ihren Buchungen berechnet.",
+      "preset_overall": "Monatliches Gesamtbudget",
+      "preset_fuel": "Kraftstoffbudget",
+      "preset_home": "Haushaltsbudget",
+      "show_archived": "Archivierte Budgets anzeigen",
+      "scope": "Budgetumfang",
+      "scope_category": "Eine Kategorie",
+      "scope_overall": "Alle Ausgaben",
+      "pick_category": "Wählen Sie eine Kategorie.",
+      "period": "Zeitraum",
+      "period_monthly": "Monatlich (wiederkehrend)",
+      "period_custom": "Feste Daten",
+      "amount": "Limit",
+      "start_month": "Beginnt im",
+      "rollover": "Rest übertragen",
+      "rollover_help": "Was in diesem Monat übrig bleibt, kommt zum nächsten Monat hinzu; eine Überschreitung wird abgezogen.",
+      "alerts": "Hinweise",
+      "alerts_help": "Hinweis, wenn die Ausgaben diese Anteile des Limits erreichen.",
+      "name_optional": "Name (optional)",
+      "error_dates": "Wählen Sie Beginn und Ende, das Ende nach dem Beginn.",
+      "error_duplicate": "Für diese Kategorie und Währung läuft bereits ein Monatsbudget.",
+      "none_yet": "Keine Budgets für diesen Monat."
     }
   },
   "capture": {

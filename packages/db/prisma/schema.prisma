@@ -483,6 +483,7 @@ model Company {
   financeAccounts     FinanceAccount[]
   financeCategories   FinanceCategory[]
   financeTransactions FinanceTransaction[]
+  financeBudgets      FinanceBudget[]
   qrScans    QrScan[]
   qrFeedback QrFeedback[]
   qrFiles    QrFile[]
@@ -843,6 +844,7 @@ model User {
   financeAccounts     FinanceAccount[]
   financeCategories   FinanceCategory[]
   financeTransactions FinanceTransaction[]
+  financeBudgets      FinanceBudget[]
   qrFiles             QrFile[]                      @relation("qr_file_created_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
@@ -2134,6 +2136,7 @@ model FinanceCategory {
   parent       FinanceCategory?     @relation("finance_category_parent", fields: [parentId], references: [id], onDelete: Restrict)
   children     FinanceCategory[]    @relation("finance_category_parent")
   transactions FinanceTransaction[]
+  budgets      FinanceBudget[]
 
   @@unique([companyId, key])
   @@index([companyId, kind])
@@ -2169,4 +2172,39 @@ model FinanceTransaction {
   @@index([toAccountId])
   @@index([categoryId])
   @@map("finance_transactions")
+}
+
+enum FinanceBudgetPeriod {
+  monthly
+  custom
+
+  @@map("finance_budget_period")
+}
+
+/// Expenses phase 3 (migration 20261123000000_finance_budgets). Spending is
+/// summed from transactions on read; only the limit and its rules are stored.
+model FinanceBudget {
+  id              String              @id @db.Uuid
+  companyId       String              @map("company_id") @db.Uuid
+  userId          String              @map("user_id") @db.Uuid
+  name            String?             @db.VarChar(80)
+  categoryId      String?             @map("category_id") @db.Uuid
+  period          FinanceBudgetPeriod
+  amount          Decimal             @db.Decimal(15, 2)
+  currency        String              @default("EGP") @db.Char(3)
+  startDate       DateTime            @map("start_date") @db.Date
+  endDate         DateTime?           @map("end_date") @db.Date
+  rollover        Boolean             @default(false)
+  alertThresholds Int[]               @default([80, 90, 100]) @map("alert_thresholds") @db.SmallInt
+  archivedAt      DateTime?           @map("archived_at") @db.Timestamptz(3)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category FinanceCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, archivedAt])
+  @@index([categoryId])
+  @@map("finance_budgets")
 }

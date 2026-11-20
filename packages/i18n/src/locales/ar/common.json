@@ -2634,7 +2634,8 @@
       "overview": "نظرة عامة",
       "transactions": "العمليات",
       "accounts": "حساباتي",
-      "categories": "الفئات"
+      "categories": "الفئات",
+      "budgets": "الميزانية"
     },
     "period": {
       "today": "اليوم",
@@ -2806,6 +2807,55 @@
         "saved": "تم الحفظ",
         "failed": "تعذّر الحفظ"
       }
+    },
+    "budget": {
+      "overall": "الميزانية الكلية",
+      "add": "إضافة ميزانية",
+      "edit": "تعديل",
+      "history": "السجل",
+      "monthly_amount": "{amount} شهريًا",
+      "custom_range": "من {from} إلى {to}",
+      "rollover_on": "الباقي يُرحّل",
+      "of": "من",
+      "left": "متبقي {amount}",
+      "overspent": "تجاوزت بـ {amount}",
+      "carried_plus": "يشمل {amount} متبقية من الشهر السابق",
+      "carried_minus": "مخصوم منها {amount} تجاوزتها الشهر السابق",
+      "not_running": "لا تعمل في هذا الشهر.",
+      "state": {
+        "ok": "في الحدود",
+        "warning": "تنبيه",
+        "reached": "وصلت للحد",
+        "over": "تجاوزت"
+      },
+      "alert_level": "وصلت {level}% من ميزانية «{name}».",
+      "alert_reached": "وصلت للحد الكامل لميزانية «{name}».",
+      "alert_over": "تجاوزت ميزانية «{name}».",
+      "prev_month": "الشهر السابق",
+      "next_month": "الشهر التالي",
+      "empty_title": "حدد ميزانيتك",
+      "empty_help": "ضع حدًا لإنفاقك الشهري كله أو لفئة معينة، والمصروف يُحسب تلقائيًا من عملياتك.",
+      "preset_overall": "ميزانية شهرية كلية",
+      "preset_fuel": "ميزانية البنزين",
+      "preset_home": "ميزانية البيت",
+      "show_archived": "عرض الميزانيات المؤرشفة",
+      "scope": "نطاق الميزانية",
+      "scope_category": "فئة معينة",
+      "scope_overall": "كل المصروفات",
+      "pick_category": "اختر فئة.",
+      "period": "المدة",
+      "period_monthly": "شهرية (تتكرر)",
+      "period_custom": "فترة محددة",
+      "amount": "الحد",
+      "start_month": "تبدأ من شهر",
+      "rollover": "ترحيل الباقي",
+      "rollover_help": "ما يتبقى من الشهر يُضاف للشهر التالي، وما تتجاوزه يُخصم منه.",
+      "alerts": "التنبيهات",
+      "alerts_help": "نبّهني عند الوصول إلى هذه النسب من الحد.",
+      "name_optional": "اسم (اختياري)",
+      "error_dates": "اختر تاريخ بداية ونهاية، والنهاية بعد البداية.",
+      "error_duplicate": "توجد ميزانية شهرية تعمل لنفس الفئة ونفس العملة.",
+      "none_yet": "لا توجد ميزانيات لهذا الشهر."
     }
   },
   "capture": {

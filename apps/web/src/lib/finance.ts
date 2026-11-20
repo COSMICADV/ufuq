@@ -125,3 +125,57 @@ export function share(part: string, total: string): number {
   if (!(t > 0)) return 0;
   return Math.min(100, Math.max(0, (p * 100) / t));
 }
+
+// ---- Budgets (phase 3) ------------------------------------------------------
+
+export const ALERT_CHOICES = [50, 60, 70, 75, 80, 85, 90, 95, 100] as const;
+
+export interface BudgetPeriod {
+  readonly month: string | null;
+  readonly from: string;
+  readonly to: string;
+  readonly limit: string;
+  readonly carried: string;
+  readonly spent: string;
+  readonly remaining: string;
+  readonly percent: number;
+  readonly level: number | null;
+  readonly state: 'ok' | 'warning' | 'reached' | 'over';
+}
+
+export interface Budget {
+  readonly id: string;
+  readonly name: string | null;
+  readonly category_id: string | null;
+  readonly category_key: string | null;
+  readonly category_name: string | null;
+  readonly period: 'monthly' | 'custom';
+  readonly amount: string;
+  readonly currency: string;
+  readonly start_date: string;
+  readonly end_date: string | null;
+  readonly rollover: boolean;
+  readonly alert_thresholds: readonly number[];
+  readonly archived: boolean;
+  readonly current: BudgetPeriod | null;
+}
+
+export interface BudgetList {
+  readonly month: string;
+  readonly currency: string;
+  readonly budgets: readonly Budget[];
+}
+
+/** A budget's title: its own name, else its category, else "overall". */
+export function budgetTitle(budget: Budget, t: (key: string) => string): string {
+  if (budget.name) return budget.name;
+  if (budget.category_id) return categoryLabel({ key: budget.category_key, name: budget.category_name }, t);
+  return t('finance.budget.overall');
+}
+
+/** `YYYY-MM` shifted by whole months. */
+export function shiftMonth(month: string, by: number): string {
+  const [y, m] = month.split('-').map(Number);
+  const index = (y ?? 2026) * 12 + ((m ?? 1) - 1) + by;
+  return `${String(Math.floor(index / 12))}-${String((index % 12) + 1).padStart(2, '0')}`;
+}

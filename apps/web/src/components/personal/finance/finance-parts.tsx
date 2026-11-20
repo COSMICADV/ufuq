@@ -26,6 +26,7 @@ export function ExpensesHeader({
     { href: base, label: t('finance.tabs.overview') },
     { href: `${base}/transactions`, label: t('finance.tabs.transactions') },
     { href: `${base}/accounts`, label: t('finance.tabs.accounts') },
+    { href: `${base}/budgets`, label: t('finance.tabs.budgets') },
     { href: `${base}/categories`, label: t('finance.tabs.categories') },
   ];
   return (
