@@ -347,6 +347,14 @@
       "greeting": "Hallo {name},",
       "body": "{company} ist auf 1to1OS freigegeben. Sie können sich jetzt mit der E-Mail-Adresse und dem Passwort Ihrer Registrierung anmelden.",
       "action": "Bei 1to1OS anmelden"
+    },
+    "reset": {
+      "subject": "Neues Passwort für Ihr 1to1OS-Konto festlegen",
+      "greeting": "Hallo,",
+      "body": "Wir haben eine Anfrage erhalten, ein neues Passwort für Ihr 1to1OS-Konto festzulegen.",
+      "action": "Neues Passwort festlegen",
+      "expiry": "Dieser Link läuft am {expiry} ab und funktioniert nur einmal.",
+      "ignore": "Wenn Sie das nicht angefordert haben, ignorieren Sie diese E-Mail; Ihr Passwort bleibt unverändert."
     }
   },
   "settings": {
@@ -2600,6 +2608,25 @@
       "rejected": "Die Anfrage für das Unternehmenskonto wurde abgelehnt.",
       "inactive": "Dieses Konto ist nicht aktiv.",
       "rate": "Zu viele Versuche. Warten Sie kurz und versuchen Sie es erneut."
-    }
+    },
+    "with_email": "Stattdessen mit E-Mail registrieren"
+  },
+  "reset_password": {
+    "title": "Neues Passwort festlegen",
+    "lead": "Wählen Sie ein neues Passwort für Ihr Konto.",
+    "password": "Neues Passwort",
+    "confirm": "Passwort bestätigen",
+    "help": "Mindestens 10 Zeichen.",
+    "submit": "Passwort speichern",
+    "saving": "Wird gespeichert…",
+    "mismatch": "Die Passwörter stimmen nicht überein.",
+    "short": "Das Passwort ist kürzer als 10 Zeichen.",
+    "done_title": "Ihr Passwort wurde geändert",
+    "done_body": "Sie können sich jetzt mit Ihrem neuen Passwort anmelden.",
+    "sign_in": "Anmelden",
+    "expired_title": "Dieser Link ist ungültig",
+    "expired_body": "Dieser Link ist abgelaufen oder wurde bereits verwendet. Fordern Sie einen neuen an.",
+    "request_new": "Neuen Link anfordern",
+    "missing": "Dieser Link ist unvollständig. Öffnen Sie den Link aus der E-Mail unverändert."
   }
 }

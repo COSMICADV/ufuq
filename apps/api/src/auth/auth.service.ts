@@ -13,7 +13,10 @@
  * audit, so those write it directly.
  */
 
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { PASSWORD_RESET_TOKEN_TTL_MINUTES } from '@ufuq/auth';
+import { isLocale } from '@ufuq/i18n';
+import type { Locale } from '@ufuq/i18n';
 import {
   dummyPasswordHash,
   LOGIN_LOCKOUT_DURATION_MINUTES,
@@ -44,6 +47,7 @@ import type { InvitationPreview } from './invitation.service.js';
 import { InvitationService } from './invitation.service.js';
 
 import { PasswordService } from './password.service.js';
+import { ResetMailer } from '../mail/reset-mailer.js';
 
 import { RateLimitService } from './rate-limit.service.js';
 import type { ClientType, CreatedSession } from './session.service.js';
@@ -90,6 +94,8 @@ export class AuthService {
     @Inject(AuditService) private readonly audit: AuditService,
     /** Every transaction that changes state audits through this, after commit (DOCUMENT 21 §1–§3). */
     @Inject(AuditDispatcher) private readonly postCommit: AuditDispatcher,
+    /** Emails the reset link; absent only where a test builds the service by hand. */
+    @Optional() @Inject(ResetMailer) private readonly resetMail?: ResetMailer,
   ) {}
 
   async login(
@@ -404,12 +410,9 @@ export class AuthService {
       if (candidate.status !== 'active' || candidate.companyStatus !== 'active') {
         continue;
       }
-      // DOCUMENT 25 Phase 15 owns actually delivering this token (email);
-      // see the Phase 3 report. The token is created and auditable now so
-      // the rest of the reset flow is fully built and testable.
       const token = await this.passwords.createResetToken(candidate.companyId, candidate.id);
-      await withTenant(this.prisma, candidate.companyId, (tx) =>
-        this.audit.record(tx, {
+      const where = await withTenant(this.prisma, candidate.companyId, async (tx) => {
+        await this.audit.record(tx, {
           companyId: candidate.companyId,
           userId: candidate.id,
           action: 'PASSWORD_RESET_REQUESTED',
@@ -417,9 +420,32 @@ export class AuthService {
           entityId: candidate.id,
           ipAddress: ctx.ipAddress,
           userAgent: ctx.userAgent,
-        }),
-      );
-      void token; // not returned to the caller (DOCUMENT 08 §4.1) or logged (DOCUMENT 20 §8)
+        });
+        const user = await tx.user.findUniqueOrThrow({
+          where: { id: candidate.id },
+          select: { locale: true, company: { select: { timezone: true, defaultLocale: true } } },
+        });
+        return user;
+      });
+      // The link goes only to the account's own address; the token is never
+      // returned to the caller (DOCUMENT 08 §4.1) or logged (DOCUMENT 20 §8).
+      // A delivery failure is logged without the address and does not change
+      // the answer, which never says whether the email exists.
+      const locale =
+        [where.locale, where.company.defaultLocale]
+          .map((value) => value?.trim() ?? '')
+          .find((value): value is Locale => isLocale(value)) ?? 'ar';
+      try {
+        await this.resetMail?.send({
+          to: candidate.email,
+          locale,
+          token,
+          expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MINUTES * 60_000),
+          timeZone: where.company.timezone,
+        });
+      } catch {
+        this.logger.error('password reset email could not be delivered');
+      }
     }
   }
 

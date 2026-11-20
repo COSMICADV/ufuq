@@ -49,6 +49,8 @@ export function PersonalStart({ locale }: { readonly locale: Locale }): React.JS
   const [show, setShow] = useState(false);
   // "Continue with Google": shown only when the server has it switched on.
   const [google, setGoogle] = useState(false);
+  // With Google on, Google is the way in; the email form waits behind a link.
+  const [withEmail, setWithEmail] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -167,81 +169,102 @@ export function PersonalStart({ locale }: { readonly locale: Locale }): React.JS
                 </svg>
                 <span>{t('personal.google')}</span>
               </a>
-              <p className="pstart__or" aria-hidden="true">
-                <span>{t('personal.or')}</span>
-              </p>
+              {withEmail ? (
+                <p className="pstart__or" aria-hidden="true">
+                  <span>{t('personal.or')}</span>
+                </p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="pstart__email"
+                    aria-expanded={false}
+                    onClick={() => {
+                      setWithEmail(true);
+                    }}
+                  >
+                    {t('personal.with_email')}
+                  </button>
+                  <p className="pstart__signin">
+                    {t('personal.have_account')}{' '}
+                    <Link href={publicPath(locale, 'login')}>{t('personal.sign_in')}</Link>
+                  </p>
+                </>
+              )}
             </>
           ) : null}
-          <form
-            className="public-form"
-            onSubmit={(event) => {
-              void submit(event);
-            }}
-          >
-            <fieldset disabled={busy}>
-              <Field label={t('personal.name')} required {...invalid('name')}>
-                <Input
-                  name="name"
-                  autoComplete="name"
+          {google && !withEmail ? null : (
+            <form
+              className="public-form"
+              onSubmit={(event) => {
+                void submit(event);
+              }}
+            >
+              <fieldset disabled={busy}>
+                <Field label={t('personal.name')} required {...invalid('name')}>
+                  <Input
+                    name="name"
+                    autoComplete="name"
+                    required
+                    maxLength={200}
+                    aria-invalid={fields.includes('name')}
+                  />
+                </Field>
+                <Field label={t('personal.email')} required {...invalid('email')}>
+                  <Input
+                    name="email"
+                    type="email"
+                    dir="ltr"
+                    autoComplete="email"
+                    required
+                    maxLength={255}
+                    aria-invalid={fields.includes('email')}
+                  />
+                </Field>
+                <Field
+                  label={c.password}
                   required
-                  maxLength={200}
-                  aria-invalid={fields.includes('name')}
-                />
-              </Field>
-              <Field label={t('personal.email')} required {...invalid('email')}>
-                <Input
-                  name="email"
-                  type="email"
-                  dir="ltr"
-                  autoComplete="email"
-                  required
-                  maxLength={255}
-                  aria-invalid={fields.includes('email')}
-                />
-              </Field>
-              <Field
-                label={c.password}
-                required
-                helper={t('personal.password_help')}
-                {...invalid('password')}
-              >
-                <Input
-                  name="password"
-                  type={show ? 'text' : 'password'}
-                  dir="ltr"
-                  autoComplete="new-password"
-                  required
-                  minLength={10}
-                  maxLength={200}
-                  aria-invalid={fields.includes('password')}
-                />
-              </Field>
-              <button
-                type="button"
-                className="button button--secondary"
-                aria-pressed={show}
-                onClick={() => {
-                  setShow((value) => !value);
-                }}
-              >
-                {show ? c.hide : c.show}
-              </button>
-              {/* Left empty by people; bots fill it in. */}
-              <div className="public-honeypot" aria-hidden="true">
-                <label>
-                  Website
-                  <input name="website" tabIndex={-1} autoComplete="off" />
-                </label>
-              </div>
-              <Button type="submit" size="lg" loading={busy}>
-                {busy ? t('personal.start_busy') : t('personal.start_submit')}
-              </Button>
-            </fieldset>
-            <p className="pstart__signin">
-              {t('personal.have_account')}{' '}
-              <Link href={publicPath(locale, 'login')}>{t('personal.sign_in')}</Link>
-            </p>
-          </form>
+                  helper={t('personal.password_help')}
+                  {...invalid('password')}
+                >
+                  <Input
+                    name="password"
+                    type={show ? 'text' : 'password'}
+                    dir="ltr"
+                    autoComplete="new-password"
+                    required
+                    minLength={10}
+                    maxLength={200}
+                    aria-invalid={fields.includes('password')}
+                  />
+                </Field>
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  aria-pressed={show}
+                  onClick={() => {
+                    setShow((value) => !value);
+                  }}
+                >
+                  {show ? c.hide : c.show}
+                </button>
+                {/* Left empty by people; bots fill it in. */}
+                <div className="public-honeypot" aria-hidden="true">
+                  <label>
+                    Website
+                    <input name="website" tabIndex={-1} autoComplete="off" />
+                  </label>
+                </div>
+                <Button type="submit" size="lg" loading={busy}>
+                  {busy ? t('personal.start_busy') : t('personal.start_submit')}
+                </Button>
+              </fieldset>
+              <p className="pstart__signin">
+                {t('personal.have_account')}{' '}
+                <Link href={publicPath(locale, 'login')}>{t('personal.sign_in')}</Link>
+              </p>
+            </form>
+          )}
         </section>
 
         <aside className="os-auth__art" aria-hidden="true">

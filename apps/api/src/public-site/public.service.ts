@@ -31,8 +31,14 @@ export class PublicSiteService {
     @Inject(AuditDispatcher) private readonly audit: AuditDispatcher,
   ) {}
 
+  /**
+   * Per-IP hourly limits for the public forms. Contact and company requests
+   * (reviewed by the owner) allow 5; Personal sign-up is instant and every
+   * attempt counts, a typo included, so it allows 20.
+   */
   async throttle(kind: string, ip: string | null): Promise<void> {
-    const limit = await this.limits.consume(`public:${kind}:ip:${ip ?? 'unknown'}`, 5, 3600);
+    const max = kind === 'register-personal' ? 20 : 5;
+    const limit = await this.limits.consume(`public:${kind}:ip:${ip ?? 'unknown'}`, max, 3600);
     if (!limit.allowed)
       throw new AppException(ERROR_CODES.RATE_LIMITED, 429, {
         retryAfterSeconds: limit.retryAfterSeconds,

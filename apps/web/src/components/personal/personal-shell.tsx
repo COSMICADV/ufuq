@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
+import { ProductLogo } from '../brand-mark';
 import { FreehandIcon } from '../freehand-icon';
 import { LanguageSwitch } from '../language-switch';
 import { SignOutButton } from '../sign-out-button';
@@ -26,24 +27,6 @@ import type { PersonalSection } from '../../lib/personal';
 import { publicPath } from '../../lib/public-content';
 import { applyTheme, readStoredTheme, THEMES, themeLabelKey } from '../../lib/themes';
 import type { Theme } from '../../lib/themes';
-
-/**
- * The logo as the reference draws it: "1to1OS" in navy and "Personal" in
- * blue italic at the same size, the brush stroke under "Personal", no spark.
- */
-function PersonalLogo(): React.JSX.Element {
-  return (
-    <span className="plogo" dir="ltr" translate="no">
-      <span className="plogo__os">1to1OS</span>
-      <span className="plogo__p">
-        Personal
-        <svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M3 7C30 3.6 64 3 97 5" />
-        </svg>
-      </span>
-    </span>
-  );
-}
 
 /** The signed-in person, for the screens inside the shell. */
 const PersonalSessionContext = createContext<SessionView | null>(null);
@@ -184,7 +167,7 @@ export function PersonalShell({
   };
   const brand = (
     <Link href={personalHref(locale, 'home')} className="pshell-brand" aria-label="1to1OS Personal">
-      <PersonalLogo />
+      <ProductLogo product="Personal" />
     </Link>
   );
 

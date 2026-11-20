@@ -347,6 +347,14 @@
       "greeting": "Hello {name},",
       "body": "{company} is approved on 1to1OS. You can sign in now with the email and password you registered with.",
       "action": "Sign in to 1to1OS"
+    },
+    "reset": {
+      "subject": "Set a new password for your 1to1OS account",
+      "greeting": "Hello,",
+      "body": "We received a request to set a new password for your 1to1OS account.",
+      "action": "Set a new password",
+      "expiry": "This link expires on {expiry} and works once.",
+      "ignore": "If you did not ask for this, ignore this email and your password stays the same."
     }
   },
   "settings": {
@@ -2600,6 +2608,25 @@
       "rejected": "The company account request was declined.",
       "inactive": "This account is not active.",
       "rate": "Too many attempts. Wait a moment and try again."
-    }
+    },
+    "with_email": "Sign up with email instead"
+  },
+  "reset_password": {
+    "title": "Set a new password",
+    "lead": "Choose a new password for your account.",
+    "password": "New password",
+    "confirm": "Confirm password",
+    "help": "At least 10 characters.",
+    "submit": "Save password",
+    "saving": "Saving…",
+    "mismatch": "The passwords do not match.",
+    "short": "The password is shorter than 10 characters.",
+    "done_title": "Your password has been changed",
+    "done_body": "You can now sign in with your new password.",
+    "sign_in": "Sign in",
+    "expired_title": "This link is not valid",
+    "expired_body": "This link has expired or has already been used. Request a new one.",
+    "request_new": "Request a new link",
+    "missing": "This link is incomplete. Open the link from the email exactly as it is."
   }
 }

@@ -101,18 +101,7 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
       <header className="home-header">
         <div className="home-header__inner">
           <a className="home-logo" href="/" aria-label={`1to1OS — ${t('entry.languages')}`}>
-            <ProductLogo domain className="home-logo__wide" />
-            {/* Phones: the larger, centred logo of the mobile design. */}
-            <span className="home-mlogo" dir="ltr" translate="no" aria-hidden="true">
-              <span className="home-mlogo__one">1</span>
-              <span className="home-mlogo__rest">to</span>
-              <span className="home-mlogo__one">1</span>
-              <span className="home-mlogo__rest">OS</span>
-              <span className="home-mlogo__com">.COM</span>
-              <svg viewBox="0 0 100 10" preserveAspectRatio="none">
-                <path d="M3 7C30 3.6 64 3 97 5" />
-              </svg>
-            </span>
+            <ProductLogo />
           </a>
           <div className="home-header__tools">
             <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />

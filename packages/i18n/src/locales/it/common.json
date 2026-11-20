@@ -347,6 +347,14 @@
       "greeting": "Ciao {name},",
       "body": "{company} è stata approvata su 1to1OS. Puoi accedere subito con l’e-mail e la password usate per la registrazione.",
       "action": "Accedi a 1to1OS"
+    },
+    "reset": {
+      "subject": "Imposta una nuova password per il tuo account 1to1OS",
+      "greeting": "Ciao,",
+      "body": "Abbiamo ricevuto una richiesta per impostare una nuova password per il tuo account 1to1OS.",
+      "action": "Imposta una nuova password",
+      "expiry": "Questo link scade il {expiry} e funziona una sola volta.",
+      "ignore": "Se non l’hai richiesto tu, ignora questa e-mail: la tua password resta invariata."
     }
   },
   "settings": {
@@ -2600,6 +2608,25 @@
       "rejected": "La richiesta di account aziendale è stata rifiutata.",
       "inactive": "Questo account non è attivo.",
       "rate": "Troppi tentativi. Attendi un momento e riprova."
-    }
+    },
+    "with_email": "Registrati invece con l’e-mail"
+  },
+  "reset_password": {
+    "title": "Imposta una nuova password",
+    "lead": "Scegli una nuova password per il tuo account.",
+    "password": "Nuova password",
+    "confirm": "Conferma password",
+    "help": "Almeno 10 caratteri.",
+    "submit": "Salva password",
+    "saving": "Salvataggio…",
+    "mismatch": "Le password non coincidono.",
+    "short": "La password è più corta di 10 caratteri.",
+    "done_title": "La tua password è stata cambiata",
+    "done_body": "Ora puoi accedere con la nuova password.",
+    "sign_in": "Accedi",
+    "expired_title": "Questo link non è valido",
+    "expired_body": "Questo link è scaduto o è già stato usato. Richiedine uno nuovo.",
+    "request_new": "Richiedi un nuovo link",
+    "missing": "Questo link è incompleto. Apri il link dell’e-mail così com’è."
   }
 }

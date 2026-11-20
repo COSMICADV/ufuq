@@ -34,60 +34,51 @@ body {
 }
 
 /* ---- Logo --------------------------------------------------------------------------- */
+/* The approved artwork (components/brand-mark.tsx): navy "1"s and ".com",
+ * blue "to" and "OS". Its height is set in em, so every place that sized the
+ * old text logo with font-size still sizes this one. On the dark theme the
+ * navy turns white, so the logo never disappears. */
+:root {
+  --logo-ink: #001738;
+  --logo-blue: #007aff;
+}
+:root[data-theme='dark'] {
+  --logo-ink: #ffffff;
+  --logo-blue: #3d9bff;
+}
+.logo {
+  display: block;
+  block-size: 0.9em;
+  inline-size: auto;
+  overflow: visible;
+}
+.logo__ink {
+  fill: var(--logo-ink);
+}
+.logo__ones {
+  stroke: var(--logo-ink);
+  stroke-width: 2.8px;
+  stroke-miterlimit: 10;
+}
+.logo__blue {
+  fill: var(--logo-blue);
+}
 .os-logo {
-  position: relative;
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.32em;
-  padding-inline-end: 0.9em;
-  font-family: var(--font-ui);
+  align-items: center;
+  gap: 0.28em;
   line-height: 1;
   white-space: nowrap;
 }
-.os-logo__brand {
-  position: relative;
-  padding-block-end: 0.28em;
-  color: var(--os-navy);
-  font-weight: 600;
-  font-size: 1em;
-  letter-spacing: -0.01em;
-}
-:root[data-theme='dark'] .os-logo__brand {
-  color: #ffffff;
-}
-.os-logo__underline {
-  position: absolute;
-  inset-inline-start: 12%;
-  inset-block-end: 0;
-  inline-size: 62%;
-  block-size: 0.24em;
-  overflow: visible;
-}
-.os-logo__underline path,
-.os-logo__spark path {
-  fill: none;
-  stroke: var(--os-accent);
-  stroke-linecap: round;
-}
-.os-logo__underline path {
-  stroke-width: 3.4;
-}
 .os-logo__product {
-  color: var(--os-accent);
+  color: var(--logo-blue);
+  font-family: var(--font-ui);
   font-style: italic;
   font-weight: 600;
-  font-size: 0.62em;
-  letter-spacing: -0.01em;
-}
-.os-logo__spark {
-  position: absolute;
-  inset-inline-end: -0.05em;
-  inset-block-start: -0.55em;
-  inline-size: 0.7em;
-  block-size: 0.7em;
-}
-.os-logo__spark path {
-  stroke-width: 2.2;
+  font-size: 0.86em;
+  letter-spacing: 0;
+  /* Optical: sit on the artwork's baseline. */
+  transform: translateY(0.04em);
 }
 
 /* ---- Buttons, fields, cards: the shared parts ---------------------------------------- */

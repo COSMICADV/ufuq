@@ -27,15 +27,6 @@
 .biz-logo {
   font-size: clamp(24px, 2.2vw, 38px);
 }
-/* The Business mark as in its mockup: the words alone, no brush or sparks. */
-.biz-logo .os-logo__underline,
-.biz-logo .os-logo__spark {
-  display: none;
-}
-.biz-logo .os-logo,
-.biz-logo .os-logo__brand {
-  padding: 0;
-}
 .biz .os-logo__product {
   color: var(--home-blue);
   font-size: 1em;
@@ -242,9 +233,6 @@
   .biz-logo {
     font-size: 21px;
   }
-  .biz-logo .os-logo__spark {
-    display: none;
-  }
   .biz-nav__sep {
     margin-inline: 2px;
   }
@@ -318,7 +306,6 @@
 .home.biz .biz-lead {
   font-weight: 600;
 }
-.home.biz .biz-logo .os-logo__brand,
 .home.biz .biz-logo .os-logo__product {
   font-family: var(--font-ui);
   font-weight: 600;

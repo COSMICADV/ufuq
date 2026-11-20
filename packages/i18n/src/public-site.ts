@@ -130,7 +130,7 @@ export const publicCopy = {
     forgot: 'نسيت كلمة المرور؟',
     resetInfo: 'أدخل بريدك لطلب إعادة تعيين كلمة المرور.',
     resetSent:
-      'إذا كان الحساب مؤهلاً، فقد سُجل طلب إعادة التعيين. تواصل مع مسؤول شركتك إذا احتجت إلى المساعدة.',
+      'إذا كان هناك حساب بهذا البريد، فقد أرسلنا إليه رابطًا لتعيين كلمة مرور جديدة. تفقّد صندوق الوارد والرسائل غير المرغوب فيها.',
     resetSubmit: 'طلب إعادة التعيين',
     setup: 'إعداد الشركة',
     setupBody: 'ابدأ من إعدادات الشركة، ثم اضبط الهيكل والجداول وأضف الموظفين.',
@@ -270,7 +270,7 @@ export const publicCopy = {
     forgot: 'Forgot password?',
     resetInfo: 'Enter your email to request a password reset.',
     resetSent:
-      'If the account is eligible, a reset request has been recorded. Contact your company administrator if you need help.',
+      'If there is an account with this email, we have sent it a link to set a new password. Check your inbox and spam folder.',
     resetSubmit: 'Request password reset',
     setup: 'Set up your company',
     setupBody:
@@ -413,7 +413,7 @@ export const publicCopy = {
     forgot: 'Mot de passe oublié ?',
     resetInfo: 'Saisissez votre e-mail pour demander la réinitialisation du mot de passe.',
     resetSent:
-      'Si le compte est éligible, une demande de réinitialisation a été enregistrée. Contactez l’administrateur de votre entreprise si vous avez besoin d’aide.',
+      'S’il existe un compte avec cet e-mail, nous lui avons envoyé un lien pour définir un nouveau mot de passe. Vérifiez votre boîte de réception et vos courriers indésirables.',
     resetSubmit: 'Demander la réinitialisation',
     setup: 'Configurez votre entreprise',
     setupBody:
@@ -556,7 +556,7 @@ export const publicCopy = {
     forgot: 'Password dimenticata?',
     resetInfo: 'Inserisci la tua e-mail per richiedere il ripristino della password.',
     resetSent:
-      'Se l’account è idoneo, la richiesta di ripristino è stata registrata. Contatta l’amministratore della tua azienda se hai bisogno di aiuto.',
+      'Se esiste un account con questa e-mail, gli abbiamo inviato un link per impostare una nuova password. Controlla la posta in arrivo e lo spam.',
     resetSubmit: 'Richiedi il ripristino della password',
     setup: 'Configura la tua azienda',
     setupBody:
@@ -699,7 +699,7 @@ export const publicCopy = {
     forgot: 'Passwort vergessen?',
     resetInfo: 'Geben Sie Ihre E-Mail-Adresse ein, um das Zurücksetzen des Passworts anzufordern.',
     resetSent:
-      'Wenn das Konto berechtigt ist, wurde eine Anfrage zum Zurücksetzen erfasst. Wenden Sie sich an den Administrator Ihres Unternehmens, wenn Sie Hilfe brauchen.',
+      'Wenn es ein Konto mit dieser E-Mail gibt, haben wir ihm einen Link zum Festlegen eines neuen Passworts geschickt. Prüfen Sie Ihren Posteingang und den Spam-Ordner.',
     resetSubmit: 'Zurücksetzen anfordern',
     setup: 'Richten Sie Ihr Unternehmen ein',
     setupBody:

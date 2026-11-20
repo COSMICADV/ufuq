@@ -64,43 +64,6 @@
   direction: ltr;
   text-align: left;
 }
-.plogo {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.28em;
-  line-height: 1;
-  white-space: nowrap;
-}
-.plogo__os {
-  color: var(--p-ink);
-  font-family: var(--font-ui);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.plogo__p {
-  position: relative;
-  padding-block-end: 0.3em;
-  color: var(--p-blue);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.plogo__p svg {
-  position: absolute;
-  inset-inline: 4% 2%;
-  inset-block-end: 0;
-  inline-size: 94%;
-  block-size: 0.22em;
-  overflow: visible;
-}
-.plogo__p path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-}
-
 /* ---- The rows ------------------------------------------------------------ */
 
 .pnav-list {
@@ -553,4 +516,31 @@
   background: color-mix(in srgb, var(--semantic-error, #c62828) 9%, transparent);
   color: var(--semantic-error, #c62828);
   font-weight: var(--weight-ui);
+}
+
+.pstart__email {
+  display: block;
+  margin: 16px auto 0;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  color: var(--p-blue);
+  font: inherit;
+  font-weight: var(--weight-ui);
+  cursor: pointer;
+}
+.pstart__email:hover {
+  text-decoration: underline;
+}
+.pstart__email:focus-visible {
+  outline: 2px solid var(--p-blue);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Phones: the sign-up card comes first; the drawing would push it off screen. */
+@media (max-width: 900px) {
+  .pstart .os-auth__art {
+    display: none;
+  }
 }

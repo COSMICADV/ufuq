@@ -655,7 +655,8 @@ describe('1to1OS Personal — individual sign-up', () => {
         })
       ).status,
     ).toBe(422);
-    for (let i = 0; i < 5; i++)
+    // 20 an hour: Personal sign-up is instant, and a typo counts too.
+    for (let i = 0; i < 20; i++)
       await post('register-personal', {
         ...personal(`t${String(i)}@p.test`),
         password: 'short',
@@ -776,6 +777,57 @@ describe('Continue with Google — Personal and Business', () => {
       "SELECT 1 FROM users WHERE email IN ('x1@gmail.com','x2@gmail.com')",
     );
     expect(rows.rows).toHaveLength(0);
+  });
+});
+
+describe('Forgot password — the reset link is emailed', () => {
+  it('emails a one-time link in the account language and the new password signs in', async () => {
+    expect(
+      (
+        await post('register-personal', {
+          name: 'Reset Person',
+          email: 'reset.person@personal.test',
+          password: 'the-first-passphrase',
+          started_at: Date.now() - 3000,
+          website: '',
+        })
+      ).status,
+    ).toBe(201);
+    messages.length = 0;
+    const asked = await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .set('Accept-Language', 'fr')
+      .send({ email: 'reset.person@personal.test' });
+    expect(asked.status).toBeLessThan(300);
+    expect(messages).toHaveLength(1);
+    const mail = messages[0];
+    expect(mail?.to).toBe('reset.person@personal.test');
+    const link = /https?:\/\/\S+\/reset-password#token=(\S+)/.exec(mail?.text ?? '');
+    expect(link).not.toBeNull();
+    const token = decodeURIComponent(link?.[1] ?? '');
+    expect(asked.text).not.toContain(token);
+
+    const reset = await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ token, newPassword: 'a-brand-new-passphrase' });
+    expect(reset.status).toBeLessThan(300);
+    const again = await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ token, newPassword: 'another-passphrase-123' });
+    expect(again.status).toBeGreaterThanOrEqual(400);
+    const signedIn = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: 'reset.person@personal.test', password: 'a-brand-new-passphrase' });
+    expect(signedIn.status).toBe(200);
+  });
+
+  it('sends nothing, and says the same, for an unknown email', async () => {
+    messages.length = 0;
+    const asked = await request(app.getHttpServer())
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'nobody@nowhere.test' });
+    expect(asked.status).toBeLessThan(300);
+    expect(messages).toHaveLength(0);
   });
 });
 

@@ -347,6 +347,14 @@
       "greeting": "Bonjour {name},",
       "body": "{company} est approuvée sur 1to1OS. Vous pouvez vous connecter dès maintenant avec l’e-mail et le mot de passe utilisés lors de l’inscription.",
       "action": "Se connecter à 1to1OS"
+    },
+    "reset": {
+      "subject": "Définir un nouveau mot de passe pour votre compte 1to1OS",
+      "greeting": "Bonjour,",
+      "body": "Nous avons reçu une demande pour définir un nouveau mot de passe pour votre compte 1to1OS.",
+      "action": "Définir un nouveau mot de passe",
+      "expiry": "Ce lien expire le {expiry} et ne fonctionne qu’une fois.",
+      "ignore": "Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail : votre mot de passe reste inchangé."
     }
   },
   "settings": {
@@ -2600,6 +2608,25 @@
       "rejected": "La demande de compte de l’entreprise a été refusée.",
       "inactive": "Ce compte n’est pas actif.",
       "rate": "Trop de tentatives. Patientez un instant puis réessayez."
-    }
+    },
+    "with_email": "S’inscrire plutôt avec un e-mail"
+  },
+  "reset_password": {
+    "title": "Définir un nouveau mot de passe",
+    "lead": "Choisissez un nouveau mot de passe pour votre compte.",
+    "password": "Nouveau mot de passe",
+    "confirm": "Confirmer le mot de passe",
+    "help": "Au moins 10 caractères.",
+    "submit": "Enregistrer le mot de passe",
+    "saving": "Enregistrement…",
+    "mismatch": "Les mots de passe ne correspondent pas.",
+    "short": "Le mot de passe fait moins de 10 caractères.",
+    "done_title": "Votre mot de passe a été modifié",
+    "done_body": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+    "sign_in": "Se connecter",
+    "expired_title": "Ce lien n’est pas valide",
+    "expired_body": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.",
+    "request_new": "Demander un nouveau lien",
+    "missing": "Ce lien est incomplet. Ouvrez le lien de l’e-mail tel quel."
   }
 }

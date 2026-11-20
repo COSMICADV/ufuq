@@ -90,28 +90,6 @@
 .home-logo--small {
   font-size: 24px;
 }
-.home .os-logo__brand {
-  color: var(--home-ink);
-}
-.home .os-logo__domain {
-  color: var(--home-ink);
-  font-size: 0.42em;
-  font-weight: var(--weight-subheading);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-.home-logo .os-logo {
-  gap: 0.16em;
-  padding-inline-end: 0;
-}
-.home-logo .os-logo__underline {
-  inset-inline-start: 12%;
-  inline-size: 60%;
-}
-.home .os-logo__underline path,
-.home .os-logo__spark path {
-  stroke: var(--home-blue);
-}
 .home-nav {
   display: flex;
   align-items: center;
@@ -894,9 +872,6 @@
   color: var(--home-ink);
   font-weight: var(--weight-ui);
 }
-.home:not(.biz) .home-logo .os-logo__brand {
-  font-weight: 600;
-}
 .home .home-door__name {
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1154,7 +1129,6 @@
  * the headline on two lines over a pale brush stroke, the two doors (drawing,
  * a hairline, "1to1OS" over the product in blue italic, a grey chevron), the
  * waves along the bottom and the company line under them. */
-.home-mlogo,
 .home-title__brush {
   display: none;
 }
@@ -1190,62 +1164,17 @@
     justify-content: center;
     padding-block: 34px 4px;
   }
-  .home:not(.biz):not(.lang-page) .home-header__tools,
-  .home:not(.biz):not(.lang-page) .home-logo__wide {
+  .home:not(.biz):not(.lang-page) .home-header__tools {
     display: none;
+  }
+  /* Phones: the larger, centred logo of the mobile design. */
+  .home:not(.biz):not(.lang-page) .home-logo {
+    font-size: clamp(54px, 15vw, 66px);
   }
   .home:not(.biz):not(.lang-page) .home-logo {
     margin: 0;
     text-decoration: none;
   }
-  .home-mlogo {
-    position: relative;
-    display: inline-flex;
-    align-items: baseline;
-    padding-block-end: 0.22em;
-    font-family: var(--font-ui);
-    font-size: clamp(54px, 17vw, 70px);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1;
-  }
-  .home:not(.biz):not(.lang-page) .home-mlogo {
-    display: inline-flex;
-  }
-  /* The logo's own colours: both "1"s navy, "to" and "OS" blue. */
-  .home-mlogo__one {
-    color: #102451;
-  }
-  .home-mlogo__one:first-child {
-    margin-inline-end: 0.1em;
-  }
-  .home-mlogo__rest {
-    color: #457bf8;
-  }
-  .home-mlogo__com {
-    margin-inline-start: 0.12em;
-    color: #102451;
-    font-size: 0.3em;
-    font-weight: 600;
-    letter-spacing: 0;
-  }
-  .home-mlogo svg {
-    position: absolute;
-    inset-inline-start: 34%;
-    inset-block-end: 0;
-    inline-size: 46%;
-    block-size: 0.14em;
-    overflow: visible;
-  }
-  .home-mlogo path,
-  .home-title__brush path {
-    fill: none;
-    stroke: var(--home-blue, #007cfc);
-    stroke-width: 3;
-    stroke-linecap: round;
-    vector-effect: non-scaling-stroke;
-  }
-
   .home:not(.biz):not(.lang-page) .home-hero {
     position: relative;
     flex: 1;
@@ -1266,6 +1195,9 @@
     overflow: visible;
   }
   .home-title__brush path {
+    fill: none;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
     stroke: color-mix(in srgb, var(--home-blue, #007cfc) 55%, white);
     stroke-width: 6;
   }

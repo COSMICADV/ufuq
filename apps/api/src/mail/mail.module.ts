@@ -9,6 +9,7 @@ import type { DynamicModule, OnModuleDestroy } from '@nestjs/common';
 import type { Env } from '@ufuq/config';
 
 import { InvitationMailer } from './invitation-mailer.js';
+import { ResetMailer } from './reset-mailer.js';
 import { MAIL_TRANSPORT } from './mail-transport.js';
 import type { MailTransport } from './mail-transport.js';
 import { ResendMailTransport } from './resend-mail-transport.js';
@@ -43,8 +44,9 @@ export class MailModule {
         MailLifecycle,
         InvitationMailer,
         SignupMailer,
+        ResetMailer,
       ],
-      exports: [MAIL_TRANSPORT, InvitationMailer, SignupMailer],
+      exports: [MAIL_TRANSPORT, InvitationMailer, SignupMailer, ResetMailer],
     };
   }
 }
