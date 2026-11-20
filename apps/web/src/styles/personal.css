@@ -1,0 +1,507 @@
+/*
+ * 1to1OS Personal — the workspace, drawn after the reference sidebar: a white
+ * card with large rounded corners and a soft shadow; the logo; each section as
+ * a row (the hand-drawn icon, then its name) with a hairline between rows; the
+ * current one in a pale-blue pill with blue text. The icon sits before the
+ * name in every language, as in the reference.
+ *
+ * Colours come from the theme tokens, so the violet, green and dark themes
+ * apply here too; the rounded Nunito / Baloo Bhaijaan 2 pairing matches the
+ * reference and the product-choice screen.
+ */
+
+.pshell,
+.pstart {
+  --p-ink: var(--text-primary, #0b1f4d);
+  --p-muted: var(--text-secondary, #4a5878);
+  --p-card: var(--bg-surface, #fff);
+  --p-line: var(--border-subtle, #e6ecf5);
+  --p-blue: var(--brand-indigo, #0084ff);
+  --p-pill: color-mix(in srgb, var(--p-blue) 16%, var(--p-card));
+  --p-pill-line: color-mix(in srgb, var(--p-blue) 26%, var(--p-card));
+  --p-shadow: 0 18px 50px rgb(16 36 84 / 0.08), 0 2px 6px rgb(16 36 84 / 0.05);
+  font-family: Nunito, 'Baloo Bhaijaan 2', Cairo, system-ui, sans-serif;
+}
+
+.pshell {
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  gap: clamp(20px, 2.4vw, 36px);
+  min-block-size: 100dvh;
+  padding: clamp(16px, 2vw, 28px);
+  background: var(--bg-page, #f5f8ff);
+  color: var(--p-ink);
+}
+
+/* ---- The card ------------------------------------------------------------ */
+
+.pshell-side {
+  position: sticky;
+  inset-block-start: clamp(16px, 2vw, 28px);
+  align-self: start;
+  max-block-size: calc(100dvh - 2 * clamp(16px, 2vw, 28px) + 40px);
+  /* Room for the card's shadow inside the scroll box. */
+  margin: -6px -18px -34px;
+  padding: 6px 18px 34px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.pshell-card {
+  padding: 28px 16px 22px;
+  border: 1px solid var(--p-line);
+  border-radius: 36px;
+  background: var(--p-card);
+  box-shadow: var(--p-shadow);
+}
+
+.pshell-brand {
+  display: block;
+  padding-inline: 18px;
+  margin-block-end: 22px;
+  color: var(--p-ink);
+  font-size: 34px;
+  text-decoration: none;
+  direction: ltr;
+  text-align: left;
+}
+.plogo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.plogo__os {
+  color: var(--p-ink);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.plogo__p {
+  position: relative;
+  padding-block-end: 0.3em;
+  color: var(--p-blue);
+  font-family: Nunito, system-ui, sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.plogo__p svg {
+  position: absolute;
+  inset-inline: 4% 2%;
+  inset-block-end: 0;
+  inline-size: 94%;
+  block-size: 0.22em;
+  overflow: visible;
+}
+.plogo__p path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ---- The rows ------------------------------------------------------------ */
+
+.pnav-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pnav-list > li {
+  position: relative;
+}
+.pnav-list > li + li::before {
+  content: '';
+  position: absolute;
+  inset-inline: 14px;
+  inset-block-start: 0;
+  border-block-start: 1px solid var(--p-line);
+}
+/* No hairline next to the pill, as in the reference. */
+.pnav-list > li:has(> [aria-current='page'])::before,
+.pnav-list > li:has(> [aria-current='page']) + li::before {
+  display: none;
+}
+
+.pnav-link {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  inline-size: 100%;
+  min-block-size: 58px;
+  padding: 6px 20px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: none;
+  color: var(--p-ink);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  /* Icon first, then the name, in every language. */
+  direction: ltr;
+}
+.pnav-link > span:last-child {
+  unicode-bidi: plaintext;
+}
+.pnav-link:hover {
+  background: color-mix(in srgb, var(--p-pill) 55%, transparent);
+}
+.pnav-link:focus-visible {
+  outline: 2px solid var(--p-blue);
+  outline-offset: 2px;
+}
+.pnav-link[aria-current='page'] {
+  border-color: var(--p-pill-line);
+  background: var(--p-pill);
+  color: var(--p-blue);
+}
+
+.pnav-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+}
+.pnav-icon img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+/* The drawings are navy ink: on the dark theme they sit on a light tile. */
+:root[data-theme='dark'] .pnav-icon {
+  padding: 3px;
+  border-radius: 12px;
+  background: #f4f7fd;
+}
+
+.pnav-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 2px 12px 10px;
+}
+.pnav-theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  color: var(--p-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+.pnav-theme-option[aria-checked='true'] {
+  border-color: var(--p-pill-line);
+  background: var(--p-pill);
+  color: var(--p-blue);
+}
+
+/* ---- The screen ---------------------------------------------------------- */
+
+.pshell-main {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  min-inline-size: 0;
+}
+
+.pshell-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pshell-top__brand {
+  display: none;
+}
+.pshell-top__prefs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
+}
+.pshell-menu {
+  display: none;
+}
+
+.pshell-content {
+  min-inline-size: 0;
+}
+.pshell-content:focus {
+  outline: none;
+}
+
+.pscreen {
+  display: grid;
+  gap: 24px;
+  max-inline-size: 1180px;
+}
+
+.pscreen-hello h1,
+.pscreen-head h1 {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 44px);
+  font-weight: 800;
+  line-height: 1.2;
+}
+.pscreen-hello p,
+.pscreen-head p {
+  margin: 6px 0 0;
+  color: var(--p-muted);
+  font-size: clamp(16px, 1.3vw, 20px);
+  font-weight: 500;
+}
+.pscreen-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.pscreen-sub {
+  margin: 8px 0 -6px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pcard {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  block-size: 100%;
+  padding: 22px;
+  border: 1px solid var(--p-line);
+  border-radius: 26px;
+  background: var(--p-card);
+  box-shadow: var(--p-shadow);
+  color: var(--p-ink);
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+.pcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--p-pill-line);
+}
+.pcard:focus-visible {
+  outline: 2px solid var(--p-blue);
+  outline-offset: 3px;
+}
+.pcard__name {
+  font-size: 21px;
+  font-weight: 700;
+}
+.pcard__about {
+  color: var(--p-muted);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.pempty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: clamp(36px, 6vw, 72px) 24px;
+  border: 1px solid var(--p-line);
+  border-radius: 30px;
+  background: var(--p-card);
+  box-shadow: var(--p-shadow);
+  text-align: center;
+}
+.pempty h2 {
+  margin: 8px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.pempty p {
+  max-inline-size: 46ch;
+  margin: 0;
+  color: var(--p-muted);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.pempty__soon {
+  margin-block-start: 6px;
+  padding: 6px 16px;
+  border: 1px solid var(--p-pill-line);
+  border-radius: 999px;
+  background: var(--p-pill);
+  color: var(--p-blue);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.psettings {
+  padding: 22px 24px;
+  border: 1px solid var(--p-line);
+  border-radius: 26px;
+  background: var(--p-card);
+  box-shadow: var(--p-shadow);
+}
+.psettings h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.psettings dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.psettings dl > div,
+.psettings__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 8px;
+}
+.psettings dl > div + div,
+.psettings__row + .psettings__row {
+  border-block-start: 1px solid var(--p-line);
+}
+.psettings dt,
+.psettings__row > span {
+  color: var(--p-muted);
+  font-weight: 600;
+}
+.psettings dd {
+  margin: 0;
+  font-weight: 700;
+}
+.psettings__out {
+  display: flex;
+}
+
+/* ---- Phones: a top bar and the same card as a drawer --------------------- */
+
+.pshell-drawer {
+  inline-size: min(360px, 100vw - 24px);
+  max-block-size: calc(100dvh - 24px);
+  margin: 12px;
+  margin-inline-end: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: visible;
+}
+.pshell-drawer:focus,
+.pshell-drawer:focus-visible {
+  outline: none;
+}
+.pshell-drawer__out {
+  display: flex;
+  margin-block-start: 14px;
+  padding-inline: 20px;
+}
+.pshell-drawer::backdrop {
+  background: rgb(8 18 46 / 0.35);
+}
+.pshell-drawer > .pshell-card {
+  max-block-size: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+.pshell-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 18px;
+}
+.pshell-drawer__head .pshell-brand {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .pshell {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 14px 24px;
+  }
+  .pshell-side {
+    display: none;
+  }
+  .pshell-menu {
+    display: inline-grid;
+  }
+  .pshell-top {
+    padding: 4px 2px;
+  }
+  .pshell-top__brand {
+    display: block;
+  }
+  .pshell-top__brand .pshell-brand {
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+  }
+  .pshell-top__prefs .sign-out {
+    display: none;
+  }
+  .pscreen-head {
+    align-items: flex-start;
+  }
+  .pcards {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .pcard {
+    padding: 16px;
+  }
+  .pcard__about {
+    display: none;
+  }
+}
+
+/* ---- Sign-up ------------------------------------------------------------- */
+
+.pstart__art {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+.pstart__art img {
+  inline-size: min(340px, 80%);
+  block-size: auto;
+}
+.pstart__art p {
+  margin: 0;
+  color: var(--p-ink);
+  font-size: clamp(30px, 3vw, 46px);
+  font-weight: 600;
+}
+.pstart__art em {
+  color: var(--home-blue, #007cfc);
+  font-style: italic;
+}
+.pstart__signin {
+  margin: 14px 0 0;
+  color: var(--p-muted);
+  font-weight: 500;
+}
+.pstart__signin a {
+  color: var(--p-blue);
+  font-weight: 700;
+}

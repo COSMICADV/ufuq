@@ -8,7 +8,11 @@ export class PublicWriteGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     await this.service.throttle(
-      request.path.endsWith('/register') ? 'register' : 'contact',
+      request.path.endsWith('/register')
+        ? 'register'
+        : request.path.endsWith('/register-personal')
+          ? 'register-personal'
+          : 'contact',
       request.ip ?? null,
     );
     return true;

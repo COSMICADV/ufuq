@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ApiError, fetchOne } from '../../lib/api-client';
 import { publicCopy, publicPath } from '../../lib/public-content';
+import { workspaceFor } from '../../lib/personal';
 import { Button, Field, Input } from '../design-system';
 
 export function PublicForm({
@@ -73,9 +74,7 @@ export function PublicForm({
       );
       if (kind === 'login') {
         const me = await fetchOne<{ role: { key: string } }>('/auth/me', { locale });
-        router.push(
-          `/${locale}/${me.role.key === 'employee' ? 'app' : me.role.key === 'admin' ? 'admin/settings/company' : 'admin'}`,
-        );
+        router.push(workspaceFor(locale, me.role.key));
       } else {
         setDone(true);
       }

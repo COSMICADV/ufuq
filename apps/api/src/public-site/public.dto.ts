@@ -55,3 +55,9 @@ export class RegisterDto extends PublicSubmissionDto {
   @IsIn(['1-10', '11-50', '51-200', '201+']) employee_count_range!: string;
   @IsString() @Length(MIN_PASSWORD_LENGTH, 200) password!: string;
 }
+/** 1to1OS Personal sign-up: one person, no company details. */
+export class RegisterPersonalDto extends PublicSubmissionDto {
+  @Transform(trim) @IsString() @Length(1, 200) @Matches(singleLine) name!: string;
+  @Transform(email) @IsEmail() @MaxLength(255) email!: string;
+  @IsString() @Length(MIN_PASSWORD_LENGTH, 200) password!: string;
+}

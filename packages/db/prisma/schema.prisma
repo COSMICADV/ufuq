@@ -36,6 +36,14 @@ enum CompanyStatus {
   @@map("company_status")
 }
 
+/// A Business company or a 1to1OS Personal one-person workspace.
+enum CompanyKind {
+  business
+  personal
+
+  @@map("company_kind")
+}
+
 enum UserStatus {
   invited
   active
@@ -308,6 +316,7 @@ enum AuditAction {
   SIGNUP_REQUESTED                     @map("signup.requested")
   SIGNUP_APPROVED                      @map("signup.approved")
   SIGNUP_REJECTED                      @map("signup.rejected")
+  SIGNUP_PERSONAL                      @map("signup.personal")
   PASSWORD_SET_BY_ADMIN                @map("password.set_by_admin")
   SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
   EMPLOYEE_CREATED                     @map("employee.created")
@@ -411,6 +420,8 @@ model Company {
   /// only when this is true (Phase 14). Default false: blocked.
   allowNegativeStock   Boolean       @default(false) @map("allow_negative_stock")
   status               CompanyStatus @default(active)
+  /// `personal`: a 1to1OS Personal account (one user, the `personal` role).
+  kind                 CompanyKind   @default(business)
   /// When the platform owner approved or rejected a public sign-up; null otherwise.
   reviewedAt           DateTime?     @map("reviewed_at") @db.Timestamptz(3)
   /// Nullable for legacy/demo companies; public registration records the first ADMIN.

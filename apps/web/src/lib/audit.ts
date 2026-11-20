@@ -47,6 +47,7 @@ export const AUDIT_ACTIONS = [
   'signup.requested',
   'signup.approved',
   'signup.rejected',
+  'signup.personal',
   'password.set_by_admin',
   'settings.schedule_changed',
   'employee.created',

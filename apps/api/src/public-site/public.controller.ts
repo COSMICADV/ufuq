@@ -9,7 +9,7 @@ import { single } from '../common/envelope.js';
 import { PublicWriteGuard } from './public-write.guard.js';
 import { PublicSiteService } from './public.service.js';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- DTO runtime metadata
-import { ContactDto, RegisterDto } from './public.dto.js';
+import { ContactDto, RegisterDto, RegisterPersonalDto } from './public.dto.js';
 
 @Public()
 @Controller('public')
@@ -36,6 +36,22 @@ export class PublicSiteController {
     await this.service.protect(dto, request.headers.origin);
     try {
       await this.service.register(dto, locale);
+    } catch (error) {
+      if (error instanceof AppException) throw error;
+      throw new AppException(ERROR_CODES.INTERNAL_ERROR, 500);
+    }
+    return single({}, { locale });
+  }
+  /** 1to1OS Personal: the account is active at once; the web signs in next. */
+  @Post('register-personal')
+  async registerPersonal(
+    @Body() dto: RegisterPersonalDto,
+    @Req() request: Request,
+    @RequestLocale() locale: Locale,
+  ): Promise<unknown> {
+    await this.service.protect(dto, request.headers.origin);
+    try {
+      await this.service.registerPersonal(dto, locale);
     } catch (error) {
       if (error instanceof AppException) throw error;
       throw new AppException(ERROR_CODES.INTERNAL_ERROR, 500);

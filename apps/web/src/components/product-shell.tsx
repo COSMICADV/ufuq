@@ -20,6 +20,7 @@ import { ThemePicker } from './theme-picker';
 import { loadSession } from './employees/use-session';
 import { useResource } from './settings/use-resource';
 import { publicPath } from '../lib/public-content';
+import { personalBase } from '../lib/personal';
 
 const navigation = [
   ['', 'الرئيسية', 'Overview', 'M3 11 12 3l9 8v10h-6v-7H9v7H3Z', 'report.company', 'report.team'],
@@ -185,10 +186,13 @@ export function ProductShell({
   // a browser still signed in as them) belongs on their own side: every admin
   // screen would only answer "you do not have permission".
   const wrongSide = surface === 'admin' && ready?.roleKey === 'employee';
+  // A 1to1OS Personal account has no Business workspace; its own is /personal.
+  const personal = ready?.roleKey === 'personal';
   useEffect(() => {
     if (signedOut) router.replace(publicPath(locale, 'login'));
+    else if (personal) router.replace(personalBase(locale));
     else if (wrongSide) router.replace(`/${locale}/app`);
-  }, [signedOut, wrongSide, router, locale]);
+  }, [signedOut, personal, wrongSide, router, locale]);
   const t = createTranslator(locale);
   const base = `/${locale}/${surface}`;
   const close = (): void => {

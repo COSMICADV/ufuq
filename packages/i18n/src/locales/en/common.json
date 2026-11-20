@@ -705,7 +705,8 @@
       "leave__cancelled": "{actor} cancelled leave",
       "leave__balance_adjusted": "{actor} adjusted a leave balance",
       "leave_type__created": "{actor} created a leave type",
-      "leave_type__updated": "{actor} updated a leave type"
+      "leave_type__updated": "{actor} updated a leave type",
+      "signup__personal": "{actor} created a 1to1OS Personal account"
     },
     "entity": {
       "user": "User account",
@@ -2533,5 +2534,55 @@
     "more": "More",
     "not_found_title": "Page not found",
     "not_found_body": "Return home or sign in to continue your work."
+  },
+  "personal": {
+    "nav": {
+      "home": "Home",
+      "tasks": "Tasks",
+      "expenses": "Expenses",
+      "calendar": "Calendar",
+      "health": "Health",
+      "car": "My car",
+      "house": "My home",
+      "notes": "Notes",
+      "files": "Files",
+      "reports": "Reports",
+      "settings": "Settings",
+      "theme": "Change theme"
+    },
+    "about": {
+      "tasks": "Everything you need to get done, with dates and priorities.",
+      "expenses": "Your daily and monthly spending, sorted and clear.",
+      "calendar": "Your appointments and occasions in one calendar.",
+      "health": "Medicines, doctor visits and measurements.",
+      "car": "Service, licence, insurance and fuel.",
+      "house": "Home bills, repairs and supplies.",
+      "notes": "Your ideas and quick notes.",
+      "files": "Your important documents and photos, kept safe.",
+      "reports": "A monthly summary of your tasks and spending.",
+      "settings": "Your account, language and look."
+    },
+    "empty_title": "Nothing here yet",
+    "empty_body": "This section is being prepared. Soon you can add and save your own entries here.",
+    "soon": "Coming soon",
+    "hello": "Hello, {name}",
+    "hello_anon": "Welcome",
+    "lead": "Your whole life, in one place.",
+    "sections": "Your sections",
+    "nav_label": "1to1OS Personal sections",
+    "open_nav": "Open menu",
+    "close_nav": "Close menu",
+    "account": "Account",
+    "name": "Name",
+    "email": "Email",
+    "appearance": "Appearance",
+    "language": "Language",
+    "start_title": "Start with 1to1OS Personal",
+    "start_lead": "A personal account for your tasks, spending and appointments, ready in a minute.",
+    "start_submit": "Create my account",
+    "start_busy": "Creating your account…",
+    "have_account": "Already have an account?",
+    "sign_in": "Sign in",
+    "password_help": "At least 10 characters."
   }
 }

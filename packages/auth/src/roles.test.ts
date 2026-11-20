@@ -27,9 +27,22 @@ describe('assignable roles — DOCUMENT 02 §7', () => {
   });
 });
 
+describe('the personal role', () => {
+  it('holds no Business permission and cannot be assigned', () => {
+    expect(permissionsForRole('personal').size).toBe(0);
+    expect(isAssignableRoleKey('personal')).toBe(false);
+  });
+});
+
 describe('roles — catalogue integrity', () => {
-  it('defines exactly the four V1 roles, in the DOCUMENT 02 §2 order', () => {
-    expect(SYSTEM_ROLES.map((r) => r.key)).toEqual(['super_admin', 'admin', 'manager', 'employee']);
+  it('defines the four V1 roles, in the DOCUMENT 02 §2 order, then Personal', () => {
+    expect(SYSTEM_ROLES.map((r) => r.key)).toEqual([
+      'super_admin',
+      'admin',
+      'manager',
+      'employee',
+      'personal',
+    ]);
   });
 
   it('gives every role a bilingual name', () => {

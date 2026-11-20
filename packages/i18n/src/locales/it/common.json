@@ -705,7 +705,8 @@
       "leave__cancelled": "{actor} ha annullato delle ferie",
       "leave__balance_adjusted": "{actor} ha rettificato un saldo ferie",
       "leave_type__created": "{actor} ha creato un tipo di ferie",
-      "leave_type__updated": "{actor} ha aggiornato un tipo di ferie"
+      "leave_type__updated": "{actor} ha aggiornato un tipo di ferie",
+      "signup__personal": "{actor} ha creato un account 1to1OS Personal"
     },
     "entity": {
       "user": "Account utente",
@@ -2533,5 +2534,55 @@
     "more": "Altro",
     "not_found_title": "Pagina non trovata",
     "not_found_body": "Torna alla home o accedi per continuare il tuo lavoro."
+  },
+  "personal": {
+    "nav": {
+      "home": "Home",
+      "tasks": "Attività",
+      "expenses": "Spese",
+      "calendar": "Calendario",
+      "health": "Salute",
+      "car": "La mia auto",
+      "house": "La mia casa",
+      "notes": "Note",
+      "files": "File",
+      "reports": "Report",
+      "settings": "Impostazioni",
+      "theme": "Cambia tema"
+    },
+    "about": {
+      "tasks": "Tutto ciò che devi fare, con date e priorità.",
+      "expenses": "Le tue spese giornaliere e mensili, ordinate e chiare.",
+      "calendar": "I tuoi appuntamenti ed eventi in un unico calendario.",
+      "health": "Farmaci, visite mediche e misurazioni.",
+      "car": "Manutenzione, patente, assicurazione e carburante.",
+      "house": "Bollette, riparazioni e forniture di casa.",
+      "notes": "Le tue idee e note veloci.",
+      "files": "I tuoi documenti e foto importanti, al sicuro.",
+      "reports": "Un riepilogo mensile di attività e spese.",
+      "settings": "Il tuo account, la lingua e l’aspetto."
+    },
+    "empty_title": "Ancora niente qui",
+    "empty_body": "Questa sezione è in preparazione. Presto potrai aggiungere e salvare qui i tuoi dati.",
+    "soon": "Presto",
+    "hello": "Ciao, {name}",
+    "hello_anon": "Benvenuto",
+    "lead": "Tutta la tua vita, in un unico posto.",
+    "sections": "Le tue sezioni",
+    "nav_label": "Sezioni di 1to1OS Personal",
+    "open_nav": "Apri il menu",
+    "close_nav": "Chiudi il menu",
+    "account": "Account",
+    "name": "Nome",
+    "email": "E-mail",
+    "appearance": "Aspetto",
+    "language": "Lingua",
+    "start_title": "Inizia con 1to1OS Personal",
+    "start_lead": "Un account personale per attività, spese e appuntamenti, pronto in un minuto.",
+    "start_submit": "Crea il mio account",
+    "start_busy": "Creazione dell’account…",
+    "have_account": "Hai già un account?",
+    "sign_in": "Accedi",
+    "password_help": "Almeno 10 caratteri."
   }
 }

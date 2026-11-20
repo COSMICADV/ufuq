@@ -45,6 +45,84 @@ const transport = {
   send: async (message: MailMessage): Promise<void> => {
     if (failMail) throw new Error('private SMTP failure with secret credentials');
     messages.push(message);
+    describe('1to1OS Personal — individual sign-up', () => {
+      const personal = (email = 'person@personal.test'): Record<string, unknown> => ({
+        name: 'سارة',
+        email,
+        password: 'a-safe-personal-passphrase',
+        started_at: Date.now() - 3000,
+        website: '',
+      });
+
+      it('opens an active one-person account that signs in at once, with no Business access', async () => {
+        const res = await post('register-personal', personal());
+        expect(res.status).toBe(201);
+        expect(res.text).not.toMatch(/password|token|company_id/);
+        const company = await companyOf('person@personal.test');
+        expect(company.status).toBe('active');
+        const kind = await inspect<{ kind: string; reviewed_at: string | null }>(
+          'SELECT kind::text AS kind, reviewed_at FROM companies WHERE id=$1',
+          [company.id],
+        );
+        expect(kind.rows[0]).toEqual({ kind: 'personal', reviewed_at: null });
+        const audit = await inspect<{ action: string }>(
+          'SELECT action::text AS action FROM audit_logs WHERE company_id=$1',
+          [company.id],
+        );
+        expect(audit.rows.map((r) => r.action)).toContain('signup.personal');
+        // No owner review, so no email and no entry on the owner's list.
+        expect(messages).toHaveLength(0);
+        const list = await owner('get');
+        expect(
+          (list.body.data as { company_id: string }[]).some((r) => r.company_id === company.id),
+        ).toBe(false);
+
+        const agent = request.agent(app.getHttpServer());
+        const signedIn = await agent
+          .post('/api/v1/auth/login')
+          .send({ email: 'person@personal.test', password: personal().password });
+        expect(signedIn.status).toBe(200);
+        const me = await agent.get('/api/v1/auth/me');
+        expect(me.body.data.role.key).toBe('personal');
+        expect(me.body.data.permissions).toEqual([]);
+        expect(me.body.data.employee).toBeNull();
+        for (const path of ['/employees', '/attendance', '/payroll/periods'])
+          expect((await agent.get(`/api/v1${path}`)).status).toBe(403);
+      });
+
+      it('refuses an email already used by any account, and a weak password', async () => {
+        expect((await post('register-personal', personal('admin-a@company-a.test'))).status).toBe(
+          409,
+        );
+        expect((await post('register-personal', personal('p2@personal.test'))).status).toBe(201);
+        expect((await post('register-personal', personal('p2@personal.test'))).status).toBe(409);
+        const weak = await post('register-personal', {
+          ...personal('p3@personal.test'),
+          password: 'short',
+        });
+        expect(weak.status).toBe(422);
+      });
+
+      it('validates fields, refuses tenant input and is throttled on its own', async () => {
+        expect((await post('register-personal', { ...personal(), name: '' })).status).toBe(422);
+        expect(
+          (
+            await post('register-personal', {
+              ...personal('x@personal.test'),
+              company_id: COMPANY_A,
+            })
+          ).status,
+        ).toBe(422);
+        for (let i = 0; i < 5; i++)
+          await post('register-personal', {
+            ...personal(`t${String(i)}@p.test`),
+            password: 'short',
+          });
+        expect((await post('register-personal', personal('late@p.test'))).status).toBe(429);
+        expect((await post('register', registration('still-open@new.test'))).status).toBe(201);
+      });
+    });
+
     if (process.env.PHASE16_PREVIEW === '1')
       writeFileSync('/private/tmp/ufuq-phase16-mail.json', JSON.stringify(messages), {
         mode: 0o600,

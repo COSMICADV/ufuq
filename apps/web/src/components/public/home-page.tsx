@@ -7,6 +7,7 @@ import { LanguageSwitch } from '../language-switch';
 import { languageNames } from '../../lib/language-names';
 import { ThemePicker } from '../theme-picker';
 import { publicPath } from '../../lib/public-content';
+import { personalStart } from '../../lib/personal';
 
 /**
  * The product choice, the second screen of 1to1OS: after the visitor picks a
@@ -32,7 +33,7 @@ export function homePaths(locale: Locale): {
     home: publicPath(locale, 'home'),
     // Straight into the product: sign-in, with sign-up one link away.
     business: login,
-    personal: publicPath(locale, 'for-individuals'),
+    personal: personalStart(locale),
     login,
     register: publicPath(locale, 'register'),
   };
