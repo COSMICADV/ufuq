@@ -8,6 +8,9 @@
 
 import arCommon from './locales/ar/common.json' with { type: 'json' };
 import enCommon from './locales/en/common.json' with { type: 'json' };
+import frCommon from './locales/fr/common.json' with { type: 'json' };
+import itCommon from './locales/it/common.json' with { type: 'json' };
+import deCommon from './locales/de/common.json' with { type: 'json' };
 import { LOCALES, type Locale } from './locale.js';
 
 export type MessageTree = { readonly [key: string]: string | MessageTree };
@@ -17,6 +20,9 @@ export type Namespace = 'common';
 const CATALOGUE: Record<Locale, Record<Namespace, MessageTree>> = {
   ar: { common: arCommon },
   en: { common: enCommon },
+  fr: { common: frCommon },
+  it: { common: itCommon },
+  de: { common: deCommon },
 };
 
 export class MissingMessageError extends Error {

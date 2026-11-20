@@ -49,7 +49,7 @@ export function PayrollMonthToDate({
       <p className="tasks-muted">{t('salary.month_to_date_intro')}</p>
       {data.missing.length > 0 ? (
         <Alert tone="warning" title={t('salary.month_to_date_missing_title')}>
-          {data.missing.map((row) => row.employee.name).join('، ')}
+          {data.missing.map((row) => row.employee.name).join(t('settings.list_separator'))}
         </Alert>
       ) : null}
       {data.rows.length === 0 ? null : (

@@ -2,8 +2,9 @@
  * Locale prefixing (Next's `proxy` file convention).
  *
  * Every page lives under `/{locale}`, because the root layout reads the locale
- * from the path to set `lang` and `dir`. A request without a prefix is
- * redirected to the language the browser asked for, defaulting to Arabic.
+ * from the path to set `lang` and `dir`. `/` itself is the language choice; any
+ * other request without a prefix is redirected to the language the browser
+ * asked for, defaulting to Arabic.
  */
 
 import { NextResponse } from 'next/server';
@@ -18,6 +19,12 @@ export default function proxy(request: NextRequest): NextResponse {
   }
 
   const url = request.nextUrl.clone();
+  // The first screen: the five languages.
+  if (pathname === '/') {
+    url.pathname = '/en/language';
+    return NextResponse.rewrite(url);
+  }
+  // Older unprefixed links keep working, in Arabic.
   const publicPaths = new Set([
     '/',
     '/about',
@@ -31,7 +38,7 @@ export default function proxy(request: NextRequest): NextResponse {
     '/business',
   ]);
   if (publicPaths.has(pathname)) {
-    url.pathname = pathname === '/' ? '/ar' : `/ar${pathname}`;
+    url.pathname = `/ar${pathname}`;
     return NextResponse.rewrite(url);
   }
   url.pathname = redirectTarget(pathname, request.headers.get('accept-language'));

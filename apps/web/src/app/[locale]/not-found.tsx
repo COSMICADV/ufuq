@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createTranslator } from '@ufuq/i18n';
 
+import { localeFromPath } from '../../lib/locale-route';
+
 import { BrandMark, Wordmark } from '../../components/brand-mark';
 import { publicPath } from '../../lib/public-content';
 
 /** A localized, navigable unavailable state in the same public brand system. */
 export default function NotFound(): React.JSX.Element {
   const pathname = usePathname();
-  const locale = pathname === '/en' || pathname?.startsWith('/en/') ? 'en' : 'ar';
+  const locale = localeFromPath(pathname ?? '/') ?? 'ar';
   const t = createTranslator(locale);
   return (
     <main className="not-found-page">
@@ -23,17 +25,13 @@ export default function NotFound(): React.JSX.Element {
           404
         </p>
         <h1>{t('error.not_found')}</h1>
-        <p>
-          {locale === 'ar'
-            ? 'يمكنك العودة إلى الرئيسية أو تسجيل الدخول لمتابعة عملك.'
-            : 'Return home or sign in to continue your work.'}
-        </p>
+        <p>{t('shell.not_found_body')}</p>
         <div className="button-row">
           <Link className="button button--primary" href={publicPath(locale, 'home')}>
-            {locale === 'ar' ? 'الرئيسية' : 'Home'}
+            {t('shell.nav.home')}
           </Link>
           <Link className="button button--secondary" href={publicPath(locale, 'login')}>
-            {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
+            {t('home.nav.login')}
           </Link>
         </div>
       </section>

@@ -10,7 +10,7 @@ describe('localeFromPath', () => {
 
   it('returns null when the path carries no locale', () => {
     expect(localeFromPath('/')).toBeNull();
-    expect(localeFromPath('/fr')).toBeNull();
+    expect(localeFromPath('/es')).toBeNull();
     expect(localeFromPath('/admin')).toBeNull();
   });
 });
@@ -37,8 +37,14 @@ describe('redirectTarget', () => {
     expect(redirectTarget('/', 'ar-EG,ar;q=0.9')).toBe('/ar');
   });
 
+  it('follows the browser to any of the five languages', () => {
+    expect(redirectTarget('/admin', 'fr-FR,fr;q=0.9')).toBe('/fr/admin');
+    expect(redirectTarget('/admin', 'de-DE')).toBe('/de/admin');
+    expect(redirectTarget('/admin', 'it')).toBe('/it/admin');
+  });
+
   it('falls back to Arabic for anything else', () => {
-    expect(redirectTarget('/', 'fr-FR,fr;q=0.9')).toBe('/ar');
+    expect(redirectTarget('/', 'es-ES,es;q=0.9')).toBe('/ar');
     expect(redirectTarget('/', null)).toBe('/ar');
   });
 });

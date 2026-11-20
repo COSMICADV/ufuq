@@ -5,6 +5,7 @@ import type { Locale } from '@ufuq/i18n';
 import { ProductLogo } from '../brand-mark';
 import { FreehandIcon } from '../freehand-icon';
 import { LanguageSwitch } from '../language-switch';
+import { languageNames } from '../../lib/language-names';
 import { ThemePicker } from '../theme-picker';
 import { PUBLIC_PAGES, publicPath } from '../../lib/public-content';
 
@@ -42,11 +43,7 @@ export function LoginScreen({
           <ProductLogo />
         </Link>
         <div className="os-auth__tools">
-          <LanguageSwitch
-            locale={locale}
-            label={t('language.switch')}
-            names={{ ar: t('language.ar'), en: t('language.en') }}
-          />
+          <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
           <ThemePicker locale={locale} />
         </div>
       </header>

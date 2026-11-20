@@ -8,7 +8,7 @@
  * product decides `dir` for itself.
  */
 
-export const LOCALES = ['ar', 'en'] as const;
+export const LOCALES = ['ar', 'en', 'fr', 'it', 'de'] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
@@ -20,12 +20,18 @@ export const DEFAULT_LOCALE: Locale = 'ar';
 const DIRECTION_BY_LOCALE: Record<Locale, Direction> = {
   ar: 'rtl',
   en: 'ltr',
+  fr: 'ltr',
+  it: 'ltr',
+  de: 'ltr',
 };
 
 /** BCP 47 tags used for Intl formatting. */
 const BCP47_BY_LOCALE: Record<Locale, string> = {
   ar: 'ar-EG',
   en: 'en-GB',
+  fr: 'fr-FR',
+  it: 'it-IT',
+  de: 'de-DE',
 };
 
 export function isLocale(value: unknown): value is Locale {
@@ -68,4 +74,12 @@ export function resolveLocale(candidate: string | null | undefined): Locale {
 /** The attributes a document root must carry for the given locale. */
 export function documentAttributes(locale: Locale): { lang: Locale; dir: Direction } {
   return { lang: locale, dir: getDirection(locale) };
+}
+
+/**
+ * The language of content the product stores twice (`name_ar` / `name_en`):
+ * Arabic for Arabic readers, English for every other locale.
+ */
+export function contentLocale(locale: Locale): 'ar' | 'en' {
+  return locale === 'ar' ? 'ar' : 'en';
 }

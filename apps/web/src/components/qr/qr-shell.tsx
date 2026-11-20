@@ -11,6 +11,7 @@ import { publicPath } from '../../lib/public-content';
 import { BrandMark, Wordmark } from '../brand-mark';
 import { loadSession } from '../employees/use-session';
 import { LanguageSwitch } from '../language-switch';
+import { languageNames } from '../../lib/language-names';
 import { useResource } from '../settings/use-resource';
 import { SignOutButton } from '../sign-out-button';
 import { ThemePicker } from '../theme-picker';
@@ -67,11 +68,7 @@ export function QrShell({
             <Link className="button button--secondary qr-shell__back" href={workspace}>
               {ar ? 'مساحة العمل' : 'Workspace'}
             </Link>
-            <LanguageSwitch
-              locale={locale}
-              label={t('language.switch')}
-              names={{ ar: t('language.ar'), en: t('language.en') }}
-            />
+            <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
             <ThemePicker locale={locale} />
             <SignOutButton locale={locale} />
           </div>

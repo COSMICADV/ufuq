@@ -155,7 +155,7 @@ export function TaskForm({
             ? null
             : {
                 id: e.department.id,
-                label: locale === 'en' ? e.department.name_en : e.department.name_ar,
+                label: locale !== 'ar' ? e.department.name_en : e.department.name_ar,
               },
       }));
       // An existing task's assignee stays selectable even if they have since
@@ -169,7 +169,7 @@ export function TaskForm({
               ? null
               : {
                   id: task.department.id,
-                  label: locale === 'en' ? task.department.name_en : task.department.name_ar,
+                  label: locale !== 'ar' ? task.department.name_en : task.department.name_ar,
                 },
         });
       }
@@ -190,7 +190,7 @@ export function TaskForm({
             ? null
             : departments.items.map((d) => ({
                 id: d.id,
-                label: locale === 'en' ? d.name_en : d.name_ar,
+                label: locale !== 'ar' ? d.name_en : d.name_ar,
               })),
       };
     },
@@ -563,7 +563,7 @@ function departmentChoices(
     return [
       {
         id: task.department.id,
-        label: locale === 'en' ? task.department.name_en : task.department.name_ar,
+        label: locale !== 'ar' ? task.department.name_en : task.department.name_ar,
       },
     ];
   }

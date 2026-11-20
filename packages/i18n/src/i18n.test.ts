@@ -11,6 +11,7 @@ import {
 } from './format.js';
 import {
   DEFAULT_LOCALE,
+  contentLocale,
   documentAttributes,
   getDirection,
   isLocale,
@@ -48,14 +49,24 @@ describe('locale and direction', () => {
   it('resolves Accept-Language, falling back to Arabic', () => {
     expect(resolveLocale('en-GB,en;q=0.9')).toBe('en');
     expect(resolveLocale('ar-EG,ar;q=0.9,en;q=0.8')).toBe('ar');
-    expect(resolveLocale('fr-FR')).toBe('ar');
+    expect(resolveLocale('fr-FR')).toBe('fr');
+    expect(resolveLocale('de-CH,de;q=0.9')).toBe('de');
+    expect(resolveLocale('it')).toBe('it');
+    expect(resolveLocale('es-ES')).toBe('ar');
     expect(resolveLocale(null)).toBe('ar');
     expect(resolveLocale('')).toBe('ar');
   });
 
   it('recognises only the supported locales', () => {
-    expect(isLocale('ar')).toBe(true);
-    expect(isLocale('fr')).toBe(false);
+    for (const locale of ['ar', 'en', 'fr', 'it', 'de']) expect(isLocale(locale)).toBe(true);
+    expect(isLocale('es')).toBe(false);
+  });
+
+  it('reads stored two-language content in Arabic for Arabic and English otherwise', () => {
+    expect(contentLocale('ar')).toBe('ar');
+    for (const locale of ['en', 'fr', 'it', 'de'] as const)
+      expect(contentLocale(locale)).toBe('en');
+    expect(documentAttributes('de')).toEqual({ lang: 'de', dir: 'ltr' });
   });
 });
 

@@ -9,7 +9,10 @@
   "language": {
     "switch": "تغيير اللغة",
     "ar": "العربية",
-    "en": "English"
+    "en": "English",
+    "fr": "Français",
+    "it": "Italiano",
+    "de": "Deutsch"
   },
   "action": {
     "save": "حفظ",
@@ -2409,7 +2412,10 @@
       "home": "الرئيسية",
       "features": "المزايا",
       "about": "عنّا"
-    }
+    },
+    "chooseLanguage": "اختار لغتك",
+    "continue": "متابعة",
+    "languages": "كل اللغات"
   },
   "home": {
     "nav": {
@@ -2495,5 +2501,37 @@
       "login": "تسجيل الدخول"
     },
     "home": "الرئيسية"
+  },
+  "shell": {
+    "nav": {
+      "overview": "الرئيسية",
+      "home": "الرئيسية",
+      "employees": "الموظفون",
+      "attendance": "الحضور",
+      "tasks": "المهام",
+      "goals": "الأهداف والأداء",
+      "requests": "الطلبات",
+      "leave": "الإجازات",
+      "payroll": "الرواتب",
+      "reports": "التقارير",
+      "warehouse": "المخازن",
+      "inventory": "المخزون",
+      "notifications": "الإشعارات",
+      "settings": "الإعدادات"
+    },
+    "my_salary": "راتبي",
+    "workspace_admin": "إدارة الأعمال",
+    "workspace_employee": "مساحة الموظف",
+    "skip": "انتقل إلى المحتوى",
+    "main_nav": "التنقل الرئيسي",
+    "tagline": "منصة واحدة. إمكانات بلا حدود.",
+    "open_nav": "فتح قائمة التنقل",
+    "nav_menu": "قائمة التنقل",
+    "close_menu": "إغلاق القائمة",
+    "all_sections": "كل الأقسام",
+    "quick_nav": "التنقل السريع",
+    "more": "المزيد",
+    "not_found_title": "الصفحة غير موجودة",
+    "not_found_body": "يمكنك العودة إلى الرئيسية أو تسجيل الدخول لمتابعة عملك."
   }
 }

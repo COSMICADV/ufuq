@@ -16,7 +16,7 @@
  *   - Forms keep what was typed when the server refuses it (DOCUMENT 11 §2).
  */
 
-import { formatMoney, normaliseDigits } from '@ufuq/i18n';
+import { formatMoney, normaliseDigits, toBcp47 } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
 import type { ApiError } from './api-client';
@@ -323,7 +323,7 @@ export function statusTone(status: PeriodStatus): StatusTone {
 
 /** The label a month list shows: "مارس 2026" / "March 2026", in the company calendar. */
 export function monthLabel(year: number, month: number, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(toBcp47(locale), {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',

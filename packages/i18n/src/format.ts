@@ -35,8 +35,8 @@ const SEPARATORS: Record<NumeralSystem, { group: string; decimal: string }> = {
 };
 
 /** Currency symbols by ISO code. EGP is the V1 default (DOCUMENT 01 §1). */
-const CURRENCY_SYMBOLS: Record<string, { ar: string; en: string }> = {
-  EGP: { ar: 'ج.م', en: 'EGP' },
+const CURRENCY_SYMBOLS: Record<string, Record<Locale, string>> = {
+  EGP: { ar: 'ج.م', en: 'EGP', fr: 'EGP', it: 'EGP', de: 'EGP' },
 };
 
 function toNumerals(digits: string, numerals: NumeralSystem): string {

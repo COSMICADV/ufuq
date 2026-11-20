@@ -123,7 +123,7 @@ export function LeaveContext({
           {t('leave.holiday_inside_note', {
             dates: leave.holidays_inside
               .map((date) => formatDate(date, locale, timeZone))
-              .join('، '),
+              .join(t('settings.list_separator')),
           })}
         </Alert>
       )}

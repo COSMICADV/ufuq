@@ -299,7 +299,7 @@ function EmployeeFormBody({
       });
   };
 
-  const localized = (ar: string, en: string): string => (locale === 'en' ? en : ar);
+  const localized = (ar: string, en: string): string => (locale !== 'ar' ? en : ar);
   const managerOptions = data.managers.filter((manager) => manager.id !== editing?.id);
   const optionalLabel = (key: string): string => `${t(key)} ${t('employees.optional')}`;
 

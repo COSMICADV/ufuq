@@ -8,7 +8,7 @@
  */
 
 import { useCallback } from 'react';
-import { createTranslator } from '@ufuq/i18n';
+import { createTranslator, toBcp47 } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { fetchMany } from '../../lib/api-client';
@@ -26,7 +26,7 @@ function size(amount: string): number {
 }
 
 function compact(locale: Locale, currency: string): (value: number) => string {
-  const format = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
+  const format = new Intl.NumberFormat(toBcp47(locale), {
     notation: 'compact',
     maximumFractionDigits: 1,
   });

@@ -1,62 +1,42 @@
-import { createTranslator, publicCopy } from '@ufuq/i18n';
+import { createTranslator, getDirection, publicCopy } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
 import { ProductLogo } from '../brand-mark';
 import { FreehandIcon } from '../freehand-icon';
-import { NavGlyph } from '../nav-glyph';
-import type { NavGlyphName } from '../nav-glyph';
 import { LanguageSwitch } from '../language-switch';
+import { languageNames } from '../../lib/language-names';
 import { ThemePicker } from '../theme-picker';
 import { publicPath } from '../../lib/public-content';
 
 /**
- * The public home page of 1to1OS.
+ * The product choice, the second screen of 1to1OS: after the visitor picks a
+ * language on the first screen (`/`), this page shows one headline and two
+ * doors, Personal and Business. Nothing else is outside the product: no feature
+ * list, no prices, no footer. Business opens sign-in (plans and prices live
+ * inside the app); Personal opens its own page.
  *
- * First screen: one headline and two doors, Business and Personal, each opening
- * its product. Below: the tools of the product as a plain grid, the current
- * prices, and a small footer with the language and theme. Every word comes from the i18n catalogue (`home.*`, `entry.*`), so
- * Arabic (right to left) and English share this one component.
+ * Every word comes from the i18n catalogue (`entry.*`), so all five languages
+ * share this one component.
  */
 
-/** Where each link on the page leads — the product's existing routes. */
+/** Where each door leads. */
 export function homePaths(locale: Locale): {
   readonly home: string;
   readonly business: string;
   readonly personal: string;
   readonly login: string;
-  readonly employeeLogin: string;
   readonly register: string;
-  readonly about: string;
-  readonly contact: string;
 } {
   const login = publicPath(locale, 'login');
   return {
     home: publicPath(locale, 'home'),
-    // The Business page: what the subscription holds, and where it starts.
-    business: `${locale === 'ar' ? '' : '/en'}/business`,
+    // Straight into the product: sign-in, with sign-up one link away.
+    business: login,
     personal: publicPath(locale, 'for-individuals'),
     login,
-    employeeLogin: `${login}?as=employee`,
     register: publicPath(locale, 'register'),
-    about: publicPath(locale, 'about'),
-    contact: publicPath(locale, 'contact'),
   };
 }
-
-/** The tools of the product, in the order of its own menu. */
-const TOOLS: readonly (readonly [string, NavGlyphName])[] = [
-  ['employees', 'employees'],
-  ['attendance', 'attendance'],
-  ['tasks', 'tasks'],
-  ['goals', 'goals'],
-  ['requests', 'requests'],
-  ['leave', 'leave'],
-  ['payroll', 'payroll'],
-  ['reports', 'reports'],
-  ['warehouses', 'warehouse'],
-  ['inventory', 'inventory'],
-  ['notifications', 'notifications'],
-];
 
 function Brush(): React.JSX.Element {
   return (
@@ -107,50 +87,30 @@ function Door({
   );
 }
 
-interface Plan {
-  readonly key: 'starter' | 'pro' | 'ent';
-  readonly monthly: string;
-  readonly annual: string;
-  readonly points: number;
-  readonly href: string;
-  readonly featured?: boolean;
-}
-
 export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Element {
   const t = createTranslator(locale);
-  const h = (key: string, values?: Record<string, string>): string => t(`home.${key}`, values);
   const paths = homePaths(locale);
-  const dir = locale === 'ar' ? 'rtl' : 'ltr';
-
-  const plans: readonly Plan[] = [
-    { key: 'starter', monthly: '$0', annual: '$0', points: 1, href: paths.register },
-    { key: 'pro', monthly: '$36', annual: '$29', points: 1, href: paths.register, featured: true },
-    { key: 'ent', monthly: '$109', annual: '$89', points: 2, href: paths.contact },
-  ];
 
   return (
-    <div className="home">
+    <div className="home" dir={getDirection(locale)}>
       <a className="public-skip" href="#content">
         {publicCopy[locale].skip}
       </a>
 
       <header className="home-header">
         <div className="home-header__inner">
-          <a className="home-logo" href={paths.home} aria-label="1to1OS">
+          <a className="home-logo" href="/" aria-label={`1to1OS — ${t('entry.languages')}`}>
             <ProductLogo domain />
           </a>
-          <nav className="home-nav" aria-label={h('nav.label')} dir={dir}>
-            <a href={paths.home} aria-current="page">
-              {h('nav.home')}
-            </a>
-            <a href="#features">{h('nav.features')}</a>
-            <a href={paths.about}>{h('nav.about')}</a>
-          </nav>
+          <div className="home-header__tools">
+            <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
+            <ThemePicker locale={locale} />
+          </div>
         </div>
       </header>
 
       <main id="content">
-        <section className="home-hero" aria-labelledby="home-title">
+        <section className="home-hero home-hero--only" aria-labelledby="home-title">
           <h1 id="home-title" className="home-title">
             {t('entry.headlineStart')}
             <span className="home-title__keep">
@@ -180,116 +140,7 @@ export function HomePage({ locale }: { readonly locale: Locale }): React.JSX.Ele
             />
           </svg>
         </section>
-
-        <section
-          id="features"
-          className="home-section home-features"
-          aria-labelledby="home-features-title"
-        >
-          <div className="home-section__head">
-            <h2 id="home-features-title">{h('features.title')}</h2>
-            <p>{h('features.lead')}</p>
-          </div>
-          <ul className="home-tools">
-            {TOOLS.map(([key, icon]) => (
-              <li key={key}>
-                <span className="home-tools__icon">
-                  <NavGlyph name={icon} size={38} />
-                </span>
-                <span className="home-tools__name">{h(`features.${key}`)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section
-          id="pricing"
-          className="home-section home-pricing"
-          aria-labelledby="home-pricing-title"
-        >
-          <div className="home-section__head">
-            <h2 id="home-pricing-title">{h('pricing.title')}</h2>
-            <p>{h('pricing.lead')}</p>
-          </div>
-          <fieldset className="home-billing">
-            <legend className="home-sr">{h('pricing.billing')}</legend>
-            <input type="radio" name="home-billing" id="home-billing-monthly" defaultChecked />
-            <label htmlFor="home-billing-monthly">{h('pricing.monthly')}</label>
-            <input type="radio" name="home-billing" id="home-billing-annual" />
-            <label htmlFor="home-billing-annual">
-              {h('pricing.annual')}
-              <span className="home-billing__save">{h('pricing.save')}</span>
-            </label>
-          </fieldset>
-          <div className="home-plans">
-            {plans.map((plan) => (
-              <article
-                key={plan.key}
-                className={`home-plan${plan.featured ? ' home-plan--featured' : ''}`}
-                aria-labelledby={`home-plan-${plan.key}`}
-              >
-                {plan.featured ? (
-                  <span className="home-plan__ribbon">{h('pricing.proRibbon')}</span>
-                ) : null}
-                <div className="home-plan__head">
-                  <h3 id={`home-plan-${plan.key}`}>{h(`pricing.${plan.key}Name`)}</h3>
-                  <span className="home-plan__badge">{h(`pricing.${plan.key}Badge`)}</span>
-                </div>
-                <p className="home-plan__desc">{h(`pricing.${plan.key}Desc`)}</p>
-                <p className="home-plan__price">
-                  <span className="home-plan__amount home-plan__amount--monthly" dir="ltr">
-                    {plan.monthly}
-                  </span>
-                  <span className="home-plan__amount home-plan__amount--annual" dir="ltr">
-                    {plan.annual}
-                  </span>
-                  <small>{h('pricing.perMonth')}</small>
-                </p>
-                <ul className="home-plan__points">
-                  {Array.from({ length: plan.points }, (_, i) => (
-                    <li key={i}>
-                      <FreehandIcon name="check" size={20} />
-                      <span>{h(`pricing.${plan.key}P${i + 1}`)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a className="home-plan__cta" href={plan.href}>
-                  {h(`pricing.${plan.key}Cta`)}
-                </a>
-              </article>
-            ))}
-          </div>
-          <p className="home-pricing__note">{h('pricing.note')}</p>
-        </section>
       </main>
-
-      <footer className="home-footer">
-        <div className="home-footer__inner">
-          <a className="home-logo home-logo--small" href={paths.home} aria-label="1to1OS">
-            <ProductLogo />
-          </a>
-          <nav className="home-footer__links" aria-label={h('footer.label')}>
-            <a href="#features">{h('nav.features')}</a>
-            <a href="#pricing">{h('pricing.title')}</a>
-            <a href={paths.about}>{h('footer.about')}</a>
-            <a href={paths.contact}>{h('footer.contact')}</a>
-            <a href={paths.login}>{h('nav.login')}</a>
-            <a href={paths.employeeLogin}>{h('nav.loginEmployee')}</a>
-            <a href={paths.register}>{h('footer.register')}</a>
-          </nav>
-          <div className="home-footer__prefs" role="group" aria-label={h('footer.prefs')}>
-            <LanguageSwitch
-              locale={locale}
-              label={t('language.switch')}
-              names={{ ar: t('language.ar'), en: t('language.en') }}
-            />
-            <ThemePicker locale={locale} />
-          </div>
-          <p className="home-footer__rights">
-            {h('footer.rights', { year: String(new Date().getFullYear()) })}
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

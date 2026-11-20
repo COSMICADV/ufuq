@@ -1,6 +1,7 @@
 export {
   DEFAULT_LOCALE,
   LOCALES,
+  contentLocale,
   documentAttributes,
   getDirection,
   isLocale,

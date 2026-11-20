@@ -112,7 +112,7 @@ export function orderByFor(
     case 'department':
       // The department name the reader sees is the one they sort by.
       return [
-        { department: locale === 'en' ? { nameEn: order } : { nameAr: order } },
+        { department: locale !== 'ar' ? { nameEn: order } : { nameAr: order } },
         { firstName: 'asc' },
         { id: 'asc' },
       ];

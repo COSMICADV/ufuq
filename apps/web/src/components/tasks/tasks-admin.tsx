@@ -173,7 +173,7 @@ export function TasksAdmin({ locale }: { readonly locale: Locale }): React.JSX.E
         })),
         departments: (departments?.items ?? []).map((d) => ({
           id: d.id,
-          label: locale === 'en' ? d.name_en : d.name_ar,
+          label: locale !== 'ar' ? d.name_en : d.name_ar,
         })),
       };
     },
@@ -554,7 +554,7 @@ export function TaskTable({
           <Cell key="department" label={t('tasks.col_department')}>
             {task.department === null
               ? t('tasks.no_department')
-              : locale === 'en'
+              : locale !== 'ar'
                 ? task.department.name_en
                 : task.department.name_ar}
           </Cell>,

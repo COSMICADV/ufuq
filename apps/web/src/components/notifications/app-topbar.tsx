@@ -4,6 +4,7 @@ import type { Locale } from '@ufuq/i18n';
 
 import { ProductLogo } from '../brand-mark';
 import { LanguageSwitch } from '../language-switch';
+import { languageNames } from '../../lib/language-names';
 import { SignOutButton } from '../sign-out-button';
 import { ThemePicker } from '../theme-picker';
 
@@ -34,11 +35,7 @@ export function AppTopbar({
       </Link>
       <div className="app-topbar__actions">
         <div className="app-topbar__prefs">
-          <LanguageSwitch
-            locale={locale}
-            label={t('language.switch')}
-            names={{ ar: t('language.ar'), en: t('language.en') }}
-          />
+          <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
           <ThemePicker locale={locale} />
         </div>
         <NotificationBell locale={locale} surface={surface} />

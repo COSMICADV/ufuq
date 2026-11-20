@@ -9,7 +9,10 @@
   "language": {
     "switch": "Change language",
     "ar": "العربية",
-    "en": "English"
+    "en": "English",
+    "fr": "Français",
+    "it": "Italiano",
+    "de": "Deutsch"
   },
   "action": {
     "save": "Save",
@@ -2409,7 +2412,10 @@
       "home": "Home",
       "features": "Features",
       "about": "About"
-    }
+    },
+    "chooseLanguage": "Choose your language",
+    "continue": "Continue",
+    "languages": "All languages"
   },
   "home": {
     "nav": {
@@ -2495,5 +2501,37 @@
       "login": "Sign in"
     },
     "home": "Home"
+  },
+  "shell": {
+    "nav": {
+      "overview": "Overview",
+      "home": "Home",
+      "employees": "Employees",
+      "attendance": "Attendance",
+      "tasks": "Tasks",
+      "goals": "Goals",
+      "requests": "Requests",
+      "leave": "Leave",
+      "payroll": "Payroll",
+      "reports": "Reports",
+      "warehouse": "Warehouse",
+      "inventory": "Inventory",
+      "notifications": "Notifications",
+      "settings": "Settings"
+    },
+    "my_salary": "My salary",
+    "workspace_admin": "Business workspace",
+    "workspace_employee": "Employee workspace",
+    "skip": "Skip to content",
+    "main_nav": "Main navigation",
+    "tagline": "One platform. Infinite possibilities.",
+    "open_nav": "Open navigation",
+    "nav_menu": "Navigation menu",
+    "close_menu": "Close menu",
+    "all_sections": "All sections",
+    "quick_nav": "Quick navigation",
+    "more": "More",
+    "not_found_title": "Page not found",
+    "not_found_body": "Return home or sign in to continue your work."
   }
 }

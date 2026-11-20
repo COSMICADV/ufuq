@@ -9,6 +9,7 @@
  */
 
 import type { Cell, ReportPayload, ReportRow } from './reports';
+import { resolveLocale, toBcp47 } from '@ufuq/i18n';
 
 // ---------------------------------------------------------------------------
 // Period
@@ -80,14 +81,14 @@ export function percent(part: number, whole: number): number | null {
 export function formatPercent(value: number | null, locale: string): string {
   if (value === null) return '—';
   const digits = value > 0 && value < 10 && !Number.isInteger(value) ? 1 : 0;
-  return `${new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
+  return `${new Intl.NumberFormat(toBcp47(resolveLocale(locale)), {
     maximumFractionDigits: digits,
     minimumFractionDigits: 0,
   }).format(value)}%`;
 }
 
 export function formatCount(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US').format(value);
+  return new Intl.NumberFormat(toBcp47(resolveLocale(locale))).format(value);
 }
 
 // ---------------------------------------------------------------------------

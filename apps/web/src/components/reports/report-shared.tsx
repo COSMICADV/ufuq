@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { createTranslator } from '@ufuq/i18n';
+import { createTranslator, toBcp47 } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { localizedCell, chartMagnitude } from '../../lib/reports';
@@ -53,7 +53,7 @@ export function ReportsShell({
 
 /** Generation time in the company's zone — the clock the report was produced against. */
 export function formatInstant(instant: string, locale: Locale, timeZone: string): string {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(toBcp47(locale), {
     timeZone,
     day: '2-digit',
     month: 'short',

@@ -299,7 +299,7 @@ export function TaskDetailScreen({
                 <dd>
                   {task.department === null
                     ? t('tasks.no_department')
-                    : locale === 'en'
+                    : locale !== 'ar'
                       ? task.department.name_en
                       : task.department.name_ar}
                 </dd>
@@ -579,7 +579,7 @@ function describeTaskError(error: unknown, t: Translator): string {
     );
     return allowed.length === 0
       ? `${t('error.invalid_status_transition')} ${t('tasks.no_transitions')}`
-      : `${t('error.invalid_status_transition')} ${t('tasks.allowed_list', { list: allowed.join('، ') })}`;
+      : `${t('error.invalid_status_transition')} ${t('tasks.allowed_list', { list: allowed.join(t('settings.list_separator')) })}`;
   }
   if (error instanceof ApiError && error.fields.assignee_employee_id?.[0] === 'not_active') {
     return `${t('validation.not_active')}. ${t('tasks.assignee_inactive_hint')}`;

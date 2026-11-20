@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { toBcp47 } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import {
@@ -35,7 +36,7 @@ function sentence(entry: AuditEntry, t: Translator): string {
 }
 
 function formatInstant(instant: string, locale: Locale, timeZone: string): string {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(toBcp47(locale), {
     timeZone,
     dateStyle: 'medium',
     timeStyle: 'short',

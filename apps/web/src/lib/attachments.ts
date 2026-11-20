@@ -7,6 +7,7 @@
  */
 
 import { apiUrl } from './api-client';
+import { resolveLocale, toBcp47 } from '@ufuq/i18n';
 
 /** `AttachmentPayload` — see `apps/api/src/attachments/attachment-payload.ts`. */
 export interface Attachment {
@@ -60,7 +61,7 @@ export function typeLabel(mime: string): string {
 
 /** A size in the reader's own digits and units: "١٫٥ ميغابايت", "1.5 MB". */
 export function formatBytes(bytes: number, locale: string): string {
-  const tag = locale === 'ar' ? 'ar-EG' : 'en-GB';
+  const tag = toBcp47(resolveLocale(locale));
   const [value, unit] =
     bytes >= 1024 * 1024
       ? [bytes / (1024 * 1024), 'megabyte']

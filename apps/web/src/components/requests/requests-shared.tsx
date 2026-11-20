@@ -1,6 +1,7 @@
 'use client';
 
 import type { Locale, Translator } from '@ufuq/i18n';
+import { toBcp47 } from '@ufuq/i18n';
 
 import { ageInDays, categoryKey, STATUS_TONE, statusKey, summaryOf } from '../../lib/requests';
 import type { RequestCategory, RequestItem, RequestStatus } from '../../lib/requests';
@@ -103,7 +104,7 @@ export function SubmittedOn({
 }): React.JSX.Element {
   return (
     <Ltr>
-      {new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+      {new Intl.DateTimeFormat(toBcp47(locale), {
         timeZone,
         day: '2-digit',
         month: 'short',

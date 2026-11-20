@@ -157,11 +157,11 @@ export function EmployeesList({ locale }: { readonly locale: Locale }): React.JS
       return {
         departments: departments.map((d) => ({
           id: d.id,
-          label: locale === 'en' ? d.name_en : d.name_ar,
+          label: locale !== 'ar' ? d.name_en : d.name_ar,
         })),
         positions: positions.map((p) => ({
           id: p.id,
-          label: locale === 'en' ? p.title_en : p.title_ar,
+          label: locale !== 'ar' ? p.title_en : p.title_ar,
         })),
         managers: managers.map((m) => ({ id: m.id, label: fullName(m) })),
       };
@@ -324,14 +324,14 @@ export function EmployeesList({ locale }: { readonly locale: Locale }): React.JS
               <Cell key="department" label={t('employees.column_department')}>
                 {row.department === null
                   ? t('employees.none')
-                  : locale === 'en'
+                  : locale !== 'ar'
                     ? row.department.name_en
                     : row.department.name_ar}
               </Cell>,
               <Cell key="position" label={t('employees.column_position')}>
                 {row.position === null
                   ? t('employees.none')
-                  : locale === 'en'
+                  : locale !== 'ar'
                     ? row.position.title_en
                     : row.position.title_ar}
               </Cell>,

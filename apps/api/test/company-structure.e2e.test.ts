@@ -443,7 +443,7 @@ describe('PATCH /company', () => {
   it.each([
     ['a timezone that is not IANA', { timezone: 'Mars/Olympus' }],
     ['a four-letter currency', { currency: 'EGPX' }],
-    ['a locale the product does not have', { default_locale: 'fr' }],
+    ['a locale the product does not have', { default_locale: 'es' }],
     ['a fiscal start day of 0', { fiscal_month_start_day: 0 }],
     ['a fiscal start day of 29', { fiscal_month_start_day: 29 }],
     ['a name of only whitespace', { name: '   ' }],

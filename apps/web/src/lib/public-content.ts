@@ -13,6 +13,6 @@ export const PUBLIC_PAGES = [
 ] as const;
 export type PublicPage = (typeof PUBLIC_PAGES)[number];
 export function publicPath(locale: Locale, page: PublicPage): string {
-  return `${locale === 'ar' ? '' : '/en'}${page === 'home' ? '' : `/${page}`}` || '/';
+  return `/${locale}${page === 'home' ? '' : `/${page}`}`;
 }
 export { publicCopy, publicFeatures as features } from '@ufuq/i18n';

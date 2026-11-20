@@ -9,7 +9,7 @@
  * are written in the reader's; enum values use the labels the screens use.
  */
 
-import { createTranslator } from '@ufuq/i18n';
+import { contentLocale, createTranslator } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import type { CsvColumn } from './csv.js';
@@ -24,7 +24,7 @@ function text(row: ReportRow, field: string): Cell {
 }
 
 function localized(row: ReportRow, base: string, locale: Locale): Cell {
-  return row[`${base}_${locale}`] ?? null;
+  return row[`${base}_${contentLocale(locale)}`] ?? null;
 }
 
 function enumLabel(t: Translator, prefix: string, value: Cell): Cell {
@@ -169,7 +169,7 @@ export function reportColumns(key: ReportKey, locale: Locale): readonly Column[]
 /** The value a filter is shown with: the referenced name, or the enum's label. */
 function filterValue(t: Translator, meta: ReportMeta, field: FilterField, locale: Locale): string {
   const label = meta.filter_labels[field];
-  if (label !== undefined) return label[locale];
+  if (label !== undefined) return label[contentLocale(locale)];
   const value = meta.filters[field as keyof ReportMeta['filters']] ?? '';
   switch (field) {
     case 'work_mode':

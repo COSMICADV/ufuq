@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createTranslator } from '@ufuq/i18n';
+import { contentLocale, createTranslator } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { fetchMany, fetchOne, sendRaw } from '../../lib/api-client';
@@ -450,7 +450,7 @@ function ViewerBody({
   const filterValue = (field: string, value: string): string => {
     const named =
       result.state.status === 'ready' ? result.state.value.report.filter_labels[field] : undefined;
-    if (named !== undefined) return named[locale];
+    if (named !== undefined) return named[contentLocale(locale)];
     const fromList = (
       enumOptions(reportKey, field as FilterField, t) ??
       options[field as FilterField] ??

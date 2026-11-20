@@ -313,7 +313,7 @@ function ProfileBody({
       });
   };
 
-  const localized = (ar: string, en: string): string => (locale === 'en' ? en : ar);
+  const localized = (ar: string, en: string): string => (locale !== 'ar' ? en : ar);
   const departmentName =
     employee.department === null
       ? t('employees.none')

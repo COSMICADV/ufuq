@@ -3,6 +3,7 @@ import type { Locale } from '@ufuq/i18n';
 
 import { ProductLogo } from '../brand-mark';
 import { LanguageSwitch } from '../language-switch';
+import { languageNames } from '../../lib/language-names';
 import { ThemePicker } from '../theme-picker';
 import { publicPath } from '../../lib/public-content';
 
@@ -117,11 +118,7 @@ export function BusinessPage({ locale }: { readonly locale: Locale }): React.JSX
             <a href={paths.subscribe}>{b('cta')}</a>
           </nav>
           <div className="home-footer__prefs" role="group" aria-label={t('home.footer.prefs')}>
-            <LanguageSwitch
-              locale={locale}
-              label={t('language.switch')}
-              names={{ ar: t('language.ar'), en: t('language.en') }}
-            />
+            <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
             <ThemePicker locale={locale} />
           </div>
           <p className="home-footer__rights">

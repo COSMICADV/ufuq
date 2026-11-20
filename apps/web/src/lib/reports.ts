@@ -7,6 +7,7 @@
  * this file only decides what to show and how to ask.
  */
 
+import { contentLocale } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
 // ---------------------------------------------------------------------------
@@ -542,7 +543,8 @@ export function chartMagnitude(value: Cell): number {
 
 /** The value of a localized pair (`department_name_ar` / `_en`) for the reader. */
 export function localizedCell(row: ReportRow, base: string, locale: Locale): Cell {
-  return row[`${base}_${locale}`] ?? row[`${base}_${locale === 'ar' ? 'en' : 'ar'}`] ?? null;
+  const first = contentLocale(locale);
+  return row[`${base}_${first}`] ?? row[`${base}_${first === 'ar' ? 'en' : 'ar'}`] ?? null;
 }
 
 // ---------------------------------------------------------------------------

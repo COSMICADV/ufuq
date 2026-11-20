@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { toBcp47 } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import { fetchOne } from '../../lib/api-client';
@@ -555,7 +556,7 @@ export function GoalTypeCard({ payload, locale, t }: CardProps): React.JSX.Eleme
 // ---------------------------------------------------------------------------
 
 function intlLocale(locale: Locale): string {
-  return locale === 'ar' ? 'ar-EG' : 'en-GB';
+  return toBcp47(locale);
 }
 export function dayLabel(day: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocale(locale), {

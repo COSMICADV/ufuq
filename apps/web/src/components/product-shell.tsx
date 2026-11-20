@@ -14,6 +14,7 @@ import type { NavGlyphName } from './nav-glyph';
 import { AppTopbar } from './notifications/app-topbar';
 import { createTranslator } from '@ufuq/i18n';
 import { LanguageSwitch } from './language-switch';
+import { languageNames } from '../lib/language-names';
 import { SignOutButton } from './sign-out-button';
 import { ThemePicker } from './theme-picker';
 import { loadSession } from './employees/use-session';
@@ -108,6 +109,14 @@ const navigation = [
   ],
 ] as const;
 
+/** The catalogue key (`shell.nav.*`) of each section's label. */
+function navKey(path: string, surface: 'admin' | 'app'): string {
+  if (path === '') return surface === 'app' ? 'home' : 'overview';
+  if (path.startsWith('requests?category=leave')) return 'leave';
+  if (path.startsWith('settings')) return 'settings';
+  return path;
+}
+
 /** The icon each section is drawn with (the paths above stay as the fallback). */
 const NAV_ICONS: Readonly<Record<string, NavGlyphName>> = {
   '': 'overview',
@@ -180,7 +189,6 @@ export function ProductShell({
     if (signedOut) router.replace(publicPath(locale, 'login'));
     else if (wrongSide) router.replace(`/${locale}/app`);
   }, [signedOut, wrongSide, router, locale]);
-  const ar = locale === 'ar';
   const t = createTranslator(locale);
   const base = `/${locale}/${surface}`;
   const close = (): void => {
@@ -201,7 +209,7 @@ export function ProductShell({
       permissions.some((permission) => ready.permissions.has(permission))
     );
   });
-  const links = items.map(([path, arabic, english, icon]) => {
+  const links = items.map(([path, , , icon]) => {
     const href = `${base}${path ? `/${path}` : ''}`;
     const current =
       path === 'settings/company'
@@ -212,7 +220,7 @@ export function ProductShell({
     return (
       <Link key={path} href={href} onClick={close} aria-current={current ? 'page' : undefined}>
         <NavIcon path={icon} section={path} />
-        <span>{ar ? arabic : surface === 'app' && path === '' ? 'Home' : english}</span>
+        <span>{t(`shell.nav.${navKey(path, surface)}`)}</span>
       </Link>
     );
   });
@@ -227,7 +235,7 @@ export function ProductShell({
         aria-current={pathname.startsWith(`${base}/salary`) ? 'page' : undefined}
       >
         <NavIcon path={navigation[7][3]} section="salary" />
-        <span>{ar ? 'راتبي' : 'My salary'}</span>
+        <span>{t('shell.my_salary')}</span>
       </Link>
     ) : null;
   const branding = (
@@ -235,13 +243,7 @@ export function ProductShell({
       <span>
         <ProductLogo product="Business" />
         <small>
-          {surface === 'admin'
-            ? ar
-              ? 'إدارة الأعمال'
-              : 'Business workspace'
-            : ar
-              ? 'مساحة الموظف'
-              : 'Employee workspace'}
+          {t(surface === 'admin' ? 'shell.workspace_admin' : 'shell.workspace_employee')}
         </small>
       </span>
     </Link>
@@ -249,11 +251,11 @@ export function ProductShell({
   return (
     <div className={`product-shell product-shell--${surface}`}>
       <a className="public-skip" href="#workspace-content">
-        {ar ? 'انتقل إلى المحتوى' : 'Skip to content'}
+        {t('shell.skip')}
       </a>
       <aside className="product-sidebar">
         {branding}
-        <nav className="product-nav" aria-label={ar ? 'التنقل الرئيسي' : 'Main navigation'}>
+        <nav className="product-nav" aria-label={t('shell.main_nav')}>
           {links}
           {salary}
         </nav>
@@ -261,10 +263,7 @@ export function ProductShell({
           <span className="product-company__icon">
             <FreehandIcon name="building" size={20} />
           </span>
-          <span>
-            {ready?.companyName ??
-              (ar ? 'منصة واحدة. إمكانات بلا حدود.' : 'One platform. Infinite possibilities.')}
-          </span>
+          <span>{ready?.companyName ?? t('shell.tagline')}</span>
         </p>
       </aside>
       <div className="product-workspace">
@@ -272,7 +271,7 @@ export function ProductShell({
           <button
             className="icon-button product-menu"
             onClick={open}
-            aria-label={ar ? 'فتح قائمة التنقل' : 'Open navigation'}
+            aria-label={t('shell.open_nav')}
             aria-haspopup="dialog"
           >
             <FreehandIcon name="menu" size={24} />
@@ -287,7 +286,7 @@ export function ProductShell({
         ref={drawer}
         onKeyDown={containDialogFocus}
         className="product-drawer"
-        aria-label={ar ? 'قائمة التنقل' : 'Navigation menu'}
+        aria-label={t('shell.nav_menu')}
         onClick={(event) => {
           if (event.target === event.currentTarget) close();
         }}
@@ -295,30 +294,22 @@ export function ProductShell({
         <div className="product-drawer__body">
           <div className="product-drawer__heading">
             {branding}
-            <button
-              className="icon-button"
-              onClick={close}
-              aria-label={ar ? 'إغلاق القائمة' : 'Close menu'}
-            >
+            <button className="icon-button" onClick={close} aria-label={t('shell.close_menu')}>
               <FreehandIcon name="close" size={22} />
             </button>
           </div>
-          <nav className="product-nav" aria-label={ar ? 'كل الأقسام' : 'All sections'}>
+          <nav className="product-nav" aria-label={t('shell.all_sections')}>
             {links}
             {salary}
           </nav>
           <div className="product-drawer__prefs">
-            <LanguageSwitch
-              locale={locale}
-              label={t('language.switch')}
-              names={{ ar: t('language.ar'), en: t('language.en') }}
-            />
+            <LanguageSwitch locale={locale} label={t('language.switch')} names={languageNames(t)} />
             <ThemePicker locale={locale} />
             <SignOutButton locale={locale} />
           </div>
         </div>
       </dialog>
-      <nav className="product-bottom" aria-label={ar ? 'التنقل السريع' : 'Quick navigation'}>
+      <nav className="product-bottom" aria-label={t('shell.quick_nav')}>
         {items
           .filter(([p]) =>
             (surface === 'app'
@@ -326,19 +317,19 @@ export function ProductShell({
               : ['', 'employees', 'tasks', 'requests']
             ).includes(p),
           )
-          .map(([path, arabic, english, icon]) => (
+          .map(([path, , , icon]) => (
             <Link
               key={path}
               href={`${base}${path ? `/${path}` : ''}`}
               aria-current={pathname === `${base}${path ? `/${path}` : ''}` ? 'page' : undefined}
             >
               <NavIcon path={icon} section={path} />
-              <span>{ar ? arabic : surface === 'app' && path === '' ? 'Home' : english}</span>
+              <span>{t(`shell.nav.${navKey(path, surface)}`)}</span>
             </Link>
           ))}
         <button onClick={open} aria-haspopup="dialog">
           <FreehandIcon name="more" size={22} />
-          <span>{ar ? 'المزيد' : 'More'}</span>
+          <span>{t('shell.more')}</span>
         </button>
       </nav>
     </div>

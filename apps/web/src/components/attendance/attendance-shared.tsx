@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { toBcp47 } from '@ufuq/i18n';
 import type { Locale, Translator } from '@ufuq/i18n';
 
 import {
@@ -37,7 +38,7 @@ export function formatTime(
   timeZone: string,
 ): string | null {
   if (instant === null) return null;
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(toBcp47(locale), {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
@@ -46,7 +47,7 @@ export function formatTime(
 }
 
 export function formatDate(date: string, locale: Locale, timeZone: string): string {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(toBcp47(locale), {
     timeZone,
     day: '2-digit',
     month: 'short',
