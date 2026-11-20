@@ -2583,6 +2583,23 @@
     "start_busy": "Konto wird erstellt…",
     "have_account": "Sie haben bereits ein Konto?",
     "sign_in": "Anmelden",
-    "password_help": "Mindestens 10 Zeichen."
+    "password_help": "Mindestens 10 Zeichen.",
+    "google": "Weiter mit Google",
+    "or": "oder",
+    "oauth": {
+      "unavailable": "Die Registrierung mit Google ist gerade nicht verfügbar. Registrieren Sie sich mit E-Mail und Passwort.",
+      "cancelled": "Die Registrierung mit Google wurde abgebrochen.",
+      "expired": "Der Versuch ist abgelaufen. Bitte erneut versuchen.",
+      "failed": "Die Registrierung mit Google hat nicht funktioniert. Bitte erneut versuchen.",
+      "unverified": "Die E-Mail dieses Google-Kontos ist nicht bestätigt.",
+      "no_account": "Es gibt kein Konto mit dieser E-Mail.",
+      "locked": "Dieses Konto ist vorübergehend gesperrt. Versuchen Sie es später erneut.",
+      "deactivated": "Dieses Konto wurde deaktiviert.",
+      "not_activated": "Dieses Konto ist noch nicht aktiviert.",
+      "pending": "Das Unternehmenskonto wird noch geprüft.",
+      "rejected": "Die Anfrage für das Unternehmenskonto wurde abgelehnt.",
+      "inactive": "Dieses Konto ist nicht aktiv.",
+      "rate": "Zu viele Versuche. Warten Sie kurz und versuchen Sie es erneut."
+    }
   }
 }

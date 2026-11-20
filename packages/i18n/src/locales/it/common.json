@@ -2583,6 +2583,23 @@
     "start_busy": "Creazione dell’account…",
     "have_account": "Hai già un account?",
     "sign_in": "Accedi",
-    "password_help": "Almeno 10 caratteri."
+    "password_help": "Almeno 10 caratteri.",
+    "google": "Continua con Google",
+    "or": "oppure",
+    "oauth": {
+      "unavailable": "La registrazione con Google non è disponibile al momento. Registrati con e-mail e password.",
+      "cancelled": "La registrazione con Google è stata annullata.",
+      "expired": "Il tentativo è scaduto. Riprova.",
+      "failed": "La registrazione con Google non è riuscita. Riprova.",
+      "unverified": "L’e-mail di questo account Google non è verificata.",
+      "no_account": "Non esiste un account con questa e-mail.",
+      "locked": "Questo account è temporaneamente bloccato. Riprova più tardi.",
+      "deactivated": "Questo account è stato disattivato.",
+      "not_activated": "Questo account non è ancora attivo.",
+      "pending": "L’account aziendale è ancora in revisione.",
+      "rejected": "La richiesta di account aziendale è stata rifiutata.",
+      "inactive": "Questo account non è attivo.",
+      "rate": "Troppi tentativi. Attendi un momento e riprova."
+    }
   }
 }

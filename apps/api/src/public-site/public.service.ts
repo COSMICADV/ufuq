@@ -18,6 +18,7 @@ import type {
   RegisterPersonalDto,
 } from './public.dto.js';
 import { contactMessage } from './contact-message.js';
+import { createPersonalAccount } from '../auth/personal-account.js';
 
 @Injectable()
 export class PublicSiteService {
@@ -145,46 +146,11 @@ export class PublicSiteService {
         fields: { password: violations.map((v) => v.code) },
       });
     const passwordHash = await this.passwords.hash(dto.password);
-    const companyId = generateId();
-    await this.audit.withTenant(companyId, async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${dto.email}, 16))`;
-      const existing = await lookupUsersByEmail(tx, dto.email);
-      if (existing.length) throw new AppException(ERROR_CODES.CONFLICT, 409);
-      const userId = generateId();
-      const role = await tx.role.findFirstOrThrow({
-        where: { key: 'personal', companyId: null, isSystem: true },
-      });
-      await tx.company.create({
-        data: {
-          id: companyId,
-          name: dto.name,
-          slug: `personal-${companyId}`,
-          timezone: 'Africa/Cairo',
-          defaultLocale: locale,
-          kind: 'personal',
-          status: 'active',
-        },
-      });
-      await tx.user.create({
-        data: {
-          id: userId,
-          companyId,
-          email: dto.email,
-          displayName: dto.name,
-          roleId: role.id,
-          passwordHash,
-          status: 'active',
-          locale,
-        },
-      });
-      await tx.company.update({ where: { id: companyId }, data: { createdBy: userId } });
-      await this.audit.record(tx, {
-        companyId,
-        userId,
-        action: 'SIGNUP_PERSONAL',
-        entityType: 'company',
-        entityId: companyId,
-      });
+    await createPersonalAccount(this.audit, {
+      name: dto.name,
+      email: dto.email,
+      passwordHash,
+      locale,
     });
   }
 }

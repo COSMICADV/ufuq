@@ -194,3 +194,35 @@ describe('loadEnv — sign-up approval owner settings', () => {
     ).toThrow(/OWNER_ACCESS_KEY must be at least 32 characters[\s\S]*OWNER_NOTIFY_TO/);
   });
 });
+
+describe('loadEnv — Continue with Google', () => {
+  it('is off unless both the client id and secret are set', () => {
+    expect(loadEnv(valid).google).toBeNull();
+    expect(() => loadEnv({ ...valid, GOOGLE_CLIENT_ID: 'id-only' })).toThrow(
+      /GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET/,
+    );
+  });
+
+  it('defaults the callback to the web origin', () => {
+    const google = loadEnv({
+      ...valid,
+      GOOGLE_CLIENT_ID: 'id',
+      GOOGLE_CLIENT_SECRET: 'secret',
+    }).google;
+    expect(google).toEqual({
+      clientId: 'id',
+      clientSecret: 'secret',
+      redirectUri: `${String(valid.WEB_ORIGIN).replace(/\/$/, '')}/api/v1/auth/google/callback`,
+    });
+  });
+
+  it('accepts an explicit callback', () => {
+    const google = loadEnv({
+      ...valid,
+      GOOGLE_CLIENT_ID: 'id',
+      GOOGLE_CLIENT_SECRET: 'secret',
+      GOOGLE_REDIRECT_URI: 'http://localhost:4000/api/v1/auth/google/callback',
+    }).google;
+    expect(google?.redirectUri).toBe('http://localhost:4000/api/v1/auth/google/callback');
+  });
+});

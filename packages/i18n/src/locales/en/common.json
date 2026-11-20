@@ -2583,6 +2583,23 @@
     "start_busy": "Creating your account…",
     "have_account": "Already have an account?",
     "sign_in": "Sign in",
-    "password_help": "At least 10 characters."
+    "password_help": "At least 10 characters.",
+    "google": "Continue with Google",
+    "or": "or",
+    "oauth": {
+      "unavailable": "Google sign-up is not available right now. Sign up with email and password.",
+      "cancelled": "Google sign-up was cancelled.",
+      "expired": "The attempt timed out. Please try again.",
+      "failed": "Google sign-up did not work. Please try again.",
+      "unverified": "This Google account’s email is not verified.",
+      "no_account": "There is no account with this email.",
+      "locked": "This account is temporarily locked. Try again later.",
+      "deactivated": "This account has been deactivated.",
+      "not_activated": "This account is not activated yet.",
+      "pending": "The company account is still under review.",
+      "rejected": "The company account request was declined.",
+      "inactive": "This account is not active.",
+      "rate": "Too many attempts. Wait a moment and try again."
+    }
   }
 }

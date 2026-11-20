@@ -64,6 +64,18 @@ export interface Env {
     /** Where new sign-up notifications are emailed; null sends none. */
     readonly notifyTo: string | null;
   };
+  /**
+   * "Continue with Google" (OpenID Connect). Null — the default — hides the
+   * button and refuses the flow. Both GOOGLE_CLIENT_ID and
+   * GOOGLE_CLIENT_SECRET are required together; GOOGLE_REDIRECT_URI defaults
+   * to `{WEB_ORIGIN}/api/v1/auth/google/callback`, the address the web origin
+   * forwards to the API.
+   */
+  readonly google?: {
+    readonly clientId: string;
+    readonly clientSecret: string;
+    readonly redirectUri: string;
+  } | null;
   readonly apiPort: number;
   readonly webPort: number;
   /** Origin allowed to call the API with credentials. */
@@ -234,6 +246,34 @@ function loadOwner(raw: RawEnv, issues: string[]): NonNullable<Env['owner']> {
   };
 }
 
+function loadGoogle(
+  raw: RawEnv,
+  webOrigin: string,
+  issues: string[],
+): NonNullable<Env['google']> | null {
+  const clientId = optionalString(raw, 'GOOGLE_CLIENT_ID');
+  const clientSecret = optionalString(raw, 'GOOGLE_CLIENT_SECRET');
+  if (clientId === null && clientSecret === null) return null;
+  if (clientId === null || clientSecret === null) {
+    issues.push('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together');
+    return null;
+  }
+  const redirect = optionalString(raw, 'GOOGLE_REDIRECT_URI');
+  if (redirect !== null) {
+    try {
+      const url = new URL(redirect);
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('protocol');
+    } catch {
+      issues.push('GOOGLE_REDIRECT_URI must be an http(s) URL');
+    }
+  }
+  return {
+    clientId,
+    clientSecret,
+    redirectUri: redirect ?? `${webOrigin.replace(/\/$/, '')}/api/v1/auth/google/callback`,
+  };
+}
+
 /**
  * Validate and freeze the environment. Throws {@link EnvError} listing every
  * problem at once, rather than one per restart.
@@ -261,6 +301,7 @@ export function loadEnv(raw: RawEnv = process.env): Env {
     },
     mail: loadMail(raw, issues),
     owner: loadOwner(raw, issues),
+    google: loadGoogle(raw, raw['WEB_ORIGIN'] ?? '', issues),
     apiPort: requirePort(raw, 'API_PORT', 4000, issues),
     webPort: requirePort(raw, 'WEB_PORT', 3000, issues),
     webOrigin: requireUrl(raw, 'WEB_ORIGIN', ['http:', 'https:'], issues),

@@ -174,6 +174,58 @@ export class AuthService {
       throw new AppException(ERROR_CODES.INVALID_CREDENTIALS, 401);
     }
 
+    return this.admit(candidate, ctx);
+  }
+
+  /**
+   * Sign in someone whose email an identity provider has verified ("Continue
+   * with Google"). There is no password, so this starts where a correct
+   * password would have taken {@link attemptLogin}: the lock, the account and
+   * company status checks, then the session — the same rules and the same
+   * refusals. Null when no account has this email.
+   */
+  async loginWithVerifiedEmail(
+    email: string,
+    rememberMe: boolean,
+    clientType: ClientType,
+    ctx: RequestContext,
+  ): Promise<LoginResult | null> {
+    const candidates = await withPlatformContext(this.prisma, (tx) =>
+      lookupUsersByEmail(tx, email),
+    );
+    if (candidates.length === 0) return null;
+    let lastError: AppException = new AppException(ERROR_CODES.INVALID_CREDENTIALS, 401);
+    for (const candidate of candidates) {
+      try {
+        if (candidate.lockedUntil && candidate.lockedUntil.getTime() > Date.now()) {
+          throw new AppException(ERROR_CODES.ACCOUNT_LOCKED, 401);
+        }
+        const user = await this.admit(candidate, ctx);
+        const session = await this.sessions.create({
+          userId: user.id,
+          companyId: user.companyId,
+          clientType,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          rememberMe,
+        });
+        return { user, session };
+      } catch (error) {
+        if (error instanceof AppException) {
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw lastError;
+  }
+
+  /** After the credential is known good: status checks, then the success record. */
+  private async admit(
+    candidate: AuthLoginLookupRow,
+    ctx: RequestContext,
+  ): Promise<AuthenticatedUser> {
     // DOCUMENT 09 §1 steps 4–5: status checks run only once the password is
     // known to be correct, so a wrong password against an invited or
     // deactivated account still reports as a wrong password, not as a hint

@@ -45,84 +45,6 @@ const transport = {
   send: async (message: MailMessage): Promise<void> => {
     if (failMail) throw new Error('private SMTP failure with secret credentials');
     messages.push(message);
-    describe('1to1OS Personal — individual sign-up', () => {
-      const personal = (email = 'person@personal.test'): Record<string, unknown> => ({
-        name: 'سارة',
-        email,
-        password: 'a-safe-personal-passphrase',
-        started_at: Date.now() - 3000,
-        website: '',
-      });
-
-      it('opens an active one-person account that signs in at once, with no Business access', async () => {
-        const res = await post('register-personal', personal());
-        expect(res.status).toBe(201);
-        expect(res.text).not.toMatch(/password|token|company_id/);
-        const company = await companyOf('person@personal.test');
-        expect(company.status).toBe('active');
-        const kind = await inspect<{ kind: string; reviewed_at: string | null }>(
-          'SELECT kind::text AS kind, reviewed_at FROM companies WHERE id=$1',
-          [company.id],
-        );
-        expect(kind.rows[0]).toEqual({ kind: 'personal', reviewed_at: null });
-        const audit = await inspect<{ action: string }>(
-          'SELECT action::text AS action FROM audit_logs WHERE company_id=$1',
-          [company.id],
-        );
-        expect(audit.rows.map((r) => r.action)).toContain('signup.personal');
-        // No owner review, so no email and no entry on the owner's list.
-        expect(messages).toHaveLength(0);
-        const list = await owner('get');
-        expect(
-          (list.body.data as { company_id: string }[]).some((r) => r.company_id === company.id),
-        ).toBe(false);
-
-        const agent = request.agent(app.getHttpServer());
-        const signedIn = await agent
-          .post('/api/v1/auth/login')
-          .send({ email: 'person@personal.test', password: personal().password });
-        expect(signedIn.status).toBe(200);
-        const me = await agent.get('/api/v1/auth/me');
-        expect(me.body.data.role.key).toBe('personal');
-        expect(me.body.data.permissions).toEqual([]);
-        expect(me.body.data.employee).toBeNull();
-        for (const path of ['/employees', '/attendance', '/payroll/periods'])
-          expect((await agent.get(`/api/v1${path}`)).status).toBe(403);
-      });
-
-      it('refuses an email already used by any account, and a weak password', async () => {
-        expect((await post('register-personal', personal('admin-a@company-a.test'))).status).toBe(
-          409,
-        );
-        expect((await post('register-personal', personal('p2@personal.test'))).status).toBe(201);
-        expect((await post('register-personal', personal('p2@personal.test'))).status).toBe(409);
-        const weak = await post('register-personal', {
-          ...personal('p3@personal.test'),
-          password: 'short',
-        });
-        expect(weak.status).toBe(422);
-      });
-
-      it('validates fields, refuses tenant input and is throttled on its own', async () => {
-        expect((await post('register-personal', { ...personal(), name: '' })).status).toBe(422);
-        expect(
-          (
-            await post('register-personal', {
-              ...personal('x@personal.test'),
-              company_id: COMPANY_A,
-            })
-          ).status,
-        ).toBe(422);
-        for (let i = 0; i < 5; i++)
-          await post('register-personal', {
-            ...personal(`t${String(i)}@p.test`),
-            password: 'short',
-          });
-        expect((await post('register-personal', personal('late@p.test'))).status).toBe(429);
-        expect((await post('register', registration('still-open@new.test'))).status).toBe(201);
-      });
-    });
-
     if (process.env.PHASE16_PREVIEW === '1')
       writeFileSync('/private/tmp/ufuq-phase16-mail.json', JSON.stringify(messages), {
         mode: 0o600,
@@ -163,6 +85,11 @@ function testEnv(databaseUrl: string): Env {
       contactTo: 'contact@ufuq.test',
     },
     owner: { accessKey: OWNER_KEY, notifyTo: OWNER_EMAIL },
+    google: {
+      clientId: 'google-client-test',
+      clientSecret: 'google-secret-test',
+      redirectUri: 'http://localhost:3000/api/v1/auth/google/callback',
+    },
     apiPort: 0,
     webPort: 0,
     webOrigin: 'http://localhost:3000',
@@ -659,6 +586,196 @@ describe('Sign-up approval — registration waits for the platform owner', () =>
   it('does not expose protected endpoints to public visitors', async () => {
     for (const path of ['/auth/me', '/company', '/employees', '/notifications'])
       expect((await request(app.getHttpServer()).get(`/api/v1${path}`)).status).toBe(401);
+  });
+});
+
+describe('1to1OS Personal — individual sign-up', () => {
+  const personal = (email = 'person@personal.test'): Record<string, unknown> => ({
+    name: 'سارة',
+    email,
+    password: 'a-safe-personal-passphrase',
+    started_at: Date.now() - 3000,
+    website: '',
+  });
+
+  it('opens an active one-person account that signs in at once, with no Business access', async () => {
+    const res = await post('register-personal', personal());
+    expect(res.status).toBe(201);
+    expect(res.text).not.toMatch(/password|token|company_id/);
+    const company = await companyOf('person@personal.test');
+    expect(company.status).toBe('active');
+    const kind = await inspect<{ kind: string; reviewed_at: string | null }>(
+      'SELECT kind::text AS kind, reviewed_at FROM companies WHERE id=$1',
+      [company.id],
+    );
+    expect(kind.rows[0]).toEqual({ kind: 'personal', reviewed_at: null });
+    const audit = await inspect<{ action: string }>(
+      'SELECT action::text AS action FROM audit_logs WHERE company_id=$1',
+      [company.id],
+    );
+    expect(audit.rows.map((r) => r.action)).toContain('signup.personal');
+    // No owner review, so no email and no entry on the owner's list.
+    expect(messages).toHaveLength(0);
+    const list = await owner('get');
+    expect(
+      (list.body.data as { company_id: string }[]).some((r) => r.company_id === company.id),
+    ).toBe(false);
+
+    const agent = request.agent(app.getHttpServer());
+    const signedIn = await agent
+      .post('/api/v1/auth/login')
+      .send({ email: 'person@personal.test', password: personal().password });
+    expect(signedIn.status).toBe(200);
+    const me = await agent.get('/api/v1/auth/me');
+    expect(me.body.data.role.key).toBe('personal');
+    expect(me.body.data.permissions).toEqual([]);
+    expect(me.body.data.employee).toBeNull();
+    for (const path of ['/employees', '/attendance', '/payroll/periods'])
+      expect((await agent.get(`/api/v1${path}`)).status).toBe(403);
+  });
+
+  it('refuses an email already used by any account, and a weak password', async () => {
+    expect((await post('register-personal', personal('admin-a@company-a.test'))).status).toBe(409);
+    expect((await post('register-personal', personal('p2@personal.test'))).status).toBe(201);
+    expect((await post('register-personal', personal('p2@personal.test'))).status).toBe(409);
+    const weak = await post('register-personal', {
+      ...personal('p3@personal.test'),
+      password: 'short',
+    });
+    expect(weak.status).toBe(422);
+  });
+
+  it('validates fields, refuses tenant input and is throttled on its own', async () => {
+    expect((await post('register-personal', { ...personal(), name: '' })).status).toBe(422);
+    expect(
+      (
+        await post('register-personal', {
+          ...personal('x@personal.test'),
+          company_id: COMPANY_A,
+        })
+      ).status,
+    ).toBe(422);
+    for (let i = 0; i < 5; i++)
+      await post('register-personal', {
+        ...personal(`t${String(i)}@p.test`),
+        password: 'short',
+      });
+    expect((await post('register-personal', personal('late@p.test'))).status).toBe(429);
+    expect((await post('register', registration('still-open@new.test'))).status).toBe(201);
+  });
+});
+
+describe('Continue with Google — Personal and Business', () => {
+  const idToken = (claims: Record<string, unknown>): string =>
+    `h.${Buffer.from(
+      JSON.stringify({
+        iss: 'https://accounts.google.com',
+        aud: 'google-client-test',
+        exp: Math.floor(Date.now() / 1000) + 300,
+        sub: 'g-1',
+        email_verified: true,
+        name: 'Google Person',
+        ...claims,
+      }),
+    ).toString('base64url')}.sig`;
+
+  /** Runs start → (Google) → callback; Google's token endpoint answers `claims`. */
+  async function googleRoundTrip(
+    intent: 'personal' | 'signin',
+    claims: Record<string, unknown>,
+    tamper: (state: string) => string = (s) => s,
+  ): Promise<{ location: string; cookies: string[] }> {
+    const start = await request(app.getHttpServer()).get(
+      `/api/v1/auth/google/start?intent=${intent}&locale=fr`,
+    );
+    expect(start.status).toBe(302);
+    const google = new URL(start.headers.location as string);
+    expect(google.host).toBe('accounts.google.com');
+    const cookie = (start.headers['set-cookie'] as unknown as string[])[0]?.split(';')[0] ?? '';
+    expect(cookie).toMatch(/^ufuq_google_oauth=/);
+    const nonce = google.searchParams.get('nonce');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      expect(String(url)).toBe('https://oauth2.googleapis.com/token');
+      const body = new URLSearchParams(String(init?.body));
+      expect(body.get('code')).toBe('code-1');
+      expect(body.get('client_secret')).toBe('google-secret-test');
+      expect(body.get('code_verifier')).toBeTruthy();
+      return new Response(JSON.stringify({ id_token: idToken({ nonce, ...claims }) }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    const back = await request(app.getHttpServer())
+      .get(
+        `/api/v1/auth/google/callback?code=code-1&state=${tamper(google.searchParams.get('state') ?? '')}`,
+      )
+      .set('Cookie', cookie);
+    fetchSpy.mockRestore();
+    expect(back.status).toBe(302);
+    return {
+      location: back.headers.location as string,
+      cookies: (back.headers['set-cookie'] as unknown as string[] | undefined) ?? [],
+    };
+  }
+
+  it('says whether Google is switched on', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/auth/providers');
+    expect(res.body.data).toEqual({ google: true });
+  });
+
+  it('creates an active Personal account for a new email from Personal sign-up and signs in', async () => {
+    const res = await googleRoundTrip('personal', { email: 'New.Google@Gmail.com' });
+    expect(res.location).toBe('http://localhost:3000/fr/personal');
+    expect(res.cookies.some((c) => c.startsWith('ufuq_session='))).toBe(true);
+    const company = await companyOf('new.google@gmail.com');
+    expect(company.status).toBe('active');
+    const user = await inspect<{ password_hash: string | null; display_name: string }>(
+      "SELECT password_hash, display_name FROM users WHERE email='new.google@gmail.com'",
+    );
+    expect(user.rows[0]).toEqual({ password_hash: null, display_name: 'Google Person' });
+    // The same Google account again simply signs in.
+    expect((await googleRoundTrip('signin', { email: 'new.google@gmail.com' })).location).toBe(
+      'http://localhost:3000/fr/personal',
+    );
+  });
+
+  it('signs an existing Business account in, and never creates one from the sign-in page', async () => {
+    const admin = await googleRoundTrip('signin', { email: ADMIN_A_EMAIL });
+    expect(admin.location).toBe('http://localhost:3000/fr/admin/settings/company');
+    expect(admin.cookies.some((c) => c.startsWith('ufuq_session='))).toBe(true);
+    const unknown = await googleRoundTrip('signin', { email: 'stranger@gmail.com' });
+    expect(unknown.location).toBe('http://localhost:3000/fr/login?oauth=no_account');
+    expect(unknown.cookies.some((c) => c.startsWith('ufuq_session='))).toBe(false);
+    const rows = await inspect("SELECT 1 FROM users WHERE email='stranger@gmail.com'");
+    expect(rows.rows).toHaveLength(0);
+  });
+
+  it('applies the same status rules as a password sign-in', async () => {
+    await post('register', registration('waiting@new-company.test'));
+    const pending = await googleRoundTrip('signin', { email: 'waiting@new-company.test' });
+    expect(pending.location).toBe('http://localhost:3000/fr/login?oauth=pending');
+  });
+
+  it('refuses a mismatched state, an unverified email and a cancelled consent', async () => {
+    const forged = await googleRoundTrip('personal', { email: 'x1@gmail.com' }, (s) => `${s}x`);
+    expect(forged.location).toBe('http://localhost:3000/fr/personal/start?oauth=expired');
+    const unverified = await googleRoundTrip('personal', {
+      email: 'x2@gmail.com',
+      email_verified: false,
+    });
+    expect(unverified.location).toBe('http://localhost:3000/fr/personal/start?oauth=unverified');
+    const noCookie = await request(app.getHttpServer()).get(
+      '/api/v1/auth/google/callback?code=c&state=s',
+    );
+    expect(noCookie.headers.location).toBe('http://localhost:3000/ar/login?oauth=expired');
+    const cancelled = await request(app.getHttpServer()).get(
+      '/api/v1/auth/google/callback?error=access_denied',
+    );
+    expect(cancelled.headers.location).toBe('http://localhost:3000/ar/login?oauth=cancelled');
+    const rows = await inspect(
+      "SELECT 1 FROM users WHERE email IN ('x1@gmail.com','x2@gmail.com')",
+    );
+    expect(rows.rows).toHaveLength(0);
   });
 });
 

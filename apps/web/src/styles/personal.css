@@ -503,3 +503,54 @@
   color: var(--p-blue);
   font-weight: 600;
 }
+
+/* "Continue with Google" — Google's own white button with its "G". */
+.pstart__google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-block-size: 52px;
+  margin-block-start: 6px;
+  padding: 10px 18px;
+  border: 1px solid var(--border-default, #d5deec);
+  border-radius: 14px;
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 16px;
+  font-weight: var(--weight-ui);
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.pstart__google:hover {
+  border-color: var(--border-strong, #9aa8c2);
+  background: #f8fafd;
+}
+.pstart__google:focus-visible {
+  outline: 2px solid var(--p-blue);
+  outline-offset: 2px;
+}
+.pstart__or {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0 4px;
+  color: var(--p-muted);
+  font-size: 14px;
+}
+.pstart__or::before,
+.pstart__or::after {
+  content: '';
+  flex: 1;
+  border-block-start: 1px solid var(--p-line);
+}
+.pstart__error {
+  margin: 4px 0 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--semantic-error, #c62828) 9%, transparent);
+  color: var(--semantic-error, #c62828);
+  font-weight: var(--weight-ui);
+}

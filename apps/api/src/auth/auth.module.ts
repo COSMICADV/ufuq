@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthController } from './auth.controller.js';
+import { GoogleAuthController } from './google-auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { AuditDispatcher, AUDIT_RETRY_QUEUE, BullMqAuditRetryQueue } from './audit-dispatcher.js';
 import { AuditService } from './audit.service.js';
@@ -10,7 +11,7 @@ import { RateLimitService } from './rate-limit.service.js';
 import { SessionService } from './session.service.js';
 
 @Module({
-  controllers: [AuthController],
+  controllers: [AuthController, GoogleAuthController],
   providers: [
     AuthService,
     AuditService,
