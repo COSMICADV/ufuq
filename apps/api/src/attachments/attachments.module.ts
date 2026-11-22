@@ -26,6 +26,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { RateLimitService } from '../auth/rate-limit.service.js';
 import { ProductAttachmentPolicy } from '../inventory/product-attachment-policy.js';
 import { ReceiptAttachmentPolicy } from '../personal-finance/receipt-attachment-policy.js';
+import { OdometerAttachmentPolicy } from '../personal-car/odometer-attachment-policy.js';
 import { HealthDocumentAttachmentPolicy } from '../personal-health/health-document-attachment-policy.js';
 import { LeaveAttachmentPolicy } from '../leave/leave-attachment-policy.js';
 import { RequestAttachmentPolicy } from '../requests/request-attachment-policy.js';
@@ -62,6 +63,7 @@ export class AttachmentsModule {
         ProductAttachmentPolicy,
         ReceiptAttachmentPolicy,
         HealthDocumentAttachmentPolicy,
+        OdometerAttachmentPolicy,
         {
           provide: ATTACHMENT_POLICIES,
           useFactory: (
@@ -71,7 +73,8 @@ export class AttachmentsModule {
             products: ProductAttachmentPolicy,
             receipts: ReceiptAttachmentPolicy,
             health: HealthDocumentAttachmentPolicy,
-          ) => [tasks, requests, leave, products, receipts, health],
+            odometer: OdometerAttachmentPolicy,
+          ) => [tasks, requests, leave, products, receipts, health, odometer],
           inject: [
             TaskAttachmentPolicy,
             RequestAttachmentPolicy,
@@ -79,6 +82,7 @@ export class AttachmentsModule {
             ProductAttachmentPolicy,
             ReceiptAttachmentPolicy,
             HealthDocumentAttachmentPolicy,
+            OdometerAttachmentPolicy,
           ],
         },
         {

@@ -74,7 +74,13 @@ export type FieldIssue =
   // Phase 12 — DOCUMENT 18: a monthly snapshot is of a closed month; a
   // filter that does not belong to the report being asked for is refused.
   | 'not_closed'
-  | 'not_allowed';
+  | 'not_allowed'
+  // 1to1OS Personal — My Car: an odometer reading out of order, an unusual
+  // jump that needs confirming, or a reset that is not the latest reading.
+  | 'decreasing'
+  | 'exceeds_next'
+  | 'unusual'
+  | 'reset_not_latest';
 
 @Injectable()
 export abstract class TenantScopedService {

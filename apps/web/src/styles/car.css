@@ -1,0 +1,199 @@
+/* 1to1OS Personal — My Car. Reuses the Expenses and Health card language. */
+
+.car-vehicles .car-add-vehicle {
+  border-style: dashed;
+  color: var(--fin-blue);
+}
+.car-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.car-kpis {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 14px;
+}
+.car-kpis .fin-kpi small {
+  color: var(--p-muted);
+}
+.car-kpis .fin-kpi--hero small {
+  color: rgb(255 255 255 / 0.78);
+}
+.car-trend--up {
+  color: #9a6400 !important;
+}
+.car-trend--down {
+  color: var(--fin-plus) !important;
+}
+.car-basis {
+  margin: -6px 0 0;
+  font-size: 14px;
+}
+.car-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 14px;
+}
+.car-vehicle dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.car-vehicle dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block-end: 8px;
+  border-block-end: 1px solid var(--p-line);
+}
+.car-vehicle dl > div:last-child {
+  border-block-end: 0;
+}
+.car-vehicle dt {
+  color: var(--p-muted);
+}
+.car-vehicle dd {
+  margin: 0;
+  font-weight: 600;
+}
+.car-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fin-blue);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.car-empty {
+  justify-items: start;
+}
+.car-readings {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.car-readings > li {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 0;
+  border-block-end: 1px solid var(--p-line);
+}
+.car-readings > li:last-child {
+  border-block-end: 0;
+}
+.car-readings > li.is-reset {
+  border-inline-start: 3px solid var(--fin-blue);
+  padding-inline-start: 10px;
+}
+.car-readings__icon {
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--fin-blue) 10%, var(--p-card));
+  color: var(--fin-navy);
+}
+.car-readings__main {
+  display: grid;
+  gap: 3px;
+  min-inline-size: 0;
+}
+.car-readings__main strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: start;
+}
+.car-readings__main small {
+  color: var(--p-muted);
+}
+.car-readings__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.car-readings__tags:empty {
+  display: none;
+}
+.car-readings__note {
+  font-style: normal;
+}
+.car-readings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.car-photo-step {
+  display: grid;
+  gap: 14px;
+}
+.car-photo-step p {
+  margin: 0;
+}
+.car-reading-bar {
+  block-size: 10px;
+}
+.car-photo-preview {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: 160px;
+  margin-inline: auto;
+  border-radius: 12px;
+  border: 1px solid var(--p-line, #e6ecf5);
+}
+.car-candidates {
+  display: grid;
+  gap: 8px;
+}
+.car-candidates p {
+  margin: 0;
+  font-weight: 500;
+}
+.car-candidates > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.car-candidates .fin-chip {
+  font-size: 20px;
+  font-weight: 600;
+}
+.car-candidates small {
+  color: var(--p-muted, #4a5878);
+}
+.car-photo-view .receipt-thumb {
+  inline-size: 100%;
+  block-size: auto;
+  min-block-size: 200px;
+}
+.car-photo-view .receipt-thumb__view img {
+  object-fit: contain;
+}
+@media (max-width: 1100px) {
+  .car-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .car-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+  .car-kpis .fin-kpi--hero {
+    grid-column: 1 / -1;
+  }
+  .car-readings > li {
+    grid-template-columns: 34px 1fr;
+  }
+  .car-readings__actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}

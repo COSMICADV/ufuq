@@ -68,7 +68,7 @@ export function releasePage(page: Page): void {
 /** Upload one page as a private attachment of a record (a receipt, a medical document page…). */
 export async function uploadPage(
   locale: Locale,
-  relatedType: 'finance_transaction' | 'health_document',
+  relatedType: 'finance_transaction' | 'health_document' | 'odometer_reading',
   relatedId: string,
   page: Page,
   name: string = page.name,

@@ -485,6 +485,8 @@ model Company {
   financeTransactions FinanceTransaction[]
   financeBudgets      FinanceBudget[]
   healthDocuments     HealthDocument[]
+  vehicles            Vehicle[]
+  odometerReadings    OdometerReading[]
   qrScans    QrScan[]
   qrFeedback QrFeedback[]
   qrFiles    QrFile[]
@@ -847,6 +849,8 @@ model User {
   financeTransactions FinanceTransaction[]
   financeBudgets      FinanceBudget[]
   healthDocuments     HealthDocument[]
+  vehicles            Vehicle[]
+  odometerReadings    OdometerReading[]
   qrFiles             QrFile[]                      @relation("qr_file_created_by")
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
@@ -2245,4 +2249,70 @@ model HealthDocument {
   @@index([companyId, deletedAt])
   @@index([linkId])
   @@map("health_documents")
+}
+
+enum OdometerReadingKind {
+  normal
+  reset
+  replacement
+
+  @@map("odometer_reading_kind")
+}
+
+enum OdometerReadingSource {
+  photo
+  manual
+  fuel
+  service
+
+  @@map("odometer_reading_source")
+}
+
+/// My Car phase A (migration 20261125000000_personal_car).
+model Vehicle {
+  id         String    @id @db.Uuid
+  companyId  String    @map("company_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  name       String    @db.VarChar(80)
+  make       String?   @db.VarChar(60)
+  model      String?   @db.VarChar(60)
+  year       Int?      @db.SmallInt
+  plate      String?   @db.VarChar(20)
+  fuelType   String?   @map("fuel_type") @db.VarChar(20)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company  Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readings OdometerReading[]
+
+  @@unique([companyId, name])
+  @@map("vehicles")
+}
+
+/// One confirmed odometer reading. `segment` starts again after a reset or
+/// a replaced odometer; distances are measured within a segment only.
+model OdometerReading {
+  id          String                @id @db.Uuid
+  companyId   String                @map("company_id") @db.Uuid
+  userId      String                @map("user_id") @db.Uuid
+  vehicleId   String                @map("vehicle_id") @db.Uuid
+  readingKm   Int                   @map("reading_km")
+  readAt      DateTime              @map("read_at") @db.Timestamptz(3)
+  segment     Int                   @default(1)
+  kind        OdometerReadingKind   @default(normal)
+  source      OdometerReadingSource @default(manual)
+  note        String?               @db.VarChar(300)
+  correctedAt DateTime?             @map("corrected_at") @db.Timestamptz(3)
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, readAt])
+  @@index([companyId])
+  @@map("odometer_readings")
 }

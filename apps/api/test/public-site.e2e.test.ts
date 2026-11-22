@@ -638,6 +638,7 @@ describe('1to1OS Personal — individual sign-up', () => {
     expect(me.body.data.permissions).toEqual([
       { key: 'personal.finance', scope: 'self' },
       { key: 'personal.health', scope: 'self' },
+      { key: 'personal.car', scope: 'self' },
     ]);
     expect(me.body.data.employee).toBeNull();
     for (const path of ['/employees', '/attendance', '/payroll/periods'])
@@ -1403,6 +1404,111 @@ describe('1to1OS Personal — Health records', () => {
     expect(await health.purgeExpired(new Date(Date.now() + 31 * 86_400_000))).toBeGreaterThanOrEqual(1);
     expect((await me.get(`${H}/documents?trash=true`)).body.data).toEqual([]);
     expect(storage.objects.size).toBe(before - 2);
+  });
+});
+
+describe('1to1OS Personal — My Car odometer', () => {
+  const C = '/api/v1/personal/car';
+  async function carAgent(email: string) {
+    expect(
+      (await post('register-personal', { name: 'Car Person', email, password: 'car-passphrase-1', started_at: Date.now() - 3000, website: '' })).status,
+    ).toBe(201);
+    const agent = request.agent(app.getHttpServer());
+    const login = await agent.post('/api/v1/auth/login').send({ email, password: 'car-passphrase-1' });
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const csrf = cookies.map((c) => /ufuq_csrf=([^;]+)/.exec(c)?.[1]).find(Boolean) ?? '';
+    return {
+      get: (url: string) => agent.get(url),
+      post: (url: string) => agent.post(url).set('X-CSRF-Token', csrf),
+      patch: (url: string) => agent.patch(url).set('X-CSRF-Token', csrf),
+      delete: (url: string) => agent.delete(url).set('X-CSRF-Token', csrf),
+    };
+  }
+  const base = Date.now() - 60_000;
+  const daysAgo = (n: number) => new Date(base - n * 86_400_000).toISOString();
+
+  it('keeps readings in order, learns the average, and handles resets and corrections', async () => {
+    const me = await carAgent('car.readings@personal.test');
+    const created = await me.post(`${C}/vehicles`).send({ name: 'Corolla', make: 'Toyota', year: 2021, plate: 'س ق ر 123' });
+    expect(created.status).toBe(201);
+    const v = String(created.body.data.id);
+    expect(created.body.data.stats).toMatchObject({ status: 'insufficient', reason: 'no_readings', current_km: null });
+    expect((await me.post(`${C}/vehicles`).send({ name: 'Corolla' })).status).toBe(422);
+
+    const add = (body: Record<string, unknown>) => me.post(`${C}/vehicles/${v}/readings`).send(body);
+    expect((await add({ reading_km: 40_000, read_at: daysAgo(30), source: 'photo' })).status).toBe(201);
+    expect((await add({ reading_km: 40_600, read_at: daysAgo(20) })).status).toBe(201);
+    let stats = (await me.get(`${C}/vehicles/${v}`)).body.data.stats;
+    expect(stats).toMatchObject({ status: 'insufficient', reason: 'need_readings' });
+
+    // Below the previous reading: refused, with the reason.
+    const lower = await add({ reading_km: 40_500, read_at: daysAgo(10) });
+    expect(lower.status).toBe(422);
+    expect(lower.body.error.fields.reading_km).toEqual(['decreasing']);
+    // Above the next reading, when back-dated: refused.
+    expect((await add({ reading_km: 40_700, read_at: daysAgo(25) })).body.error.fields.reading_km).toEqual(['exceeds_next']);
+    // A huge jump needs confirming.
+    const jump = await add({ reading_km: 90_000, read_at: daysAgo(10) });
+    expect(jump.body.error.fields.reading_km).toEqual(['unusual']);
+    // In the future: refused.
+    expect((await add({ reading_km: 41_000, read_at: new Date(Date.now() + 86_400_000).toISOString() })).status).toBe(422);
+
+    const third = await add({ reading_km: 41_500, read_at: daysAgo(0) });
+    expect(third.status).toBe(201);
+    expect(third.body.data.since_previous_km).toBe(900);
+    const detail = (await me.get(`${C}/vehicles/${v}`)).body.data;
+    // 1,500 km over 30 days = 50.0 km/day, 1,522 km a month.
+    expect(detail.stats).toMatchObject({ status: 'ok', current_km: 41_500, daily_km: '50.0', monthly_km: 1522, readings_used: 3, span_days: 30 });
+    expect(detail.readings.map((r: { reading_km: number }) => r.reading_km)).toEqual([41_500, 40_600, 40_000]);
+
+    // A correction is re-checked and marked.
+    const second = String(detail.readings[1].id);
+    expect((await me.patch(`${C}/readings/${second}`).send({ reading_km: 42_000 })).body.error.fields.reading_km).toEqual(['exceeds_next']);
+    const fixed = await me.patch(`${C}/readings/${second}`).send({ reading_km: 40_550 });
+    expect(fixed.body.data).toMatchObject({ reading_km: 40_550, corrected: true });
+
+    // A replaced odometer starts a new segment; averages restart there.
+    expect((await add({ reading_km: 5, read_at: daysAgo(40), kind: 'replacement' })).body.error.fields.kind).toEqual(['reset_not_latest']);
+    const swap = await add({ reading_km: 0, read_at: new Date().toISOString(), kind: 'replacement', note: 'cluster replaced' });
+    expect(swap.status).toBe(201);
+    expect(swap.body.data.segment).toBe(2);
+    stats = (await me.get(`${C}/vehicles/${v}`)).body.data.stats;
+    expect(stats).toMatchObject({ segment: 2, current_km: 0, status: 'insufficient', reason: 'need_readings' });
+    // While a later reading exists, the reset cannot be removed; on its own, it can.
+    expect((await me.delete(`${C}/readings/${String(swap.body.data.id)}`)).status).toBe(204);
+    expect((await me.get(`${C}/vehicles/${v}`)).body.data.stats.segment).toBe(1);
+
+    // A vehicle with history is archived, not lost.
+    expect((await me.delete(`${C}/vehicles/${v}`)).body.data.archived).toBe(true);
+    expect(((await me.get(`${C}/vehicles`)).body.data as unknown[]).length).toBe(0);
+    expect((await add({ reading_km: 42_000, read_at: daysAgo(0) })).status).toBe(422);
+    expect((await me.post(`${C}/vehicles/${v}/restore`)).status).toBe(204);
+  });
+
+  it('keeps photos and readings private to their account', async () => {
+    const owner = await carAgent('car.owner@personal.test');
+    const v = String((await owner.post(`${C}/vehicles`).send({ name: 'Car', current_km: 1000 })).body.data.id);
+    const reading = String((await owner.get(`${C}/vehicles/${v}`)).body.data.readings[0].id);
+    const photo = await owner
+      .post('/api/v1/attachments')
+      .field('related_type', 'odometer_reading')
+      .field('related_id', reading)
+      .attach('file', SAMPLES.png.bytes, { filename: 'odometer.png', contentType: 'image/png' });
+    expect(photo.status).toBe(201);
+    expect((await owner.get(`${C}/vehicles/${v}`)).body.data.readings[0].photo_ids).toEqual([photo.body.data.id]);
+
+    const stranger = await carAgent('car.stranger@personal.test');
+    expect((await stranger.get(`${C}/vehicles/${v}`)).status).toBe(404);
+    expect((await stranger.post(`${C}/vehicles/${v}/readings`).send({ reading_km: 2000, read_at: daysAgo(0) })).status).toBe(404);
+    expect((await stranger.get(`/api/v1/attachments/${String(photo.body.data.id)}`)).status).toBe(404);
+    const business = request.agent(app.getHttpServer());
+    await business.post('/api/v1/auth/login').send({ email: ADMIN_A_EMAIL, password: ADMIN_A_PASSWORD });
+    expect((await business.get(`${C}/vehicles`)).status).toBe(403);
+    expect((await request(app.getHttpServer()).get(`${C}/vehicles`)).status).toBe(401);
+
+    // Removing a reading retires its photo.
+    expect((await owner.delete(`${C}/readings/${reading}`)).status).toBe(204);
+    expect((await owner.get(`/api/v1/attachments/${String(photo.body.data.id)}`)).status).toBe(404);
   });
 });
 

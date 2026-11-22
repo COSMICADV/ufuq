@@ -92,6 +92,7 @@ export const ROLE_PERMISSIONS: readonly RolePermissionGrant[] = [
   ...grants('personal', [
     ['personal.finance', 'self'],
     ['personal.health', 'self'],
+    ['personal.car', 'self'],
   ]),
   ...grants('admin', [
     ['employee.view', 'company'],
