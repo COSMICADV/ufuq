@@ -34,7 +34,13 @@ export async function generateMetadata({
     return {};
   }
   const t = createTranslator(locale);
-  return { title: t('app.name'), description: t('app.tagline'), applicationName: t('app.name') };
+  return {
+    title: t('app.name'),
+    description: t('app.tagline'),
+    applicationName: t('app.name'),
+    // Added to an iPhone home screen: the name under the approved icon (apple-icon.png).
+    appleWebApp: { capable: true, title: t('app.name'), statusBarStyle: 'default' },
+  };
 }
 
 /**
