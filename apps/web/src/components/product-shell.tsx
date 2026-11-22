@@ -3,7 +3,7 @@ import { containDialogFocus } from '../lib/dialog-focus';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Locale } from '@ufuq/i18n';
 
@@ -21,6 +21,8 @@ import { loadSession } from './employees/use-session';
 import { useResource } from './settings/use-resource';
 import { publicPath } from '../lib/public-content';
 import { personalBase } from '../lib/personal';
+import { loadMedicalMe } from '../lib/medical';
+import type { MedicalMe } from '../lib/medical';
 
 const navigation = [
   ['', 'الرئيسية', 'Overview', 'M3 11 12 3l9 8v10h-6v-7H9v7H3Z', 'report.company', 'report.team'],
@@ -110,9 +112,19 @@ const navigation = [
   ],
 ] as const;
 
+/**
+ * Medical sections — shown only to a company whose activity is medical, and
+ * only to someone the admin granted (GET /medical/me), never by company role.
+ */
+const MEDICAL_NAV = [
+  ['patients', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21v-1a6 6 0 0 1 9-5.2M18 14v7M14.5 17.5h7'],
+  ['medical-team', 'M6 3v5a4 4 0 0 0 8 0V3M10 12v3a5 5 0 0 0 10 0v-2M20 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4'],
+] as const;
+
 /** The catalogue key (`shell.nav.*`) of each section's label. */
 function navKey(path: string, surface: 'admin' | 'app'): string {
   if (path === '') return surface === 'app' ? 'home' : 'overview';
+  if (path === 'medical-team') return 'medical_team';
   if (path.startsWith('requests?category=leave')) return 'leave';
   if (path.startsWith('settings')) return 'settings';
   return path;
@@ -178,6 +190,18 @@ export function ProductShell({
   const session = useResource(load);
   const ready = session.state.status === 'ready' ? session.state.value : null;
   const router = useRouter();
+  const [medical, setMedical] = useState<MedicalMe | null>(null);
+  const companyUser = ready !== null && ready.roleKey !== 'personal';
+  useEffect(() => {
+    if (!companyUser) return;
+    const controller = new AbortController();
+    loadMedicalMe(locale, controller.signal).then(setMedical, () => {
+      // No medical section is a safe answer to any failure.
+    });
+    return () => {
+      controller.abort();
+    };
+  }, [companyUser, locale]);
   // No session at all (never signed in, signed out, or expired): the workspace
   // has nothing to show, so go to sign-in rather than render an empty shell
   // whose every screen says "session ended".
@@ -228,6 +252,22 @@ export function ProductShell({
       </Link>
     );
   });
+  const medicalLinks = MEDICAL_NAV.filter(([path]) =>
+    medical?.enabled
+      ? path === 'patients'
+        ? medical.permissions['patients.view'] !== undefined
+        : medical.permissions['staff.manage'] !== undefined
+      : false,
+  ).map(([path, icon]) => {
+    const href = `${base}/${path}`;
+    const current = pathname === href || pathname.startsWith(`${href}/`);
+    return (
+      <Link key={path} href={href} onClick={close} aria-current={current ? 'page' : undefined}>
+        <NavIcon path={icon} />
+        <span>{t(`shell.nav.${navKey(path, surface)}`)}</span>
+      </Link>
+    );
+  });
   const salary =
     surface === 'app' &&
     ready?.employeeId &&
@@ -260,7 +300,9 @@ export function ProductShell({
       <aside className="product-sidebar">
         {branding}
         <nav className="product-nav" aria-label={t('shell.main_nav')}>
-          {links}
+          {links.slice(0, 1)}
+          {medicalLinks}
+          {links.slice(1)}
           {salary}
         </nav>
         <p className="product-company">
@@ -303,7 +345,9 @@ export function ProductShell({
             </button>
           </div>
           <nav className="product-nav" aria-label={t('shell.all_sections')}>
-            {links}
+            {links.slice(0, 1)}
+            {medicalLinks}
+            {links.slice(1)}
             {salary}
           </nav>
           <div className="product-drawer__prefs">

@@ -32,6 +32,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { QrModule } from './qr/qr.module.js';
 import { PersonalFinanceModule } from './personal-finance/finance.module.js';
 import { PersonalCarModule } from './personal-car/car.module.js';
+import { MedicalModule } from './medical/medical.module.js';
 import { PersonalHealthModule } from './personal-health/health.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
@@ -113,6 +114,7 @@ export class AppModule {
         PersonalFinanceModule,
         PersonalHealthModule.register({ scheduler: options.backgroundJobs }),
         PersonalCarModule,
+        MedicalModule,
       ],
       providers: [
         { provide: APP_ENV, useValue: env },

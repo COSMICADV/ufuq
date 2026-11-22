@@ -317,6 +317,12 @@ enum AuditAction {
   SIGNUP_APPROVED                      @map("signup.approved")
   SIGNUP_REJECTED                      @map("signup.rejected")
   SIGNUP_PERSONAL                      @map("signup.personal")
+  MEDICAL_PERMISSIONS_CHANGED          @map("medical.permissions_changed")
+  PATIENT_CREATED                      @map("patient.created")
+  PATIENT_UPDATED                      @map("patient.updated")
+  PATIENT_ARCHIVED                     @map("patient.archived")
+  MEDICAL_VISIT_CREATED                @map("medical_visit.created")
+  MEDICAL_VISIT_UPDATED                @map("medical_visit.updated")
   PASSWORD_SET_BY_ADMIN                @map("password.set_by_admin")
   SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
   EMPLOYEE_CREATED                     @map("employee.created")
@@ -482,17 +488,22 @@ model Company {
   notificationEvents      NotificationEvent[]
   notificationPreferences CompanyNotificationSetting[]
 
-  qrCodes    QrCode[]
+  qrCodes             QrCode[]
   financeAccounts     FinanceAccount[]
   financeCategories   FinanceCategory[]
   financeTransactions FinanceTransaction[]
   financeBudgets      FinanceBudget[]
   healthDocuments     HealthDocument[]
   vehicles            Vehicle[]
+  medicalStaff        MedicalStaff[]
+  medicalPermissions  MedicalPermission[]
+  patients            Patient[]
+  patientCareTeam     PatientCareTeam[]
+  medicalVisits       MedicalVisit[]
   odometerReadings    OdometerReading[]
-  qrScans    QrScan[]
-  qrFeedback QrFeedback[]
-  qrFiles    QrFile[]
+  qrScans             QrScan[]
+  qrFeedback          QrFeedback[]
+  qrFiles             QrFile[]
 
   @@index([status])
   @@map("companies")
@@ -706,6 +717,12 @@ model Employee {
 
   monthlyReports MonthlyEmployeeReport[]
 
+  medicalStaff       MedicalStaff?
+  medicalPermissions MedicalPermission[]
+  primaryPatients    Patient[]           @relation("patient_primary_doctor")
+  careTeams          PatientCareTeam[]
+  medicalVisits      MedicalVisit[]      @relation("visit_doctor")
+
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -858,6 +875,10 @@ model User {
 
   // Never unique on email alone — DOCUMENT 06 §3.2: "the same person may
   // exist in two companies later."
+  medicalGrants   MedicalPermission[] @relation("medical_granted_by")
+  patientsCreated Patient[]           @relation("patient_created_by")
+  visitsCreated   MedicalVisit[]      @relation("visit_created_by")
+
   @@unique([companyId, email])
   @@index([companyId, status])
   @@map("users")
@@ -2118,10 +2139,10 @@ model FinanceAccount {
   createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outgoing     FinanceTransaction[] @relation("finance_tx_account")
-  incoming     FinanceTransaction[] @relation("finance_tx_to_account")
+  company  Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outgoing FinanceTransaction[] @relation("finance_tx_account")
+  incoming FinanceTransaction[] @relation("finance_tx_to_account")
 
   @@unique([companyId, name])
   @@map("finance_accounts")
@@ -2318,4 +2339,135 @@ model OdometerReading {
   @@index([vehicleId, readAt])
   @@index([companyId])
   @@map("odometer_readings")
+}
+
+// ---------------------------------------------------------------------------
+// 1to1OS Business — Medical (migration 20261127000000_medical_core)
+// ---------------------------------------------------------------------------
+
+enum ClinicalRole {
+  doctor
+  nurse
+  technician
+  reception
+  finance
+  administration
+
+  @@map("clinical_role")
+}
+
+enum PatientGender {
+  male
+  female
+
+  @@map("patient_gender")
+}
+
+enum MedicalVisitStatus {
+  scheduled
+  in_progress
+  completed
+  cancelled
+
+  @@map("medical_visit_status")
+}
+
+model MedicalStaff {
+  employeeId   String       @id @map("employee_id") @db.Uuid
+  companyId    String       @map("company_id") @db.Uuid
+  clinicalRole ClinicalRole @map("clinical_role")
+  specialty    String?      @db.VarChar(80)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("medical_staff")
+}
+
+/// One employee's medical permission; `scope` is 'all' or 'assigned'.
+model MedicalPermission {
+  companyId  String   @map("company_id") @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  key        String   @db.VarChar(50)
+  scope      String   @db.VarChar(10)
+  grantedBy  String   @map("granted_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  granter  User     @relation("medical_granted_by", fields: [grantedBy], references: [id], onDelete: Restrict)
+
+  @@id([employeeId, key])
+  @@index([companyId])
+  @@map("medical_permissions")
+}
+
+model Patient {
+  id              String         @id @db.Uuid
+  companyId       String         @map("company_id") @db.Uuid
+  fileNumber      String         @map("file_number") @db.VarChar(20)
+  fullName        String         @map("full_name") @db.VarChar(160)
+  dateOfBirth     DateTime?      @map("date_of_birth") @db.Date
+  gender          PatientGender?
+  phone           String?        @db.VarChar(40)
+  nationalId      String?        @map("national_id") @db.VarChar(30)
+  notes           String?        @db.VarChar(2000)
+  primaryDoctorId String?        @map("primary_doctor_id") @db.Uuid
+  archivedAt      DateTime?      @map("archived_at") @db.Timestamptz(3)
+  createdBy       String         @map("created_by") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  careTeam      PatientCareTeam[]
+  visits        MedicalVisit[]
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  primaryDoctor Employee?         @relation("patient_primary_doctor", fields: [primaryDoctorId], references: [id], onDelete: SetNull)
+  creator       User              @relation("patient_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, fileNumber])
+  @@index([companyId, archivedAt])
+  @@index([primaryDoctorId])
+  @@map("patients")
+}
+
+model PatientCareTeam {
+  patientId  String   @map("patient_id") @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  patient  Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([patientId, employeeId])
+  @@index([employeeId])
+  @@map("patient_care_team")
+}
+
+model MedicalVisit {
+  id        String             @id @db.Uuid
+  companyId String             @map("company_id") @db.Uuid
+  patientId String             @map("patient_id") @db.Uuid
+  doctorId  String?            @map("doctor_id") @db.Uuid
+  visitAt   DateTime           @map("visit_at") @db.Timestamptz(3)
+  reason    String?            @db.VarChar(300)
+  notes     String?            @db.VarChar(4000)
+  status    MedicalVisitStatus @default(scheduled)
+  createdBy String             @map("created_by") @db.Uuid
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  patient Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  company Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  doctor  Employee? @relation("visit_doctor", fields: [doctorId], references: [id], onDelete: SetNull)
+  creator User      @relation("visit_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([patientId, visitAt])
+  @@index([companyId, visitAt])
+  @@index([doctorId])
+  @@map("medical_visits")
 }
