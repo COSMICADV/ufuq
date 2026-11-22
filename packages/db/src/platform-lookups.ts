@@ -28,6 +28,9 @@ export interface SignupRequestRow {
   readonly companyId: string;
   readonly companyName: string;
   readonly employeeCountRange: string | null;
+  /** The activity chosen on the Business page, and Medical's sub-type. */
+  readonly businessActivity: string | null;
+  readonly businessSubtype: string | null;
   readonly status: 'pending_approval' | 'active' | 'rejected';
   readonly createdAt: Date;
   readonly reviewedAt: Date | null;
@@ -47,6 +50,8 @@ export async function listSignupRequests(tx: TenantClient): Promise<readonly Sig
       company_id: string;
       company_name: string;
       employee_count_range: string | null;
+      business_activity: string | null;
+      business_subtype: string | null;
       status: string;
       created_at: Date;
       reviewed_at: Date | null;
@@ -59,6 +64,8 @@ export async function listSignupRequests(tx: TenantClient): Promise<readonly Sig
     companyId: r.company_id,
     companyName: r.company_name,
     employeeCountRange: r.employee_count_range,
+    businessActivity: r.business_activity,
+    businessSubtype: r.business_subtype,
     status: r.status as SignupRequestRow['status'],
     createdAt: r.created_at,
     reviewedAt: r.reviewed_at,

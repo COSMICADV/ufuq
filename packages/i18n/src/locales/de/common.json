@@ -3032,5 +3032,67 @@
       "future": "Das Datum liegt in der Zukunft.",
       "load": "Ihre Fahrzeuge konnten nicht geladen werden."
     }
+  },
+  "activity": {
+    "title": "Wählen Sie Ihre Branche",
+    "subtitle": "Ein System, das sich Ihrem Geschäft anpasst",
+    "pick_hint": "Wählen Sie Ihre Branche – wir richten Ihren Arbeitsbereich mit den passenden Bereichen ein.",
+    "continue": "Weiter",
+    "back": "Zurück",
+    "modules_label": "Ihr Arbeitsbereich startet mit:",
+    "your_activity": "Ihre Branche",
+    "your_activity_optional": "Ihre Branche (optional)",
+    "change": "Ändern",
+    "medical": {
+      "name": "Medizin",
+      "tagline": "Praxen und medizinische Zentren",
+      "description": "Das Team der Praxis oder des Zentrums und seine Anwesenheit, Aufgaben, medizinischer Bedarf im Lager und Berichte – in einem System.",
+      "subtype_question": "Welche Art von medizinischer Einrichtung?"
+    },
+    "food": {
+      "name": "Restaurants & Cafés",
+      "tagline": "Bestellungen und Tische",
+      "description": "Kasse für Bestellungen, Zutatenlager, Schichten des Teams und tägliche Berichte."
+    },
+    "clothing": {
+      "name": "Bekleidungsgeschäfte",
+      "tagline": "Verkauf und Lager",
+      "description": "Kasse, Lager nach Größe und Farbe, Ihr Ladenteam und Verkaufsberichte."
+    },
+    "perfume": {
+      "name": "Parfümerien",
+      "tagline": "Produkte und Kunden",
+      "description": "Kasse, Produktlager, Ihr Ladenteam und Verkaufsberichte."
+    },
+    "fitness": {
+      "name": "Fitnessstudios",
+      "tagline": "Mitgliedschaften und Buchungen",
+      "description": "Ihre Trainer und deren Anwesenheit, Aufgaben, Kasse und Berichte."
+    },
+    "beauty": {
+      "name": "Schönheitssalons",
+      "tagline": "Termine und Leistungen",
+      "description": "Ihr Salonteam und seine Anwesenheit, Aufgaben, Kasse für Leistungen und Berichte."
+    },
+    "retail": {
+      "name": "Allgemeiner Handel",
+      "tagline": "Verkauf und Lager",
+      "description": "Kasse, Lager und Lagerhäuser, Ihr Team und Verkaufsberichte."
+    },
+    "other": {
+      "name": "Andere Branche",
+      "tagline": "Ein flexibles, anpassbares System",
+      "description": "Alle Bereiche von 1to1OS Business – Sie nutzen, was zu Ihrer Arbeit passt."
+    },
+    "subtype": {
+      "clinic": {
+        "name": "Arztpraxis",
+        "description": "Ein oder mehrere Ärzte in einer Praxis"
+      },
+      "medical_center": {
+        "name": "Medizinisches Zentrum",
+        "description": "Mehrere Fachrichtungen und Abteilungen"
+      }
+    }
   }
 }

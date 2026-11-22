@@ -31,8 +31,8 @@ export function homePaths(locale: Locale): {
   const login = publicPath(locale, 'login');
   return {
     home: publicPath(locale, 'home'),
-    // Straight into the product: sign-in, with sign-up one link away.
-    business: login,
+    // The Business page: its sections, the activity choice, then sign-up.
+    business: `/${locale}/business`,
     personal: personalStart(locale),
     login,
     register: publicPath(locale, 'register'),

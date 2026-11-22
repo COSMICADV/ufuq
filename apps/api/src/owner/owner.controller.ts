@@ -23,6 +23,8 @@ function present(row: SignupRequestRow): Record<string, unknown> {
     company_id: row.companyId,
     company_name: row.companyName,
     employee_count_range: row.employeeCountRange,
+    business_activity: row.businessActivity,
+    business_subtype: row.businessSubtype,
     status: row.status,
     created_at: row.createdAt.toISOString(),
     reviewed_at: row.reviewedAt?.toISOString() ?? null,

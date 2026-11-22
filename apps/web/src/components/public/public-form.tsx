@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createTranslator } from '@ufuq/i18n';
 import { describeError } from '../settings/screen-states';
 import type { Locale } from '@ufuq/i18n';
@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { ApiError, fetchOne } from '../../lib/api-client';
 import { publicCopy, publicPath } from '../../lib/public-content';
 import { workspaceFor } from '../../lib/personal';
+import { ACTIVITIES, activityById, ONBOARDING_KEY, readChoice } from '../../lib/business-activities';
+import type { OnboardingChoice } from '../../lib/business-activities';
 import { Button, Field, Input } from '../design-system';
 
 export function PublicForm({
@@ -28,6 +30,24 @@ export function PublicForm({
   const [pending, setPending] = useState(false);
   const [fields, setFields] = useState<readonly string[]>([]);
   const [show, setShow] = useState(false);
+  // Business sign-up: the activity chosen on the Business page (from the link,
+  // else the onboarding state), or one picked here.
+  const [choice, setChoice] = useState<OnboardingChoice | null>(null);
+  const [picked, setPicked] = useState('');
+  useEffect(() => {
+    if (kind !== 'register') return;
+    const fromLink = readChoice(new URLSearchParams(window.location.search));
+    if (fromLink) {
+      setChoice(fromLink);
+      return;
+    }
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(ONBOARDING_KEY) ?? 'null') as Record<string, string> | null;
+      if (saved) setChoice(readChoice(new URLSearchParams(saved)));
+    } catch {
+      // No saved choice.
+    }
+  }, [kind]);
   /**
    * Why a sign-in was refused. A 401 from `/auth/login` is never an expired
    * session — it is wrong credentials or an account state — so the message
@@ -59,6 +79,12 @@ export function PublicForm({
         : kind === 'forgot'
           ? { email: values.email }
           : { ...values, started_at: started };
+    if (kind === 'register') {
+      // An activity is optional; an empty choice is simply not sent.
+      const b = body as Record<string, unknown>;
+      if (!b.business_activity) delete b.business_activity;
+      if (!b.business_subtype || b.business_activity !== 'medical') delete b.business_subtype;
+    }
     setBusy(true);
     setError('');
     setPending(false);
@@ -76,6 +102,13 @@ export function PublicForm({
         const me = await fetchOne<{ role: { key: string } }>('/auth/me', { locale });
         router.push(workspaceFor(locale, me.role.key));
       } else {
+        if (kind === 'register') {
+          try {
+            sessionStorage.removeItem(ONBOARDING_KEY);
+          } catch {
+            // Nothing saved.
+          }
+        }
         setDone(true);
       }
     } catch (e) {
@@ -172,6 +205,7 @@ export function PublicForm({
         </p>
       ) : null}
       <fieldset disabled={busy}>
+        {kind === 'register' ? <ActivityField locale={locale} choice={choice} picked={picked} onPick={setPicked} /> : null}
         {kind === 'contact' ? input('name', c.name) : null}
         {kind === 'register' ? input('admin_name', c.admin) : null}
         {kind === 'contact' || kind === 'register'
@@ -280,5 +314,78 @@ export function PublicForm({
         </div>
       ) : null}
     </form>
+  );
+}
+
+/**
+ * The business activity on the sign-up form: the one chosen on the Business
+ * page (with a way back to change it), or an optional choice here.
+ */
+function ActivityField({
+  locale,
+  choice,
+  picked,
+  onPick,
+}: {
+  readonly locale: Locale;
+  readonly choice: OnboardingChoice | null;
+  readonly picked: string;
+  readonly onPick: (value: string) => void;
+}): React.JSX.Element {
+  const t = createTranslator(locale);
+  if (choice) {
+    const config = activityById(choice.activity);
+    return (
+      <div className="public-activity">
+        {config ? <img src={config.icon} alt="" width={54} height={39} /> : null}
+        <span>
+          <small>{t('activity.your_activity')}</small>
+          <strong>
+            {t(`activity.${choice.activity}.name`)}
+            {choice.subtype ? ` — ${t(`activity.subtype.${choice.subtype}.name`)}` : ''}
+          </strong>
+        </span>
+        <a href={`/${locale}/business#activities`}>{t('activity.change')}</a>
+        <input type="hidden" name="business_activity" value={choice.activity} />
+        {choice.subtype ? <input type="hidden" name="business_subtype" value={choice.subtype} /> : null}
+      </div>
+    );
+  }
+  const medical = activityById('medical');
+  return (
+    <>
+      <label>
+        {t('activity.your_activity_optional')}
+        <select
+          name="business_activity"
+          value={picked}
+          onChange={(event) => {
+            onPick(event.target.value);
+          }}
+        >
+          <option value="">—</option>
+          {ACTIVITIES.map((a) => (
+            <option key={a.id} value={a.id}>
+              {t(`activity.${a.id}.name`)}
+            </option>
+          ))}
+        </select>
+      </label>
+      {picked === 'medical' && medical?.subtypes ? (
+        <label>
+          {t('activity.medical.subtype_question')}
+          <select name="business_subtype" defaultValue="" required>
+            <option value="" disabled>
+              —
+            </option>
+            {medical.subtypes.map((s) => (
+              <option key={s} value={s}>
+                {t(`activity.subtype.${s}.name`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+    </>
   );
 }

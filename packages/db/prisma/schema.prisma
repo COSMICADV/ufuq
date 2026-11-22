@@ -405,6 +405,9 @@ model Company {
   id                   String        @id @db.Uuid
   name                 String        @db.VarChar(200)
   employeeCountRange   String?       @map("employee_count_range") @db.VarChar(20)
+  /// The activity chosen on the Business page (migration 20261126000000_business_activity).
+  businessActivity     String?       @map("business_activity") @db.VarChar(20)
+  businessSubtype      String?       @map("business_subtype") @db.VarChar(30)
   slug                 String        @unique @db.VarChar(100)
   logoPath             String?       @map("logo_path") @db.VarChar(500)
   timezone             String        @db.VarChar(64)

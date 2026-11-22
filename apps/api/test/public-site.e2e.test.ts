@@ -542,11 +542,43 @@ describe('Sign-up approval — registration waits for the platform owner', () =>
     ['company_id', COMPANY_B],
     ['role_id', 'admin'],
     ['website', 'bot'],
+    ['business_activity', 'casino'],
+    ['business_subtype', 'hospital'],
   ])('rejects invalid registration %s', async (field, value) => {
     expect(
       (await post('register', { ...registration('invalid@new.test'), [field]: value })).status,
     ).toBe(422);
     expect(messages).toHaveLength(0);
+  });
+  it('saves the business activity chosen on the Business page, and shows it to the owner', async () => {
+    const res = await post('register', {
+      ...registration('clinic@new.test'),
+      business_activity: 'medical',
+      business_subtype: 'clinic',
+    });
+    expect(res.status).toBe(201);
+    const company = await companyOf('clinic@new.test');
+    const row = await inspect<{ business_activity: string; business_subtype: string; status: string }>(
+      'SELECT business_activity, business_subtype, status::text AS status FROM companies WHERE id=$1',
+      [company.id],
+    );
+    // A request, as before: nothing is created beyond the pending workspace.
+    expect(row.rows[0]).toEqual({ business_activity: 'medical', business_subtype: 'clinic', status: 'pending_approval' });
+    const listed = (await owner('get')).body.data as { company_id: string; business_activity: string; business_subtype: string }[];
+    expect(listed.find((r) => r.company_id === company.id)).toMatchObject({ business_activity: 'medical', business_subtype: 'clinic' });
+    const mail = messages[messages.length - 1];
+    expect(JSON.stringify(mail)).toContain("Doctor's clinic");
+    // A sub-type belongs to Medical only; an activity alone is fine; none is fine.
+    expect(
+      (await post('register', { ...registration('cafe@new.test'), business_activity: 'food', business_subtype: 'clinic' })).status,
+    ).toBe(422);
+    expect((await post('register', { ...registration('cafe2@new.test'), business_activity: 'food' })).status).toBe(201);
+    expect((await post('register', registration('plain@new.test'))).status).toBe(201);
+    const plain = await inspect<{ business_activity: string | null }>(
+      'SELECT business_activity FROM companies WHERE id=$1',
+      [(await companyOf('plain@new.test')).id],
+    );
+    expect(plain.rows[0]?.business_activity).toBeNull();
   });
   it('accepts the existing ten-character minimum and 200-character maximum', async () => {
     expect(

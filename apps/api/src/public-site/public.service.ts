@@ -81,6 +81,12 @@ export class PublicSiteService {
       throw new AppException(ERROR_CODES.PASSWORD_POLICY_VIOLATION, 422, {
         fields: { password: violations.map((v) => v.code) },
       });
+    // A sub-type belongs to Medical only.
+    if (dto.business_subtype !== undefined && dto.business_activity !== 'medical') {
+      throw new AppException(ERROR_CODES.VALIDATION_FAILED, 422, {
+        fields: { business_subtype: ['invalid'] },
+      });
+    }
     const passwordHash = await this.passwords.hash(dto.password);
     // Bind a fresh, server-generated tenant before its first insert; no RLS bypass.
     // Serialize on email so two simultaneous sign-ups cannot both succeed.
@@ -102,6 +108,8 @@ export class PublicSiteService {
           timezone: 'Africa/Cairo',
           defaultLocale: locale,
           employeeCountRange: dto.employee_count_range,
+          businessActivity: dto.business_activity ?? null,
+          businessSubtype: dto.business_subtype ?? null,
           status: 'pending_approval',
           createdAt: requestedAt,
         },
@@ -135,6 +143,8 @@ export class PublicSiteService {
       adminEmail: dto.email,
       adminPhone: dto.phone,
       employeeCountRange: dto.employee_count_range,
+      businessActivity: dto.business_activity ?? null,
+      businessSubtype: dto.business_subtype ?? null,
       requestedAt,
     });
   }

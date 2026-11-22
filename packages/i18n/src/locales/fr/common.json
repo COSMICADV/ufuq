@@ -3032,5 +3032,67 @@
       "future": "La date est dans le futur.",
       "load": "Impossible de charger vos véhicules."
     }
+  },
+  "activity": {
+    "title": "Choisissez votre activité",
+    "subtitle": "Un seul système adapté à votre activité",
+    "pick_hint": "Choisissez votre activité : nous préparons votre espace avec les sections adaptées.",
+    "continue": "Continuer",
+    "back": "Retour",
+    "modules_label": "Votre espace commence avec :",
+    "your_activity": "Votre activité",
+    "your_activity_optional": "Votre activité (facultatif)",
+    "change": "Modifier",
+    "medical": {
+      "name": "Médical",
+      "tagline": "Cabinets et centres médicaux",
+      "description": "L’équipe du cabinet ou du centre et sa présence, les tâches, les fournitures médicales en stock et les rapports — dans un seul système.",
+      "subtype_question": "Quel type d’établissement médical ?"
+    },
+    "food": {
+      "name": "Restaurants et cafés",
+      "tagline": "Commandes et tables",
+      "description": "Caisse pour les commandes, stock des ingrédients, horaires de l’équipe et rapports quotidiens."
+    },
+    "clothing": {
+      "name": "Boutiques de vêtements",
+      "tagline": "Ventes et stock",
+      "description": "Caisse, stock par taille et couleur, équipe de la boutique et rapports de ventes."
+    },
+    "perfume": {
+      "name": "Parfumeries",
+      "tagline": "Produits et clients",
+      "description": "Caisse, stock des produits, équipe de la boutique et rapports de ventes."
+    },
+    "fitness": {
+      "name": "Salles de sport",
+      "tagline": "Abonnements et réservations",
+      "description": "Vos coachs et leur présence, les tâches, la caisse et les rapports."
+    },
+    "beauty": {
+      "name": "Salons de beauté",
+      "tagline": "Rendez-vous et prestations",
+      "description": "L’équipe du salon et sa présence, les tâches, la caisse pour les prestations et les rapports."
+    },
+    "retail": {
+      "name": "Commerce général",
+      "tagline": "Ventes et stock",
+      "description": "Caisse, stock et entrepôts, votre équipe et les rapports de ventes."
+    },
+    "other": {
+      "name": "Autre activité",
+      "tagline": "Un système souple et personnalisable",
+      "description": "Toutes les sections de 1to1OS Business : utilisez celles qui vous conviennent."
+    },
+    "subtype": {
+      "clinic": {
+        "name": "Cabinet médical",
+        "description": "Un ou plusieurs médecins dans un cabinet"
+      },
+      "medical_center": {
+        "name": "Centre médical",
+        "description": "Plusieurs spécialités et services"
+      }
+    }
   }
 }

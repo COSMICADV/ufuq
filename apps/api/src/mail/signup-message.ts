@@ -43,8 +43,23 @@ export interface SignupRequestInput {
   readonly adminEmail: string;
   readonly adminPhone: string;
   readonly employeeCountRange: string;
+  readonly businessActivity?: string | null;
+  readonly businessSubtype?: string | null;
   readonly requestedAt: Date;
 }
+
+const ACTIVITY_LABELS: Readonly<Record<string, string>> = {
+  medical: 'Medical / القطاع الطبي',
+  food: 'Restaurants & Cafés / مطاعم وكافيهات',
+  clothing: 'Clothing stores / محلات ملابس',
+  perfume: 'Perfume stores / محلات عطور',
+  fitness: 'Fitness centers / مراكز رياضية',
+  beauty: 'Beauty salons / صالونات تجميل',
+  retail: 'General retail / تجارة عامة',
+  other: 'Other / نشاط آخر',
+  clinic: "Doctor's clinic / عيادة دكتور",
+  medical_center: 'Medical center / مركز طبي',
+};
 
 /** `/en/owner#key=…&request=…` on the web origin. */
 export function ownerReviewLink(
@@ -68,6 +83,17 @@ export function buildSignupRequestMessage(input: SignupRequestInput): MailMessag
     ['Email / البريد', input.adminEmail],
     ['Phone / الهاتف', input.adminPhone],
     ['Employees / عدد الموظفين', input.employeeCountRange],
+    ...(input.businessActivity
+      ? ([
+          [
+            'Activity / النشاط',
+            [input.businessActivity, input.businessSubtype]
+              .filter((v): v is string => Boolean(v))
+              .map((v) => ACTIVITY_LABELS[v] ?? v)
+              .join(' — '),
+          ],
+        ] as [string, string][])
+      : []),
     [
       'Requested / وقت الطلب',
       input.requestedAt.toISOString().replace('T', ' ').slice(0, 16) + ' UTC',

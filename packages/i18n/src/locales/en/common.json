@@ -3032,5 +3032,67 @@
       "future": "The date is in the future.",
       "load": "Could not load your vehicles."
     }
+  },
+  "activity": {
+    "title": "Choose Your Business Activity",
+    "subtitle": "One system tailored to your business",
+    "pick_hint": "Choose your activity and we will set up your workspace with the sections that fit it.",
+    "continue": "Continue",
+    "back": "Back",
+    "modules_label": "Your workspace starts with:",
+    "your_activity": "Your activity",
+    "your_activity_optional": "Your activity (optional)",
+    "change": "Change",
+    "medical": {
+      "name": "Medical",
+      "tagline": "Clinics and medical centers",
+      "description": "Your clinic or center team and attendance, tasks, medical supplies in stock, and reports — in one system.",
+      "subtype_question": "What kind of medical practice is it?"
+    },
+    "food": {
+      "name": "Restaurants & Cafés",
+      "tagline": "Orders and tables",
+      "description": "Point of sale for orders, ingredient stock, team shifts, and daily reports."
+    },
+    "clothing": {
+      "name": "Clothing Stores",
+      "tagline": "Sales and stock",
+      "description": "Point of sale, stock by size and colour, your store team, and sales reports."
+    },
+    "perfume": {
+      "name": "Perfume Stores",
+      "tagline": "Products and customers",
+      "description": "Point of sale, product stock, your store team, and sales reports."
+    },
+    "fitness": {
+      "name": "Fitness Centers",
+      "tagline": "Memberships and bookings",
+      "description": "Your trainers and their attendance, tasks, point of sale, and reports."
+    },
+    "beauty": {
+      "name": "Beauty Salons",
+      "tagline": "Appointments and services",
+      "description": "Your salon team and attendance, tasks, point of sale for services, and reports."
+    },
+    "retail": {
+      "name": "General Retail",
+      "tagline": "Sales and stock",
+      "description": "Point of sale, stock and warehouses, your team, and sales reports."
+    },
+    "other": {
+      "name": "Other Business",
+      "tagline": "A flexible, customisable system",
+      "description": "Every 1to1OS Business section, so you use what fits your work."
+    },
+    "subtype": {
+      "clinic": {
+        "name": "Doctor's Clinic",
+        "description": "One or more doctors in a clinic"
+      },
+      "medical_center": {
+        "name": "Medical Center",
+        "description": "Several specialties and departments"
+      }
+    }
   }
 }

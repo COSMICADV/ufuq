@@ -22,6 +22,10 @@ const phoneInput = ({ value }: { value: unknown }): unknown =>
 // Reject controls/header injection; user prose is escaped at its output boundary.
 // eslint-disable-next-line no-control-regex -- refuse control characters in public fields
 const singleLine = /^[^\x00-\x1f\x7f<>]+$/u;
+/** The activities on the Business page; the `companies_business_activity_check` constraint lists the same. */
+export const BUSINESS_ACTIVITIES = ['medical', 'food', 'clothing', 'perfume', 'fitness', 'beauty', 'retail', 'other'] as const;
+export type BusinessActivity = (typeof BUSINESS_ACTIVITIES)[number];
+
 export class PublicSubmissionDto {
   @IsOptional() @IsString() @MaxLength(0) website?: string;
   @IsInt() @Min(0) started_at!: number;
@@ -54,6 +58,10 @@ export class RegisterDto extends PublicSubmissionDto {
   phone!: string;
   @IsIn(['1-10', '11-50', '51-200', '201+']) employee_count_range!: string;
   @IsString() @Length(MIN_PASSWORD_LENGTH, 200) password!: string;
+  /** Chosen on the Business page ("Choose your business activity"); optional for direct sign-ups. */
+  @IsOptional() @IsIn(BUSINESS_ACTIVITIES) business_activity?: BusinessActivity;
+  /** Medical only: a doctor's clinic or a medical center. */
+  @IsOptional() @IsIn(['clinic', 'medical_center']) business_subtype?: 'clinic' | 'medical_center';
 }
 /** 1to1OS Personal sign-up: one person, no company details. */
 export class RegisterPersonalDto extends PublicSubmissionDto {

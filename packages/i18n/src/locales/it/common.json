@@ -3032,5 +3032,67 @@
       "future": "La data è nel futuro.",
       "load": "Impossibile caricare i veicoli."
     }
+  },
+  "activity": {
+    "title": "Scegli la tua attività",
+    "subtitle": "Un unico sistema adatto alla tua attività",
+    "pick_hint": "Scegli la tua attività: prepareremo il tuo spazio con le sezioni adatte.",
+    "continue": "Continua",
+    "back": "Indietro",
+    "modules_label": "Il tuo spazio parte con:",
+    "your_activity": "La tua attività",
+    "your_activity_optional": "La tua attività (facoltativo)",
+    "change": "Cambia",
+    "medical": {
+      "name": "Settore medico",
+      "tagline": "Ambulatori e centri medici",
+      "description": "Il team dell’ambulatorio o del centro e le presenze, le attività, le forniture mediche in magazzino e i report — in un unico sistema.",
+      "subtype_question": "Che tipo di struttura medica è?"
+    },
+    "food": {
+      "name": "Ristoranti e caffè",
+      "tagline": "Ordini e tavoli",
+      "description": "Cassa per gli ordini, magazzino degli ingredienti, turni del team e report giornalieri."
+    },
+    "clothing": {
+      "name": "Negozi di abbigliamento",
+      "tagline": "Vendite e magazzino",
+      "description": "Cassa, magazzino per taglia e colore, team del negozio e report delle vendite."
+    },
+    "perfume": {
+      "name": "Profumerie",
+      "tagline": "Prodotti e clienti",
+      "description": "Cassa, magazzino dei prodotti, team del negozio e report delle vendite."
+    },
+    "fitness": {
+      "name": "Centri fitness",
+      "tagline": "Abbonamenti e prenotazioni",
+      "description": "I tuoi istruttori e le loro presenze, le attività, la cassa e i report."
+    },
+    "beauty": {
+      "name": "Saloni di bellezza",
+      "tagline": "Appuntamenti e servizi",
+      "description": "Il team del salone e le presenze, le attività, la cassa per i servizi e i report."
+    },
+    "retail": {
+      "name": "Commercio generale",
+      "tagline": "Vendite e magazzino",
+      "description": "Cassa, magazzino e depositi, il tuo team e i report delle vendite."
+    },
+    "other": {
+      "name": "Altra attività",
+      "tagline": "Un sistema flessibile e personalizzabile",
+      "description": "Tutte le sezioni di 1to1OS Business: usa quelle adatte al tuo lavoro."
+    },
+    "subtype": {
+      "clinic": {
+        "name": "Studio medico",
+        "description": "Uno o più medici in uno studio"
+      },
+      "medical_center": {
+        "name": "Centro medico",
+        "description": "Più specialità e reparti"
+      }
+    }
   }
 }

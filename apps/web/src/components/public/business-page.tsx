@@ -7,6 +7,7 @@ import { languageNames } from '../../lib/language-names';
 import { ThemePicker } from '../theme-picker';
 import { publicPath } from '../../lib/public-content';
 
+import { BusinessActivities } from './business-activities';
 import { SectionArt } from './business-art';
 import type { SectionKey } from './business-art';
 
@@ -104,6 +105,9 @@ export function BusinessPage({ locale }: { readonly locale: Locale }): React.JSX
             ))}
           </ul>
         </section>
+
+        {/* Right after the features: the activity, carried into sign-up. */}
+        <BusinessActivities locale={locale} registerPath={paths.subscribe} />
       </main>
 
       <footer className="home-footer biz-footer">

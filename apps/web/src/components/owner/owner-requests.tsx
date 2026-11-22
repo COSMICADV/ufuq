@@ -23,6 +23,8 @@ interface SignupRequest {
   readonly company_id: string;
   readonly company_name: string;
   readonly employee_count_range: string | null;
+  readonly business_activity?: string | null;
+  readonly business_subtype?: string | null;
   readonly status: 'pending_approval' | 'active' | 'rejected';
   readonly created_at: string;
   readonly reviewed_at: string | null;
@@ -201,6 +203,16 @@ export function OwnerRequests({ locale }: { readonly locale: Locale }): React.JS
         <div>
           <dt>{t('owner.employees')}</dt>
           <dd dir="ltr">{row.employee_count_range ?? '—'}</dd>
+        </div>
+        <div>
+          <dt>{t('activity.your_activity')}</dt>
+          <dd>
+            {row.business_activity
+              ? `${t(`activity.${row.business_activity}.name`)}${
+                  row.business_subtype ? ` — ${t(`activity.subtype.${row.business_subtype}.name`)}` : ''
+                }`
+              : '—'}
+          </dd>
         </div>
         <div>
           <dt>{t('owner.requested_at')}</dt>
