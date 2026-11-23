@@ -9,6 +9,7 @@
  * Nobody but the company admin has any medical access until granted.
  * `visits.clinical` (the clinical notes) is separate from `visits.view` (the
  * schedule), so reception can book visits without reading diagnoses.
+ * `queue.manage` checks patients in and gives them their number.
  */
 
 export const MEDICAL_PERMISSIONS = [
@@ -17,6 +18,7 @@ export const MEDICAL_PERMISSIONS = [
   'visits.view',
   'visits.manage',
   'visits.clinical',
+  'queue.manage',
   'documents.view',
   'documents.upload',
   'documents.edit',
@@ -77,6 +79,7 @@ export const ROLE_PRESETS: Readonly<Record<ClinicalRoleKey, readonly (readonly [
     ['patients.manage', 'all'],
     ['visits.view', 'all'],
     ['visits.manage', 'all'],
+    ['queue.manage', 'all'],
   ],
   finance: [['patients.view', 'all']],
   administration: [['patients.view', 'all']],

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import type { Locale } from '@ufuq/i18n';
 
 import type { AuthContext } from '../auth/auth-context.js';
@@ -13,6 +13,9 @@ import { resolvePage } from '../company-structure/dto/pagination.dto.js';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- NestJS reads DTO classes via emitDecoratorMetadata at runtime; `import type` would erase them from `design:paramtypes`.
 import {
   CareTeamDto,
+  CheckInDto,
+  NextPatientDto,
+  QueueQueryDto,
   CreatePatientDto,
   CreateVisitDto,
   ListPatientsQueryDto,
@@ -27,6 +30,7 @@ import type {
   PatientDetailPayload,
   PatientPayload,
   PersonRef,
+  QueuePayload,
   StaffListPayload,
   StaffPayload,
   VisitPayload,
@@ -185,5 +189,70 @@ export class MedicalController {
     @RequestLocale() locale: Locale,
   ): Promise<SingleResponse<VisitPayload>> {
     return single(await this.medical.updateVisit(ctx, id, dto, origin), { locale });
+  }
+
+  // Reception (phase C1)
+
+  @Get('queue')
+  async queue(
+    @CurrentUser() ctx: AuthContext,
+    @Query() query: QueueQueryDto,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<QueuePayload>> {
+    return single(await this.medical.queue(ctx, query.date, query.doctor_id), { locale });
+  }
+
+  @Post('queue/check-in')
+  async checkIn(
+    @CurrentUser() ctx: AuthContext,
+    @Body() dto: CheckInDto,
+    @RequestContext() origin: RequestOrigin,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<VisitPayload>> {
+    return single(await this.medical.checkIn(ctx, dto, origin), { locale });
+  }
+
+  @Post('queue/next')
+  @HttpCode(200)
+  async next(
+    @CurrentUser() ctx: AuthContext,
+    @Body() dto: NextPatientDto,
+    @RequestContext() origin: RequestOrigin,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<VisitPayload | null>> {
+    return single(await this.medical.next(ctx, dto.doctor_id, origin), { locale });
+  }
+
+  @Post('visits/:id/start')
+  @HttpCode(200)
+  async start(
+    @CurrentUser() ctx: AuthContext,
+    @Param('id', uuid) id: string,
+    @RequestContext() origin: RequestOrigin,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<VisitPayload>> {
+    return single(await this.medical.advance(ctx, id, 'in_progress', origin), { locale });
+  }
+
+  @Post('visits/:id/finish')
+  @HttpCode(200)
+  async finish(
+    @CurrentUser() ctx: AuthContext,
+    @Param('id', uuid) id: string,
+    @RequestContext() origin: RequestOrigin,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<VisitPayload>> {
+    return single(await this.medical.advance(ctx, id, 'completed', origin), { locale });
+  }
+
+  @Post('visits/:id/no-show')
+  @HttpCode(200)
+  async noShow(
+    @CurrentUser() ctx: AuthContext,
+    @Param('id', uuid) id: string,
+    @RequestContext() origin: RequestOrigin,
+    @RequestLocale() locale: Locale,
+  ): Promise<SingleResponse<VisitPayload>> {
+    return single(await this.medical.advance(ctx, id, 'no_show', origin), { locale });
   }
 }

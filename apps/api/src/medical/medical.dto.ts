@@ -115,7 +115,7 @@ export class CareTeamDto {
   employee_ids!: string[];
 }
 
-export const VISIT_STATUSES = ['scheduled', 'in_progress', 'completed', 'cancelled'] as const;
+export const VISIT_STATUSES = ['scheduled', 'waiting', 'in_progress', 'completed', 'cancelled', 'no_show'] as const;
 
 class VisitFields {
   @IsOptional()
@@ -181,4 +181,42 @@ export class ListVisitsQueryDto {
   @IsOptional()
   @IsIn(['true', 'false'])
   mine?: 'true' | 'false';
+}
+
+export class QueueQueryDto {
+  @IsOptional()
+  @IsCalendarDate()
+  date?: string;
+
+  @IsOptional()
+  @IsUUID()
+  doctor_id?: string;
+}
+
+export class CheckInDto {
+  @IsUUID()
+  patient_id!: string;
+
+  @IsUUID()
+  doctor_id!: string;
+
+  /** A scheduled appointment of this patient being checked in, instead of a walk-in. */
+  @IsOptional()
+  @IsUUID()
+  visit_id?: string;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @TrimmedText()
+  @IsString()
+  @MaxLength(300)
+  @NoControlCharacters()
+  reason?: string | null;
+}
+
+export class NextPatientDto {
+  /** Whose queue; defaults to the caller's own. */
+  @IsOptional()
+  @IsUUID()
+  doctor_id?: string;
 }

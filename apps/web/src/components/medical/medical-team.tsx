@@ -11,6 +11,7 @@ import { Badge, Button, Card, DataTable, Field, Input, Modal, Select } from '../
 import { Cell, ErrorState, LoadingState, Ltr } from '../settings/screen-states';
 import { useResource } from '../settings/use-resource';
 
+import { DocumentCategories } from './document-categories';
 import { MedicalPage, MedicalUnavailable } from './medical-parts';
 
 function accessSummary(t: Translator, member: StaffMember): string {
@@ -98,6 +99,7 @@ export function MedicalTeam({ locale }: { readonly locale: Locale }): React.JSX.
           />
         </Card>
       ) : null}
+      {me.state.value.permissions['categories.manage'] ? <DocumentCategories locale={locale} /> : null}
       {editing && list ? (
         <StaffDialog
           locale={locale}

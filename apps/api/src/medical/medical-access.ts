@@ -91,3 +91,21 @@ export async function reachablePatient(
   if (!row) throw notFound();
   return row;
 }
+
+/** Whether a permission reaches this patient (scope "all", or the patient is the employee's own). */
+export async function reaches(
+  tx: TenantClient,
+  access: MedicalAccess,
+  key: MedicalPermissionKey,
+  patientId: string,
+): Promise<boolean> {
+  if (!access.enabled) return false;
+  const scope = access.grants.get(key);
+  if (!scope) return false;
+  // Even "all" reaches only a patient of this company (row-level security decides that).
+  const row = await tx.patient.findFirst({
+    where: { id: patientId, ...(scope === 'all' ? {} : assignedPatients(access.employeeId)) },
+    select: { id: true },
+  });
+  return row !== null;
+}

@@ -18,17 +18,19 @@ import { AuditDispatcher } from '../auth/audit-dispatcher.js';
 import type { AuthContext } from '../auth/auth-context.js';
 import { PRISMA_CLIENT } from '../common/db.tokens.js';
 import type { RequestOrigin } from '../common/request-context.js';
-import { fieldError, isUniqueViolation, notFound, TenantScopedService } from '../company-structure/tenant-scoped.service.js';
+import { fieldError, notFound, TenantScopedService } from '../company-structure/tenant-scoped.service.js';
 
 import {
   patientScope,
   reachablePatient,
+  reaches,
   requireGrant,
   resolveAccess,
   visitScope,
 } from './medical-access.js';
 import type { MedicalAccess } from './medical-access.js';
-import type { CareTeamDto, CreatePatientDto, CreateVisitDto, UpdatePatientDto, UpdateStaffDto, UpdateVisitDto } from './medical.dto.js';
+import type { CareTeamDto, CheckInDto, CreatePatientDto, CreateVisitDto, UpdatePatientDto, UpdateStaffDto, UpdateVisitDto } from './medical.dto.js';
+import { calendarDateIn, formatCalendarDate, instantAt, parseCalendarDate } from '../attendance/zoned-time.js';
 import { MEDICAL_PERMISSIONS, nextFileNumber, ROLE_PRESETS } from './medical-rules.js';
 import type { ClinicalRoleKey, MedicalPermissionKey, MedicalScope } from './medical-rules.js';
 
@@ -84,6 +86,9 @@ export interface PatientDetailPayload extends PatientPayload {
     readonly manage_visits: boolean;
     readonly clinical: boolean;
     readonly documents: boolean;
+    readonly labs: boolean;
+    readonly imaging: boolean;
+    readonly upload_documents: boolean;
   };
 }
 
@@ -95,7 +100,20 @@ export interface VisitPayload {
   readonly reason: string | null;
   /** Absent (not null) when the caller may not read clinical notes. */
   readonly notes?: string | null;
-  readonly status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  readonly status: 'scheduled' | 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
+  readonly queue_number: number | null;
+  readonly checked_in_at: string | null;
+  readonly called_at: string | null;
+  readonly finished_at: string | null;
+}
+
+export interface QueuePayload {
+  /** The clinic's calendar day (company time zone). */
+  readonly date: string;
+  readonly time_zone: string;
+  readonly doctors: readonly PersonRef[];
+  readonly visits: readonly VisitPayload[];
+  readonly can_check_in: boolean;
 }
 
 interface EmployeeRow {
@@ -353,31 +371,24 @@ export class MedicalService extends TenantScopedService {
       }
       if (dto.primary_doctor_id) await this.requireStaff(tx, dto.primary_doctor_id, 'primary_doctor_id');
       const id = generateId();
-      // Two receptionists saving at once can race for a number: retry on the unique index.
-      for (let attempt = 0; ; attempt += 1) {
-        const highest = await tx.patient.findFirst({ orderBy: { fileNumber: 'desc' }, select: { fileNumber: true } });
-        const fileNumber = nextFileNumber(highest?.fileNumber ?? null);
-        try {
-          await tx.patient.create({
-            data: {
-              id,
-              companyId: ctx.companyId,
-              fileNumber,
-              fullName: dto.full_name,
-              dateOfBirth: dto.date_of_birth ? new Date(`${dto.date_of_birth}T00:00:00Z`) : null,
-              gender: dto.gender ?? null,
-              phone: dto.phone || null,
-              nationalId: dto.national_id || null,
-              notes: dto.notes || null,
-              primaryDoctorId: dto.primary_doctor_id ?? null,
-              createdBy: ctx.userId,
-            },
-          });
-          break;
-        } catch (error) {
-          if (!isUniqueViolation(error) || attempt >= 2) throw error;
-        }
-      }
+      // One registration at a time per company, so two receptionists never take the same file number.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`patient-file:${ctx.companyId}`}, 0))`;
+      const highest = await tx.patient.findFirst({ orderBy: { fileNumber: 'desc' }, select: { fileNumber: true } });
+      await tx.patient.create({
+        data: {
+          id,
+          companyId: ctx.companyId,
+          fileNumber: nextFileNumber(highest?.fileNumber ?? null),
+          fullName: dto.full_name,
+          dateOfBirth: dto.date_of_birth ? new Date(`${dto.date_of_birth}T00:00:00Z`) : null,
+          gender: dto.gender ?? null,
+          phone: dto.phone || null,
+          nationalId: dto.national_id || null,
+          notes: dto.notes || null,
+          primaryDoctorId: dto.primary_doctor_id ?? null,
+          createdBy: ctx.userId,
+        },
+      });
       // An "assigned" creator joins the care team, or they could not open the file they just made.
       if (scope !== 'all' && access.employeeId && dto.primary_doctor_id !== access.employeeId) {
         await tx.patientCareTeam.create({ data: { patientId: id, employeeId: access.employeeId, companyId: ctx.companyId } });
@@ -611,6 +622,171 @@ export class MedicalService extends TenantScopedService {
     });
   }
 
+
+  // -------------------------------------------------------------------------
+  // Reception: the day's queue (phase C1)
+  // -------------------------------------------------------------------------
+
+  /** The day's queue: checked-in patients by number, plus that day's appointments. */
+  queue(ctx: AuthContext, date: string | undefined, doctorId: string | undefined): Promise<QueuePayload> {
+    return this.tenant(ctx, async (tx) => {
+      const access = await resolveAccess(tx, ctx);
+      const scope = requireGrant(access, 'visits.view');
+      const timeZone = await this.timeZone(tx, ctx);
+      const day = date ? parseCalendarDate(date) : calendarDateIn(new Date(), timeZone);
+      if (!day) throw fieldError({ date: ['invalid'] });
+      const iso = formatCalendarDate(day);
+      const start = instantAt(day, 0, timeZone);
+      const end = instantAt(day, 24 * 60, timeZone);
+      // An "own patients" doctor's queue is theirs alone, whoever else their patients see.
+      const whose = scope === 'all' ? doctorId : (access.employeeId ?? '00000000-0000-0000-0000-000000000000');
+      const rows = await tx.medicalVisit.findMany({
+        where: {
+          AND: [
+            visitScope(access, scope),
+            whose ? { doctorId: whose } : {},
+            {
+              OR: [
+                { queueDate: new Date(`${iso}T00:00:00Z`) },
+                { queueNumber: null, status: 'scheduled', visitAt: { gte: start, lt: end } },
+              ],
+            },
+          ],
+        },
+        include: VISIT_INCLUDE,
+        orderBy: [{ queueNumber: { sort: 'asc', nulls: 'last' } }, { visitAt: 'asc' }],
+        take: 500,
+      });
+      const doctors = await tx.employee.findMany({
+        where: { deletedAt: null, status: 'active', medicalStaff: { is: { clinicalRole: 'doctor' } } },
+        select: PERSON_SELECT,
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+      });
+      return {
+        date: iso,
+        time_zone: timeZone,
+        doctors: doctors.map(person),
+        visits: await Promise.all(rows.map((row) => this.visitPayload(tx, access, row))),
+        can_check_in: access.grants.has('queue.manage'),
+      };
+    });
+  }
+
+  /** Check a patient in for a doctor: the next number in that doctor's queue today. */
+  checkIn(ctx: AuthContext, dto: CheckInDto, origin: RequestOrigin): Promise<VisitPayload> {
+    return this.tenant(ctx, async (tx) => {
+      const access = await resolveAccess(tx, ctx);
+      requireGrant(access, 'queue.manage');
+      const scope = requireGrant(access, 'patients.view');
+      const patient = await reachablePatient(tx, access, scope, dto.patient_id);
+      if (patient.archivedAt) throw fieldError({ patient: ['not_active'] });
+      await this.requireStaff(tx, dto.doctor_id, 'doctor_id');
+      const timeZone = await this.timeZone(tx, ctx);
+      const now = new Date();
+      const queueDate = new Date(`${formatCalendarDate(calendarDateIn(now, timeZone))}T00:00:00Z`);
+      if (dto.visit_id) {
+        const visit = await tx.medicalVisit.findFirst({ where: { id: dto.visit_id, patientId: dto.patient_id }, select: { status: true } });
+        if (!visit) throw fieldError({ visit_id: ['not_found'] });
+        if (visit.status !== 'scheduled') throw fieldError({ visit_id: ['not_active'] });
+      }
+      const already = await tx.medicalVisit.findFirst({
+        where: { patientId: dto.patient_id, doctorId: dto.doctor_id, queueDate, status: { in: ['waiting', 'in_progress'] } },
+        select: { id: true },
+      });
+      if (already) throw fieldError({ patient_id: ['already_taken'] });
+      // One check-in at a time per doctor and day, so two receptionists never take the same number.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`queue:${ctx.companyId}:${dto.doctor_id}:${queueDate.toISOString()}`}, 0))`;
+      const last = await tx.medicalVisit.aggregate({ where: { doctorId: dto.doctor_id, queueDate }, _max: { queueNumber: true } });
+      const queueNumber = (last._max.queueNumber ?? 0) + 1;
+      const fields = {
+        doctorId: dto.doctor_id,
+        status: 'waiting' as const,
+        queueDate,
+        queueNumber,
+        checkedInAt: now,
+        ...(dto.reason !== undefined ? { reason: dto.reason || null } : {}),
+      };
+      const row = dto.visit_id
+        ? await tx.medicalVisit.update({ where: { id: dto.visit_id }, data: fields, include: VISIT_INCLUDE })
+        : await tx.medicalVisit.create({
+            data: { id: generateId(), companyId: ctx.companyId, patientId: dto.patient_id, visitAt: now, createdBy: ctx.userId, ...fields },
+            include: VISIT_INCLUDE,
+          });
+      await this.audit.record(tx, {
+        companyId: ctx.companyId,
+        userId: ctx.userId,
+        action: 'MEDICAL_VISIT_CHECKED_IN',
+        entityType: 'medical_visit',
+        entityId: row.id,
+        newValues: { patient_id: dto.patient_id, doctor_id: dto.doctor_id, queue_number: queueNumber },
+        ipAddress: origin.ipAddress,
+        userAgent: origin.userAgent,
+      });
+      return this.visitPayload(tx, access, row);
+    });
+  }
+
+  /** Move a visit along the queue: waiting → in_progress → completed, or → no_show. */
+  advance(ctx: AuthContext, id: string, to: 'in_progress' | 'completed' | 'no_show', origin: RequestOrigin): Promise<VisitPayload> {
+    return this.tenant(ctx, async (tx) => {
+      const access = await resolveAccess(tx, ctx);
+      const scope = requireGrant(access, 'visits.manage');
+      const current = await tx.medicalVisit.findFirst({ where: { id, ...visitScope(access, scope) }, select: { status: true } });
+      if (!current) throw notFound();
+      const allowed: Readonly<Record<typeof to, readonly string[]>> = {
+        in_progress: ['waiting', 'scheduled'],
+        completed: ['in_progress', 'waiting'],
+        no_show: ['waiting', 'scheduled'],
+      };
+      if (!allowed[to].includes(current.status)) throw fieldError({ status: ['invalid'] });
+      const now = new Date();
+      const row = await tx.medicalVisit.update({
+        where: { id },
+        data: {
+          status: to,
+          ...(to === 'in_progress' ? { calledAt: now } : {}),
+          ...(to === 'completed' ? { finishedAt: now } : {}),
+        },
+        include: VISIT_INCLUDE,
+      });
+      await this.audit.record(tx, {
+        companyId: ctx.companyId,
+        userId: ctx.userId,
+        action: 'MEDICAL_VISIT_UPDATED',
+        entityType: 'medical_visit',
+        entityId: id,
+        newValues: { fields: ['status'], status: to },
+        ipAddress: origin.ipAddress,
+        userAgent: origin.userAgent,
+      });
+      return this.visitPayload(tx, access, row);
+    });
+  }
+
+  /** The doctor calls the next waiting patient (lowest number today) — or null when nobody waits. */
+  next(ctx: AuthContext, doctorId: string | undefined, origin: RequestOrigin): Promise<VisitPayload | null> {
+    return this.tenant(ctx, async (tx) => {
+      const access = await resolveAccess(tx, ctx);
+      const scope = requireGrant(access, 'visits.manage');
+      const doctor = doctorId ?? access.employeeId;
+      if (!doctor) throw fieldError({ doctor_id: ['required'] });
+      if (scope !== 'all' && doctor !== access.employeeId) throw fieldError({ doctor_id: ['not_allowed'] });
+      const timeZone = await this.timeZone(tx, ctx);
+      const queueDate = new Date(`${formatCalendarDate(calendarDateIn(new Date(), timeZone))}T00:00:00Z`);
+      const waiting = await tx.medicalVisit.findFirst({
+        where: { doctorId: doctor, queueDate, status: 'waiting' },
+        orderBy: { queueNumber: 'asc' },
+        select: { id: true },
+      });
+      return waiting ? { id: waiting.id } : null;
+    }).then((found) => (found ? this.advance(ctx, found.id, 'in_progress', origin) : null));
+  }
+
+  private async timeZone(tx: TenantClient, ctx: AuthContext): Promise<string> {
+    const company = await tx.company.findUnique({ where: { id: ctx.companyId }, select: { timezone: true } });
+    return company?.timezone ?? 'Africa/Cairo';
+  }
+
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
@@ -630,12 +806,8 @@ export class MedicalService extends TenantScopedService {
     if (!row) throw fieldError({ [field]: ['not_found'] });
   }
 
-  private async reaches(tx: TenantClient, access: MedicalAccess, key: MedicalPermissionKey, patientId: string): Promise<boolean> {
-    const scope = access.grants.get(key);
-    if (!scope) return false;
-    if (scope === 'all') return true;
-    const row = await tx.patient.findFirst({ where: { id: patientId, ...patientScope(access, scope) }, select: { id: true } });
-    return row !== null;
+  private reaches(tx: TenantClient, access: MedicalAccess, key: MedicalPermissionKey, patientId: string): Promise<boolean> {
+    return reaches(tx, access, key, patientId);
   }
 
   private reachesClinical(tx: TenantClient, access: MedicalAccess, patientId: string): Promise<boolean> {
@@ -650,6 +822,10 @@ export class MedicalService extends TenantScopedService {
       visit_at: row.visitAt.toISOString(),
       reason: row.reason,
       status: row.status,
+      queue_number: row.queueNumber,
+      checked_in_at: row.checkedInAt?.toISOString() ?? null,
+      called_at: row.calledAt?.toISOString() ?? null,
+      finished_at: row.finishedAt?.toISOString() ?? null,
     };
     const clinical = await this.reachesClinical(tx, access, row.patientId);
     return clinical ? { ...base, notes: row.notes } : base;
@@ -664,12 +840,15 @@ export class MedicalService extends TenantScopedService {
         _count: { select: { visits: true } },
       },
     });
-    const [manage, viewVisits, manageVisits, clinical, documents] = await Promise.all([
+    const [manage, viewVisits, manageVisits, clinical, documents, labs, imaging, upload] = await Promise.all([
       this.reaches(tx, access, 'patients.manage', id),
       this.reaches(tx, access, 'visits.view', id),
       this.reaches(tx, access, 'visits.manage', id),
       this.reaches(tx, access, 'visits.clinical', id),
       this.reaches(tx, access, 'documents.view', id),
+      this.reaches(tx, access, 'labs.view', id),
+      this.reaches(tx, access, 'imaging.view', id),
+      this.reaches(tx, access, 'documents.upload', id),
     ]);
     return {
       ...patientPayload(row),
@@ -684,6 +863,9 @@ export class MedicalService extends TenantScopedService {
         manage_visits: manageVisits,
         clinical,
         documents,
+        labs,
+        imaging,
+        upload_documents: upload,
       },
     };
   }

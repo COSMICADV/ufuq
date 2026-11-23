@@ -325,6 +325,12 @@ enum AuditAction {
   MEDICAL_VISIT_UPDATED                @map("medical_visit.updated")
   BUSINESS_IDENTITY_UPDATED            @map("business_identity.updated")
   BUSINESS_IDENTITY_LOGO_CHANGED       @map("business_identity.logo_changed")
+  MEDICAL_DOCUMENT_CREATED             @map("medical_document.created")
+  MEDICAL_DOCUMENT_UPDATED             @map("medical_document.updated")
+  MEDICAL_DOCUMENT_ARCHIVED            @map("medical_document.archived")
+  MEDICAL_DOCUMENT_DELETED             @map("medical_document.deleted")
+  MEDICAL_CATEGORY_CHANGED             @map("medical_category.changed")
+  MEDICAL_VISIT_CHECKED_IN             @map("medical_visit.checked_in")
   PASSWORD_SET_BY_ADMIN                @map("password.set_by_admin")
   SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
   EMPLOYEE_CREATED                     @map("employee.created")
@@ -508,6 +514,9 @@ model Company {
   qrFiles             QrFile[]
 
   businessIdentity BusinessIdentity?
+
+  medicalDocCategories MedicalDocumentCategory[]
+  medicalDocuments     MedicalDocument[]
 
   @@index([status])
   @@map("companies")
@@ -884,6 +893,10 @@ model User {
   visitsCreated   MedicalVisit[]      @relation("visit_created_by")
 
   identitiesUpdated BusinessIdentity[] @relation("identity_updated_by")
+
+  medicalCategoriesCreated MedicalDocumentCategory[] @relation("medical_category_created_by")
+  medicalDocumentsCreated  MedicalDocument[]         @relation("medical_document_created_by")
+  medicalDocumentsUpdated  MedicalDocument[]         @relation("medical_document_updated_by")
 
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -2371,9 +2384,11 @@ enum PatientGender {
 
 enum MedicalVisitStatus {
   scheduled
+  waiting
   in_progress
   completed
   cancelled
+  no_show
 
   @@map("medical_visit_status")
 }
@@ -2433,6 +2448,8 @@ model Patient {
   primaryDoctor Employee?         @relation("patient_primary_doctor", fields: [primaryDoctorId], references: [id], onDelete: SetNull)
   creator       User              @relation("patient_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
 
+  documents MedicalDocument[]
+
   @@unique([companyId, fileNumber])
   @@index([companyId, archivedAt])
   @@index([primaryDoctorId])
@@ -2455,23 +2472,33 @@ model PatientCareTeam {
 }
 
 model MedicalVisit {
-  id        String             @id @db.Uuid
-  companyId String             @map("company_id") @db.Uuid
-  patientId String             @map("patient_id") @db.Uuid
-  doctorId  String?            @map("doctor_id") @db.Uuid
-  visitAt   DateTime           @map("visit_at") @db.Timestamptz(3)
-  reason    String?            @db.VarChar(300)
-  notes     String?            @db.VarChar(4000)
-  status    MedicalVisitStatus @default(scheduled)
-  createdBy String             @map("created_by") @db.Uuid
-  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id          String             @id @db.Uuid
+  companyId   String             @map("company_id") @db.Uuid
+  patientId   String             @map("patient_id") @db.Uuid
+  doctorId    String?            @map("doctor_id") @db.Uuid
+  visitAt     DateTime           @map("visit_at") @db.Timestamptz(3)
+  reason      String?            @db.VarChar(300)
+  notes       String?            @db.VarChar(4000)
+  status      MedicalVisitStatus @default(scheduled)
+  queueDate   DateTime?          @map("queue_date") @db.Date
+  queueNumber Int?               @map("queue_number")
+  checkedInAt DateTime?          @map("checked_in_at") @db.Timestamptz(3)
+  calledAt    DateTime?          @map("called_at") @db.Timestamptz(3)
+  finishedAt  DateTime?          @map("finished_at") @db.Timestamptz(3)
+  createdBy   String             @map("created_by") @db.Uuid
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   patient Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
   company Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   doctor  Employee? @relation("visit_doctor", fields: [doctorId], references: [id], onDelete: SetNull)
   creator User      @relation("visit_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
 
+  documents MedicalDocument[]
+
+  @@unique([id, patientId])
+  @@unique([companyId, doctorId, queueDate, queueNumber], map: "medical_visits_queue_key")
+  @@index([companyId, queueDate])
   @@index([patientId, visitAt])
   @@index([companyId, visitAt])
   @@index([doctorId])
@@ -2514,4 +2541,59 @@ model BusinessIdentity {
   updater User?   @relation("identity_updated_by", fields: [updatedBy], references: [id], onDelete: SetNull)
 
   @@map("business_identities")
+}
+
+// ---------------------------------------------------------------------------
+// 1to1OS Business — Medical documents (migration 20261129000000_medical_documents)
+// ---------------------------------------------------------------------------
+
+/// A company's own document category; `kind` is document, lab or imaging.
+model MedicalDocumentCategory {
+  id         String    @id @db.Uuid
+  companyId  String    @map("company_id") @db.Uuid
+  nameAr     String    @map("name_ar") @db.VarChar(80)
+  nameEn     String    @map("name_en") @db.VarChar(80)
+  kind       String    @db.VarChar(10)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdBy  String    @map("created_by") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator   User              @relation("medical_category_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+  documents MedicalDocument[]
+
+  @@index([companyId])
+  @@map("medical_document_categories")
+}
+
+model MedicalDocument {
+  id               String    @id @db.Uuid
+  companyId        String    @map("company_id") @db.Uuid
+  patientId        String    @map("patient_id") @db.Uuid
+  visitId          String?   @map("visit_id") @db.Uuid
+  categoryKey      String?   @map("category_key") @db.VarChar(30)
+  customCategoryId String?   @map("custom_category_id") @db.Uuid
+  title            String    @db.VarChar(200)
+  documentDate     DateTime? @map("document_date") @db.Date
+  notes            String?   @db.VarChar(2000)
+  source           String    @default("upload") @db.VarChar(10)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz(3)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdBy        String    @map("created_by") @db.Uuid
+  updatedBy        String?   @map("updated_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company        Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  patient        Patient                  @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  visit          MedicalVisit?            @relation(fields: [visitId, patientId], references: [id, patientId], onDelete: Restrict, map: "medical_documents_visit_patient_fkey")
+  customCategory MedicalDocumentCategory? @relation(fields: [customCategoryId], references: [id], onDelete: Restrict)
+  creator        User                     @relation("medical_document_created_by", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater        User?                    @relation("medical_document_updated_by", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@index([patientId, deletedAt, createdAt], map: "medical_documents_patient_id_idx")
+  @@index([companyId])
+  @@index([visitId])
+  @@map("medical_documents")
 }

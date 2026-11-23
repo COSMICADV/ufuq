@@ -535,3 +535,92 @@ describe('medical — isolation and audit', () => {
     expect(text).not.toContain('+20 100');
   });
 });
+
+describe('medical — reception queue (C1)', () => {
+  let p3 = '';
+  let first = '';
+
+  it('reception checks patients in: numbers per doctor, from 1', async () => {
+    const desk = await api(RECEPTION);
+    p3 = (await desk.post('/medical/patients').send({ full_name: 'Mariam Adel' })).body.data.id as string;
+    const a = await desk.post('/medical/queue/check-in').send({ patient_id: p1, doctor_id: doctor1, reason: 'Follow-up' });
+    expect(a.status).toBe(201);
+    expect(a.body.data).toMatchObject({ status: 'waiting', queue_number: 1 });
+    expect(a.body.data.checked_in_at).not.toBeNull();
+    first = a.body.data.id as string;
+    const b = await desk.post('/medical/queue/check-in').send({ patient_id: p2, doctor_id: doctor1 });
+    expect(b.body.data.queue_number).toBe(2);
+    const c = await desk.post('/medical/queue/check-in').send({ patient_id: p2, doctor_id: doctor2 });
+    expect(c.body.data.queue_number).toBe(1);
+  });
+
+  it('refuses a second check-in while waiting, and check-in without queue.manage', async () => {
+    const again = await (await api(RECEPTION)).post('/medical/queue/check-in').send({ patient_id: p1, doctor_id: doctor1 });
+    expect(again.status).toBe(422);
+    expect(again.body.error.fields.patient_id).toEqual(['already_taken']);
+    expect((await (await api(DOCTOR_1)).post('/medical/queue/check-in').send({ patient_id: p1, doctor_id: doctor2 })).status).toBe(403);
+    const notDoctor = await (await api(RECEPTION)).post('/medical/queue/check-in').send({ patient_id: p3, doctor_id: reception });
+    expect(notDoctor.status).toBe(422);
+  });
+
+  it('two check-ins at the same moment take different numbers', async () => {
+    const desk = await api(RECEPTION);
+    const desk2 = await api(RECEPTION);
+    const p4 = (await desk.post('/medical/patients').send({ full_name: 'Youssef Nabil' })).body.data.id as string;
+    const [x, y] = await Promise.all([
+      desk.post('/medical/queue/check-in').send({ patient_id: p3, doctor_id: doctor2 }),
+      desk2.post('/medical/queue/check-in').send({ patient_id: p4, doctor_id: doctor2 }),
+    ]);
+    expect([x.status, y.status]).toEqual([201, 201]);
+    expect([x.body.data.queue_number, y.body.data.queue_number].sort()).toEqual([2, 3]);
+  });
+
+  it('reception sees the whole day; a doctor sees their own queue', async () => {
+    const desk = await (await api(RECEPTION)).get('/medical/queue');
+    expect(desk.status).toBe(200);
+    expect(desk.body.data.can_check_in).toBe(true);
+    expect(desk.body.data.visits.filter((v: { queue_number: number | null }) => v.queue_number !== null)).toHaveLength(5);
+    expect(desk.body.data.visits[0]).not.toHaveProperty('notes');
+    const mine = await (await api(DOCTOR_1)).get('/medical/queue');
+    const doctors = new Set(mine.body.data.visits.map((v: { doctor: { id: string } | null }) => v.doctor?.id));
+    expect([...doctors]).toEqual([doctor1]);
+    expect(mine.body.data.can_check_in).toBe(false);
+    const other = await (await api(ADMIN_OTHER)).get('/medical/queue');
+    expect(other.body.data.visits).toEqual([]);
+  });
+
+  it('the doctor calls the next patient, finishes, and calls the next', async () => {
+    const doc = await api(DOCTOR_1);
+    const called = await doc.post('/medical/queue/next').send({});
+    expect(called.status).toBe(200);
+    expect(called.body.data).toMatchObject({ id: first, status: 'in_progress', queue_number: 1 });
+    expect(called.body.data.called_at).not.toBeNull();
+    expect((await (await api(DOCTOR_2)).post(`/medical/visits/${first}/finish`)).status).toBe(404);
+    const done = await doc.post(`/medical/visits/${first}/finish`);
+    expect(done.body.data.status).toBe('completed');
+    expect((await doc.post(`/medical/visits/${first}/finish`)).status).toBe(422);
+    const second = await doc.post('/medical/queue/next').send({});
+    expect(second.body.data.queue_number).toBe(2);
+    expect((await doc.post('/medical/queue/next').send({ doctor_id: doctor2 })).status).toBe(422);
+  });
+
+  it('reception marks a no-show; an emptied queue answers null', async () => {
+    const desk = await api(RECEPTION);
+    const day = await desk.get(`/medical/queue?doctor_id=${doctor2}`);
+    const waiting = day.body.data.visits.filter((v: { status: string }) => v.status === 'waiting');
+    for (const v of waiting) expect((await desk.post(`/medical/visits/${String(v.id)}/no-show`)).body.data.status).toBe('no_show');
+    const none = await (await api(DOCTOR_2)).post('/medical/queue/next').send({});
+    expect(none.status).toBe(200);
+    expect(none.body.data).toBeNull();
+  });
+
+  it('a scheduled appointment is checked in, not duplicated', async () => {
+    const desk = await api(RECEPTION);
+    const later = new Date(Date.now() + 60 * 60_000).toISOString();
+    const appt = await desk.post(`/medical/patients/${p3}/visits`).send({ visit_at: later, doctor_id: doctor1 });
+    const inQueue = await desk.get('/medical/queue');
+    expect(inQueue.body.data.visits.some((v: { id: string; status: string }) => v.id === appt.body.data.id && v.status === 'scheduled')).toBe(true);
+    const checked = await desk.post('/medical/queue/check-in').send({ patient_id: p3, doctor_id: doctor1, visit_id: appt.body.data.id });
+    expect(checked.body.data).toMatchObject({ id: appt.body.data.id, status: 'waiting', queue_number: 3 });
+  });
+});

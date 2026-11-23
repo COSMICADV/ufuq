@@ -119,6 +119,7 @@ const navigation = [
  * only to someone the admin granted (GET /medical/me), never by company role.
  */
 const MEDICAL_NAV = [
+  ['queue', 'M4 5h16M4 12h10M4 19h7M17 14l3 3-3 3M14 17h6'],
   ['patients', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21v-1a6 6 0 0 1 9-5.2M18 14v7M14.5 17.5h7'],
   ['medical-team', 'M6 3v5a4 4 0 0 0 8 0V3M10 12v3a5 5 0 0 0 10 0v-2M20 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4'],
 ] as const;
@@ -265,9 +266,11 @@ export function ProductShell({
   });
   const medicalLinks = MEDICAL_NAV.filter(([path]) =>
     medical?.enabled
-      ? path === 'patients'
-        ? medical.permissions['patients.view'] !== undefined
-        : medical.permissions['staff.manage'] !== undefined
+      ? path === 'queue'
+        ? medical.permissions['visits.view'] !== undefined
+        : path === 'patients'
+          ? medical.permissions['patients.view'] !== undefined
+          : medical.permissions['staff.manage'] !== undefined
       : false,
   ).map(([path, icon]) => {
     const href = `${base}/${path}`;

@@ -14,6 +14,7 @@ import { useResource } from '../settings/use-resource';
 import { day, MedicalPage, medicalBase, personLabel, VisitStatusBadge, when } from './medical-parts';
 import type { Surface } from './medical-parts';
 import { PatientDialog } from './patient-dialog';
+import { PatientDocuments } from './patient-documents';
 import { VisitDialog } from './visit-dialog';
 
 /** `/…/patients/:id` — the patient's file: data, care team and visits. */
@@ -219,6 +220,14 @@ export function PatientProfile({
             </ol>
           )}
         </Card>
+      ) : null}
+
+      {p.can.documents || p.can.labs || p.can.imaging || p.can.upload_documents ? (
+        <PatientDocuments
+          locale={locale}
+          patient={p}
+          visits={visits.state.status === 'ready' ? visits.state.value : []}
+        />
       ) : null}
 
       {editing ? (

@@ -35,11 +35,13 @@ export function personLabel(t: Translator, person: PersonRef): string {
   return detail ? `${person.name} — ${detail}` : person.name;
 }
 
-const STATUS_TONE: Readonly<Record<VisitStatus, 'info' | 'warning' | 'success' | 'cancelled'>> = {
+const STATUS_TONE: Readonly<Record<VisitStatus, 'info' | 'warning' | 'success' | 'cancelled' | 'wfh' | 'danger'>> = {
   scheduled: 'info',
+  waiting: 'wfh',
   in_progress: 'warning',
   completed: 'success',
   cancelled: 'cancelled',
+  no_show: 'danger',
 };
 
 export function VisitStatusBadge({ t, status }: { readonly t: Translator; readonly status: VisitStatus }): React.JSX.Element {

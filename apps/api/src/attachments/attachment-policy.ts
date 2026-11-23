@@ -29,6 +29,7 @@ export const RELATED_TYPES = [
   'finance_transaction',
   'health_document',
   'odometer_reading',
+  'medical_document',
 ] as const;
 export type RelatedType = (typeof RELATED_TYPES)[number];
 
