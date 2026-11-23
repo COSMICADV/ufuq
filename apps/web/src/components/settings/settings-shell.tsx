@@ -30,6 +30,7 @@ import type { SettingsSection } from '../../lib/settings-nav';
  */
 const SECTION_ICONS: Readonly<Record<SettingsSection, FreehandIconName>> = {
   company: 'building',
+  identity: 'palette',
   departments: 'sitemap',
   positions: 'badge',
   schedules: 'clock',

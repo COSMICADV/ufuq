@@ -526,7 +526,8 @@
     "allow_negative_stock_helper": "Désactivé par défaut. Une fois activé, un mouvement qui ferait passer un lieu sous zéro est signalé et doit être confirmé ; il est alors enregistré. Les transferts sont toujours bloqués si l’origine est insuffisante.",
     "allow_negative_stock_toggle": "Autoriser le stock négatif",
     "notifications": "Notifications",
-    "notifications_description": "Les notifications que reçoit l’entreprise."
+    "notifications_description": "Les notifications que reçoit l’entreprise.",
+    "identity": "Identité de l’entreprise"
   },
   "validation": {
     "required": "Ce champ est obligatoire",
@@ -3258,6 +3259,108 @@
         "documents": "Documents et imagerie",
         "admin": "Administration"
       }
+    }
+  },
+  "brand": {
+    "title": "Identité de l’entreprise",
+    "description": "Votre logo, vos noms, couleurs et coordonnées — utilisés sur les tickets, menus, pages de commande et documents imprimés.",
+    "cancel": "Annuler",
+    "discard": "Annuler les modifications",
+    "save": "Enregistrer",
+    "saved": "Enregistré.",
+    "read_only": "Seules les personnes autorisées à modifier les paramètres de l’entreprise peuvent modifier l’identité.",
+    "color": {
+      "low_contrast": "Contraste faible sur blanc : un texte de cette couleur peut être difficile à lire."
+    },
+    "error": {
+      "save": "Enregistrement impossible. Réessayez.",
+      "forbidden": "Vous n’êtes pas autorisé à modifier l’identité de l’entreprise.",
+      "field_color": "Utilisez une couleur comme #1E7AFF.",
+      "field_email": "Saisissez une adresse e-mail valide.",
+      "field_url": "Saisissez une adresse web complète (https://…).",
+      "field_phone": "Utilisez seulement des chiffres, espaces, + ( ) et -.",
+      "field_text": "Vérifiez ce champ.",
+      "logo_too_large": "Le logo doit faire moins de 2 Mo et 4096 px maximum par côté.",
+      "logo_too_small": "Le logo est trop petit : 64 px minimum.",
+      "logo_type": "Utilisez un fichier PNG, JPG ou SVG.",
+      "logo_unsafe_svg": "Ce SVG contient des scripts ou des liens externes et ne peut pas être utilisé. Exportez un SVG simple ou utilisez un PNG.",
+      "logo_invalid": "Ce fichier ne peut pas servir de logo."
+    },
+    "field": {
+      "name_ar": "Nom (arabe)",
+      "name_en": "Nom (anglais)",
+      "primary_color": "Couleur principale",
+      "secondary_color": "Couleur secondaire",
+      "phone": "Téléphone",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "website": "Site web",
+      "address_ar": "Adresse (arabe)",
+      "address_en": "Adresse (anglais)",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok"
+    },
+    "logo": {
+      "help": "Un PNG à fond transparent donne le meilleur résultat. JPG et SVG acceptés, jusqu’à 2 Mo.",
+      "none": "Pas encore de logo",
+      "current": "Logo actuel",
+      "upload": "Téléverser le logo",
+      "replace": "Remplacer le logo",
+      "remove": "Supprimer le logo",
+      "use": "Utiliser ce logo",
+      "preview": "Logo",
+      "thermal": "Copie pour imprimante thermique",
+      "crop_help": "Recadrez le logo pour qu’il remplisse le cadre, puis choisissez Utiliser.",
+      "svg_kept": "Les fichiers SVG sont conservés tels quels (sans recadrage).",
+      "thermal_ok": "S’imprime clairement sur les imprimantes de tickets noir et blanc.",
+      "thermal_faint": "Presque rien ne s’imprimerait en noir et blanc. Les tickets afficheront le nom en texte, sauf choix contraire.",
+      "thermal_dark": "S’imprimerait comme un bloc noir. Les tickets afficheront le nom en texte, sauf choix contraire.",
+      "print_on_receipts": "Imprimer le logo sur les tickets",
+      "receipts_logo": "Les tickets impriment ce logo en noir et blanc.",
+      "receipts_text": "Les tickets impriment le nom en texte."
+    },
+    "preview": {
+      "title": "Aperçu",
+      "header": "En-tête des documents",
+      "button": "Commander",
+      "paper": "Largeur du papier",
+      "receipt": "Ticket thermique",
+      "mm": "{mm} mm"
+    },
+    "receipt": {
+      "label": "Aperçu du ticket sur papier {paper} mm",
+      "caption": "Papier {paper} mm",
+      "sample": "articles d’exemple",
+      "sample_item_1": "Café turc",
+      "sample_item_2": "Croissant",
+      "total": "Total",
+      "thanks": "Merci de votre visite"
+    },
+    "section": {
+      "logo": "Logo",
+      "details": "Noms et couleurs",
+      "contact": "Coordonnées"
+    },
+    "setup": {
+      "title": "Identité du restaurant",
+      "help": "Ajoutez votre logo et vos informations une fois. Ils apparaissent sur les tickets, le menu numérique, les pages de commande et les documents imprimés. Modifiables à tout moment dans Paramètres → Identité de l’entreprise.",
+      "steps": "Étapes",
+      "step_logo": "Logo",
+      "step_details": "Noms et couleurs",
+      "step_contact": "Contact",
+      "step_review": "Vérification",
+      "next": "Suivant",
+      "back": "Retour",
+      "skip": "Passer pour l’instant",
+      "finish": "Terminer",
+      "review_help": "Votre identité est enregistrée. Elle sera utilisée sur :",
+      "uses_receipts": "Les tickets et factures de caisse",
+      "uses_menu": "Le menu numérique et le menu QR",
+      "uses_ordering": "Les pages de commande client",
+      "uses_documents": "Les rapports et documents imprimés",
+      "no_access_title": "Demandez au propriétaire de terminer cette étape",
+      "no_access_help": "Seules les personnes autorisées à modifier les paramètres de l’entreprise peuvent définir son identité."
     }
   }
 }

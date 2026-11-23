@@ -526,7 +526,8 @@
     "allow_negative_stock_helper": "Disattivato per impostazione predefinita. Se attivo, un movimento che porterebbe un luogo sotto zero viene segnalato e deve essere confermato; poi viene registrato. I trasferimenti sono sempre bloccati se l’origine non basta.",
     "allow_negative_stock_toggle": "Consenti giacenza negativa",
     "notifications": "Notifiche",
-    "notifications_description": "Le notifiche che riceve l’azienda."
+    "notifications_description": "Le notifiche che riceve l’azienda.",
+    "identity": "Identità aziendale"
   },
   "validation": {
     "required": "Questo campo è obbligatorio",
@@ -3258,6 +3259,108 @@
         "documents": "Documenti e immagini",
         "admin": "Amministrazione"
       }
+    }
+  },
+  "brand": {
+    "title": "Identità aziendale",
+    "description": "Logo, nomi, colori e contatti — usati su scontrini, menu, pagine d’ordine e documenti stampati.",
+    "cancel": "Annulla",
+    "discard": "Annulla modifiche",
+    "save": "Salva modifiche",
+    "saved": "Salvato.",
+    "read_only": "Solo chi può modificare le impostazioni aziendali può modificare l’identità.",
+    "color": {
+      "low_contrast": "Contrasto basso sul bianco: il testo in questo colore può essere difficile da leggere."
+    },
+    "error": {
+      "save": "Impossibile salvare. Riprova.",
+      "forbidden": "Non sei autorizzato a modificare l’identità aziendale.",
+      "field_color": "Usa un colore come #1E7AFF.",
+      "field_email": "Inserisci un indirizzo email valido.",
+      "field_url": "Inserisci un indirizzo web completo (https://…).",
+      "field_phone": "Usa solo cifre, spazi, + ( ) e -.",
+      "field_text": "Controlla questo campo.",
+      "logo_too_large": "Il logo deve essere sotto i 2 MB e al massimo 4096 px per lato.",
+      "logo_too_small": "Il logo è troppo piccolo: almeno 64 px.",
+      "logo_type": "Usa un file PNG, JPG o SVG.",
+      "logo_unsafe_svg": "Questo SVG contiene script o link esterni e non può essere usato. Esporta un SVG semplice o usa un PNG.",
+      "logo_invalid": "Questo file non può essere usato come logo."
+    },
+    "field": {
+      "name_ar": "Nome (arabo)",
+      "name_en": "Nome (inglese)",
+      "primary_color": "Colore principale",
+      "secondary_color": "Colore secondario",
+      "phone": "Telefono",
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "website": "Sito web",
+      "address_ar": "Indirizzo (arabo)",
+      "address_en": "Indirizzo (inglese)",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok"
+    },
+    "logo": {
+      "help": "Un PNG con sfondo trasparente funziona meglio. Accettati anche JPG e SVG, fino a 2 MB.",
+      "none": "Ancora nessun logo",
+      "current": "Logo attuale",
+      "upload": "Carica logo",
+      "replace": "Sostituisci logo",
+      "remove": "Rimuovi logo",
+      "use": "Usa questo logo",
+      "preview": "Logo",
+      "thermal": "Copia per stampante termica",
+      "crop_help": "Ritaglia il logo in modo che riempia la cornice, poi scegli Usa.",
+      "svg_kept": "I file SVG vengono conservati così come sono (senza ritaglio).",
+      "thermal_ok": "Si stampa chiaramente sulle stampanti di scontrini in bianco e nero.",
+      "thermal_faint": "In bianco e nero non si stamperebbe quasi nulla. Gli scontrini mostreranno il nome come testo, salvo diversa scelta.",
+      "thermal_dark": "Si stamperebbe come un blocco nero. Gli scontrini mostreranno il nome come testo, salvo diversa scelta.",
+      "print_on_receipts": "Stampa il logo sugli scontrini",
+      "receipts_logo": "Gli scontrini stampano questo logo in bianco e nero.",
+      "receipts_text": "Gli scontrini stampano il nome come testo."
+    },
+    "preview": {
+      "title": "Anteprima",
+      "header": "Intestazione documenti",
+      "button": "Ordina",
+      "paper": "Larghezza carta",
+      "receipt": "Scontrino termico",
+      "mm": "{mm} mm"
+    },
+    "receipt": {
+      "label": "Anteprima scontrino su carta da {paper} mm",
+      "caption": "Carta da {paper} mm",
+      "sample": "articoli di esempio",
+      "sample_item_1": "Caffè turco",
+      "sample_item_2": "Cornetto",
+      "total": "Totale",
+      "thanks": "Grazie per la visita"
+    },
+    "section": {
+      "logo": "Logo",
+      "details": "Nomi e colori",
+      "contact": "Contatti"
+    },
+    "setup": {
+      "title": "Identità del ristorante",
+      "help": "Aggiungi logo e dati una volta sola. Appariranno su scontrini, menu digitale, pagine d’ordine e documenti stampati. Puoi cambiarli quando vuoi in Impostazioni → Identità aziendale.",
+      "steps": "Passaggi",
+      "step_logo": "Logo",
+      "step_details": "Nomi e colori",
+      "step_contact": "Contatti",
+      "step_review": "Riepilogo",
+      "next": "Avanti",
+      "back": "Indietro",
+      "skip": "Salta per ora",
+      "finish": "Fine",
+      "review_help": "La tua identità è salvata. Sarà usata su:",
+      "uses_receipts": "Scontrini e fatture della cassa",
+      "uses_menu": "Il menu digitale e il menu QR",
+      "uses_ordering": "Le pagine d’ordine dei clienti",
+      "uses_documents": "Report e documenti stampati",
+      "no_access_title": "Chiedi al titolare di completare questo passaggio",
+      "no_access_help": "Solo chi può modificare le impostazioni aziendali può definire l’identità."
     }
   }
 }

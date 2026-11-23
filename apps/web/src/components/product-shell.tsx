@@ -22,6 +22,8 @@ import { useResource } from './settings/use-resource';
 import { publicPath } from '../lib/public-content';
 import { personalBase } from '../lib/personal';
 import { loadMedicalMe } from '../lib/medical';
+import { displayName } from '../lib/brand';
+import { useIdentity, useLogoUrl } from './brand/use-identity';
 import type { MedicalMe } from '../lib/medical';
 
 const navigation = [
@@ -202,6 +204,15 @@ export function ProductShell({
       controller.abort();
     };
   }, [companyUser, locale]);
+  // The business's own logo and name in the sidebar, and the restaurant
+  // branding step for an admin who has not done or skipped it yet.
+  const identity = useIdentity(locale, companyUser);
+  const brandLogo = useLogoUrl(locale, identity);
+  useEffect(() => {
+    if (surface !== 'admin' || !identity?.onboarding.pending) return;
+    if (pathname.includes('/admin/setup/')) return;
+    router.replace(`/${locale}/admin/setup/branding`);
+  }, [surface, identity?.onboarding.pending, pathname, router, locale]);
   // No session at all (never signed in, signed out, or expired): the workspace
   // has nothing to show, so go to sign-in rather than render an empty shell
   // whose every screen says "session ended".
@@ -307,9 +318,13 @@ export function ProductShell({
         </nav>
         <p className="product-company">
           <span className="product-company__icon">
-            <FreehandIcon name="building" size={20} />
+            {brandLogo ? (
+              <img src={brandLogo} alt="" className="product-company__logo" />
+            ) : (
+              <FreehandIcon name="building" size={20} />
+            )}
           </span>
-          <span>{ready?.companyName ?? t('shell.tagline')}</span>
+          <span>{identity ? displayName(identity, locale) : (ready?.companyName ?? t('shell.tagline'))}</span>
         </p>
       </aside>
       <div className="product-workspace">

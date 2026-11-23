@@ -526,7 +526,8 @@
     "allow_negative_stock_helper": "Off by default. When on, a movement that would take a location below zero is warned and must be confirmed; it is recorded. Transfers are always blocked when the source is short.",
     "allow_negative_stock_toggle": "Allow negative stock",
     "notifications": "Notifications",
-    "notifications_description": "Which notifications the company receives."
+    "notifications_description": "Which notifications the company receives.",
+    "identity": "Business identity"
   },
   "validation": {
     "required": "This field is required",
@@ -3258,6 +3259,108 @@
         "documents": "Documents and imaging",
         "admin": "Administration"
       }
+    }
+  },
+  "brand": {
+    "title": "Business identity",
+    "description": "Your logo, names, colours and contact details — used on receipts, menus, ordering pages and printed documents.",
+    "cancel": "Cancel",
+    "discard": "Discard changes",
+    "save": "Save changes",
+    "saved": "Saved.",
+    "read_only": "Only people allowed to change company settings can edit the business identity.",
+    "color": {
+      "low_contrast": "Low contrast on white: text in this colour may be hard to read."
+    },
+    "error": {
+      "save": "Could not save. Try again.",
+      "forbidden": "You are not allowed to change the business identity.",
+      "field_color": "Use a colour like #1E7AFF.",
+      "field_email": "Enter a valid email address.",
+      "field_url": "Enter a full web address (https://…).",
+      "field_phone": "Use digits, spaces, + ( ) and - only.",
+      "field_text": "Check this field.",
+      "logo_too_large": "The logo must be under 2 MB and at most 4096 px on a side.",
+      "logo_too_small": "The logo is too small: use at least 64 px.",
+      "logo_type": "Use a PNG, JPG or SVG file.",
+      "logo_unsafe_svg": "This SVG contains scripts or external links and cannot be used. Export a plain SVG or use PNG.",
+      "logo_invalid": "This file could not be used as a logo."
+    },
+    "field": {
+      "name_ar": "Business name (Arabic)",
+      "name_en": "Business name (English)",
+      "primary_color": "Primary colour",
+      "secondary_color": "Secondary colour",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "website": "Website",
+      "address_ar": "Address (Arabic)",
+      "address_en": "Address (English)",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok"
+    },
+    "logo": {
+      "help": "PNG with a transparent background works best. JPG and SVG are accepted, up to 2 MB.",
+      "none": "No logo yet",
+      "current": "Current logo",
+      "upload": "Upload logo",
+      "replace": "Replace logo",
+      "remove": "Remove logo",
+      "use": "Use this logo",
+      "preview": "Logo",
+      "thermal": "Thermal printer copy",
+      "crop_help": "Crop the logo so it fills the frame, then choose Use.",
+      "svg_kept": "SVG files are kept exactly as uploaded (no cropping).",
+      "thermal_ok": "Prints clearly on black-and-white receipt printers.",
+      "thermal_faint": "Almost nothing would print in black and white. Receipts will show the name as text unless you choose otherwise.",
+      "thermal_dark": "This would print as a dark block in black and white. Receipts will show the name as text unless you choose otherwise.",
+      "print_on_receipts": "Print the logo on receipts",
+      "receipts_logo": "Receipts print this logo in black and white.",
+      "receipts_text": "Receipts print the business name as text."
+    },
+    "preview": {
+      "title": "Preview",
+      "header": "Document header",
+      "button": "Order",
+      "paper": "Receipt paper width",
+      "receipt": "Thermal receipt",
+      "mm": "{mm} mm"
+    },
+    "receipt": {
+      "label": "Receipt preview on {paper} mm paper",
+      "caption": "{paper} mm paper",
+      "sample": "sample items",
+      "sample_item_1": "Turkish coffee",
+      "sample_item_2": "Croissant",
+      "total": "Total",
+      "thanks": "Thank you for your visit"
+    },
+    "section": {
+      "logo": "Logo",
+      "details": "Names and colours",
+      "contact": "Contact details"
+    },
+    "setup": {
+      "title": "Restaurant branding",
+      "help": "Add your logo and details once. They appear on receipts, the digital menu, ordering pages and printed documents. You can change them anytime in Settings → Business identity.",
+      "steps": "Steps",
+      "step_logo": "Logo",
+      "step_details": "Names and colours",
+      "step_contact": "Contact",
+      "step_review": "Review",
+      "next": "Next",
+      "back": "Back",
+      "skip": "Skip for now",
+      "finish": "Finish",
+      "review_help": "Your identity is saved. It will be used on:",
+      "uses_receipts": "POS receipts and invoices",
+      "uses_menu": "The digital menu and QR menu",
+      "uses_ordering": "Customer ordering pages",
+      "uses_documents": "Printed reports and business documents",
+      "no_access_title": "Ask the owner to complete this step",
+      "no_access_help": "Only people allowed to change company settings can set the business identity."
     }
   }
 }

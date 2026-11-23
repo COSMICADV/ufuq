@@ -3648,3 +3648,37 @@ a.button {
     display: none;
   }
 }
+
+/* Business Identity — the logo and name wherever the shell or a document shows them. */
+.product-company__logo {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-mark__logo {
+  flex: none;
+  block-size: 48px;
+  inline-size: auto;
+  max-inline-size: 160px;
+  object-fit: contain;
+}
+.brand-mark__name {
+  font-weight: 600;
+  color: #0b1e4b;
+  white-space: nowrap;
+}
+.report-meta__brand .brand-mark {
+  display: flex;
+}
+@media print {
+  .report-meta__brand {
+    margin-block-end: 8px;
+    padding-block-end: 8px;
+    border-block-end: 1px solid #999;
+  }
+}

@@ -34,28 +34,36 @@ export function outputSize(
   height: number,
   rotation: Rotation,
   crop: Crop,
+  maxEdge: number = MAX_EDGE,
 ): { width: number; height: number } {
   const turned = rotation === 90 || rotation === 270;
   const w = (turned ? height : width) * crop.w;
   const h = (turned ? width : height) * crop.h;
-  const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+  const scale = Math.min(1, maxEdge / Math.max(w, h));
   return { width: Math.max(1, Math.floor(w * scale)), height: Math.max(1, Math.floor(h * scale)) };
 }
 
 /** Draw the bitmap rotated and cropped onto a new canvas. */
-export function render(bitmap: ImageBitmap, rotation: Rotation, crop: Crop): HTMLCanvasElement {
+export function render(
+  bitmap: ImageBitmap,
+  rotation: Rotation,
+  crop: Crop,
+  options: { readonly maxEdge?: number; readonly transparent?: boolean } = {},
+): HTMLCanvasElement {
   const turned = rotation === 90 || rotation === 270;
   const fullW = turned ? bitmap.height : bitmap.width;
   const fullH = turned ? bitmap.width : bitmap.height;
-  const size = outputSize(bitmap.width, bitmap.height, rotation, crop);
+  const size = outputSize(bitmap.width, bitmap.height, rotation, crop, options.maxEdge);
   const scale = size.width / (fullW * crop.w);
   const canvas = document.createElement('canvas');
   canvas.width = size.width;
   canvas.height = size.height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas unavailable');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, size.width, size.height);
+  if (!options.transparent) {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, size.width, size.height);
+  }
   ctx.imageSmoothingQuality = 'high';
   ctx.translate(-crop.x * fullW * scale, -crop.y * fullH * scale);
   ctx.scale(scale, scale);
@@ -98,6 +106,24 @@ export async function preparePhoto(
   try {
     const canvas = render(bitmap, rotation, crop);
     return { blob: await encode(canvas), canvas };
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** A logo as it will be uploaded: oriented, cropped, at most 1024px, PNG with its transparency kept. */
+export async function prepareLogo(
+  file: Blob,
+  rotation: Rotation = 0,
+  crop: Crop = FULL_CROP,
+): Promise<{ blob: Blob; canvas: HTMLCanvasElement }> {
+  const bitmap = await loadBitmap(file);
+  try {
+    const canvas = render(bitmap, rotation, crop, { maxEdge: 1024, transparent: true });
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('encode failed'))), 'image/png');
+    });
+    return { blob, canvas };
   } finally {
     bitmap.close();
   }

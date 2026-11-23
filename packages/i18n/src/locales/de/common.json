@@ -526,7 +526,8 @@
     "allow_negative_stock_helper": "Standardmäßig aus. Wenn aktiviert, wird eine Bewegung, die einen Lagerort unter null bringt, gemeldet und muss bestätigt werden; dann wird sie erfasst. Umlagerungen werden bei zu wenig Bestand am Ausgangsort immer blockiert.",
     "allow_negative_stock_toggle": "Negativen Bestand erlauben",
     "notifications": "Benachrichtigungen",
-    "notifications_description": "Welche Benachrichtigungen das Unternehmen erhält."
+    "notifications_description": "Welche Benachrichtigungen das Unternehmen erhält.",
+    "identity": "Unternehmensidentität"
   },
   "validation": {
     "required": "Dieses Feld ist erforderlich",
@@ -3258,6 +3259,108 @@
         "documents": "Dokumente und Bildgebung",
         "admin": "Verwaltung"
       }
+    }
+  },
+  "brand": {
+    "title": "Unternehmensidentität",
+    "description": "Logo, Namen, Farben und Kontaktdaten — für Belege, Speisekarten, Bestellseiten und gedruckte Dokumente.",
+    "cancel": "Abbrechen",
+    "discard": "Änderungen verwerfen",
+    "save": "Änderungen speichern",
+    "saved": "Gespeichert.",
+    "read_only": "Nur wer Unternehmenseinstellungen ändern darf, kann die Identität bearbeiten.",
+    "color": {
+      "low_contrast": "Geringer Kontrast auf Weiß: Text in dieser Farbe ist evtl. schwer lesbar."
+    },
+    "error": {
+      "save": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+      "forbidden": "Sie dürfen die Unternehmensidentität nicht ändern.",
+      "field_color": "Verwenden Sie eine Farbe wie #1E7AFF.",
+      "field_email": "Geben Sie eine gültige E-Mail-Adresse ein.",
+      "field_url": "Geben Sie eine vollständige Webadresse ein (https://…).",
+      "field_phone": "Nur Ziffern, Leerzeichen, + ( ) und - verwenden.",
+      "field_text": "Prüfen Sie dieses Feld.",
+      "logo_too_large": "Das Logo muss kleiner als 2 MB und höchstens 4096 px pro Seite sein.",
+      "logo_too_small": "Das Logo ist zu klein: mindestens 64 px.",
+      "logo_type": "Verwenden Sie eine PNG-, JPG- oder SVG-Datei.",
+      "logo_unsafe_svg": "Dieses SVG enthält Skripte oder externe Links und kann nicht verwendet werden. Exportieren Sie ein einfaches SVG oder nutzen Sie PNG.",
+      "logo_invalid": "Diese Datei kann nicht als Logo verwendet werden."
+    },
+    "field": {
+      "name_ar": "Name (Arabisch)",
+      "name_en": "Name (Englisch)",
+      "primary_color": "Hauptfarbe",
+      "secondary_color": "Zweitfarbe",
+      "phone": "Telefon",
+      "whatsapp": "WhatsApp",
+      "email": "E-Mail",
+      "website": "Website",
+      "address_ar": "Adresse (Arabisch)",
+      "address_en": "Adresse (Englisch)",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok"
+    },
+    "logo": {
+      "help": "Am besten eignet sich ein PNG mit transparentem Hintergrund. JPG und SVG werden auch akzeptiert, bis 2 MB.",
+      "none": "Noch kein Logo",
+      "current": "Aktuelles Logo",
+      "upload": "Logo hochladen",
+      "replace": "Logo ersetzen",
+      "remove": "Logo entfernen",
+      "use": "Dieses Logo verwenden",
+      "preview": "Logo",
+      "thermal": "Kopie für Thermodrucker",
+      "crop_help": "Schneiden Sie das Logo so zu, dass es den Rahmen füllt, und wählen Sie dann Verwenden.",
+      "svg_kept": "SVG-Dateien bleiben unverändert (kein Zuschnitt).",
+      "thermal_ok": "Druckt deutlich auf Schwarz-Weiß-Bondruckern.",
+      "thermal_faint": "In Schwarz-Weiß würde fast nichts gedruckt. Belege zeigen den Namen als Text, sofern Sie nichts anderes wählen.",
+      "thermal_dark": "Würde als schwarzer Block gedruckt. Belege zeigen den Namen als Text, sofern Sie nichts anderes wählen.",
+      "print_on_receipts": "Logo auf Belegen drucken",
+      "receipts_logo": "Belege drucken dieses Logo in Schwarz-Weiß.",
+      "receipts_text": "Belege drucken den Namen als Text."
+    },
+    "preview": {
+      "title": "Vorschau",
+      "header": "Dokumentkopf",
+      "button": "Bestellen",
+      "paper": "Belegbreite",
+      "receipt": "Thermobeleg",
+      "mm": "{mm} mm"
+    },
+    "receipt": {
+      "label": "Belegvorschau auf {paper}-mm-Papier",
+      "caption": "{paper}-mm-Papier",
+      "sample": "Beispielartikel",
+      "sample_item_1": "Türkischer Kaffee",
+      "sample_item_2": "Croissant",
+      "total": "Summe",
+      "thanks": "Danke für Ihren Besuch"
+    },
+    "section": {
+      "logo": "Logo",
+      "details": "Namen und Farben",
+      "contact": "Kontaktdaten"
+    },
+    "setup": {
+      "title": "Restaurant-Branding",
+      "help": "Fügen Sie Logo und Angaben einmal hinzu. Sie erscheinen auf Belegen, der digitalen Speisekarte, Bestellseiten und gedruckten Dokumenten. Jederzeit änderbar unter Einstellungen → Unternehmensidentität.",
+      "steps": "Schritte",
+      "step_logo": "Logo",
+      "step_details": "Namen und Farben",
+      "step_contact": "Kontakt",
+      "step_review": "Überprüfen",
+      "next": "Weiter",
+      "back": "Zurück",
+      "skip": "Vorerst überspringen",
+      "finish": "Fertig",
+      "review_help": "Ihre Identität ist gespeichert. Sie wird verwendet für:",
+      "uses_receipts": "Kassenbelege und Rechnungen",
+      "uses_menu": "Digitale Speisekarte und QR-Karte",
+      "uses_ordering": "Bestellseiten für Kunden",
+      "uses_documents": "Gedruckte Berichte und Geschäftsdokumente",
+      "no_access_title": "Bitten Sie den Inhaber, diesen Schritt abzuschließen",
+      "no_access_help": "Nur wer Unternehmenseinstellungen ändern darf, kann die Identität festlegen."
     }
   }
 }

@@ -9,6 +9,7 @@ import { localizedCell, chartMagnitude } from '../../lib/reports';
 import type { Cell, Column, ReportPayload, ReportRow } from '../../lib/reports';
 import { quantityLabel } from '../../lib/warehouse';
 import { Badge } from '../design-system';
+import { BrandMark } from '../brand/brand-mark';
 import { Amount } from '../warehouse/warehouse-shared';
 
 /**
@@ -136,6 +137,9 @@ export function ReportMeta({
   const filters = Object.entries(report.filters);
   return (
     <section className="report-meta" aria-label={t('reports.meta.report')}>
+      <div className="report-meta__brand report-print-only">
+        <BrandMark locale={locale} />
+      </div>
       <p className="report-meta__print-title report-print-only">
         <strong>{title}</strong>
         {companyLabel === null ? null : <span> · {companyLabel}</span>}

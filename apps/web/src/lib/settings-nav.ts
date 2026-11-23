@@ -11,6 +11,7 @@
 
 export const SETTINGS_SECTIONS = [
   'company',
+  'identity',
   'departments',
   'positions',
   'schedules',

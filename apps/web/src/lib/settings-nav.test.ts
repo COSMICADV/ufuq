@@ -12,9 +12,10 @@ import {
 } from './settings-nav';
 
 describe('SETTINGS_SECTIONS', () => {
-  it('contains the four Phase 4 sections, leave types (Phase 10), the salary policy (Phase 11), performance (Phase 8), notifications (Phase 15) and the audit log', () => {
+  it('contains the four Phase 4 sections, business identity, leave types (Phase 10), the salary policy (Phase 11), performance (Phase 8), notifications (Phase 15) and the audit log', () => {
     expect([...SETTINGS_SECTIONS]).toEqual([
       'company',
+      'identity',
       'departments',
       'positions',
       'schedules',

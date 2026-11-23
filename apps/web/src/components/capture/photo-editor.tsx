@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createTranslator } from '@ufuq/i18n';
 import type { Locale } from '@ufuq/i18n';
 
-import { FULL_CROP, loadBitmap, preparePhoto, render } from '../../lib/image-prep';
+import { FULL_CROP, loadBitmap, prepareLogo, preparePhoto, render } from '../../lib/image-prep';
 import type { Crop, Rotation } from '../../lib/image-prep';
 import { Button } from '../design-system';
 
@@ -26,9 +26,12 @@ export function PhotoEditor({
   onUse,
   onRetake,
   onCancel,
+  mode = 'photo',
 }: {
   readonly locale: Locale;
   readonly file: Blob;
+  /** `logo`: transparent PNG at most 1024px instead of a JPEG photo. */
+  readonly mode?: 'photo' | 'logo';
   readonly onUse: (result: { blob: Blob; canvas: HTMLCanvasElement }) => void;
   readonly onRetake?: (() => void) | undefined;
   readonly onCancel: () => void;
@@ -113,7 +116,7 @@ export function PhotoEditor({
   const use = async (): Promise<void> => {
     setBusy(true);
     try {
-      onUse(await preparePhoto(file, rotation, crop));
+      onUse(await (mode === 'logo' ? prepareLogo : preparePhoto)(file, rotation, crop));
     } catch {
       setFailed(true);
     } finally {
