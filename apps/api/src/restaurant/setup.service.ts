@@ -44,13 +44,19 @@ export interface BranchRef {
   readonly name: string;
 }
 
+/** A branch as the POS needs it: its rates price the cart preview. */
+export interface WorkBranch extends BranchRef {
+  readonly tax_rate: string;
+  readonly service_rate: string;
+}
+
 export interface RestaurantMePayload {
   readonly enabled: boolean;
   readonly owner: boolean;
   readonly employee_id: string | null;
   readonly role: RestaurantRoleKey | null;
-  readonly branch: BranchRef | null;
-  readonly branches: readonly BranchRef[];
+  readonly branch: WorkBranch | null;
+  readonly branches: readonly WorkBranch[];
   readonly actions: readonly RestaurantAction[];
   readonly currency: string;
   readonly time_zone: string;
@@ -136,19 +142,30 @@ export class RestaurantSetupService extends TenantScopedService {
         where: { id: ctx.companyId },
         select: { currency: true, timezone: true },
       });
-      let branches: BranchRef[] = [];
-      let branch: BranchRef | null = null;
+      const select = { id: true, name: true, taxRate: true, serviceRate: true } as const;
+      const work = (row: {
+        id: string;
+        name: string;
+        taxRate: { toString(): string };
+        serviceRate: { toString(): string };
+      }): WorkBranch => ({
+        id: row.id,
+        name: row.name,
+        tax_rate: rate(row.taxRate),
+        service_rate: rate(row.serviceRate),
+      });
+      let branches: WorkBranch[] = [];
+      let branch: WorkBranch | null = null;
       if (access.owner) {
-        branches = await tx.restaurantBranch.findMany({
+        const rows = await tx.restaurantBranch.findMany({
           where: { archivedAt: null },
-          select: { id: true, name: true },
+          select,
           orderBy: { name: 'asc' },
         });
+        branches = rows.map(work);
       } else if (access.branchId) {
-        branch = await tx.restaurantBranch.findFirst({
-          where: { id: access.branchId },
-          select: { id: true, name: true },
-        });
+        const row = await tx.restaurantBranch.findFirst({ where: { id: access.branchId }, select });
+        branch = row ? work(row) : null;
         branches = branch ? [branch] : [];
       }
       return {

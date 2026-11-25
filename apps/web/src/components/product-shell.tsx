@@ -22,6 +22,8 @@ import { useResource } from './settings/use-resource';
 import { publicPath } from '../lib/public-content';
 import { personalBase } from '../lib/personal';
 import { loadMedicalMe } from '../lib/medical';
+import { loadRestaurantMe } from '../lib/restaurant';
+import type { RestaurantMe } from '../lib/restaurant';
 import { displayName } from '../lib/brand';
 import { useIdentity, useLogoUrl } from './brand/use-identity';
 import type { MedicalMe } from '../lib/medical';
@@ -121,7 +123,66 @@ const navigation = [
 const MEDICAL_NAV = [
   ['queue', 'M4 5h16M4 12h10M4 19h7M17 14l3 3-3 3M14 17h6'],
   ['patients', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21v-1a6 6 0 0 1 9-5.2M18 14v7M14.5 17.5h7'],
-  ['medical-team', 'M6 3v5a4 4 0 0 0 8 0V3M10 12v3a5 5 0 0 0 10 0v-2M20 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4'],
+  [
+    'medical-team',
+    'M6 3v5a4 4 0 0 0 8 0V3M10 12v3a5 5 0 0 0 10 0v-2M20 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4',
+  ],
+] as const;
+
+/**
+ * Restaurant sections — shown only to a company whose activity is
+ * Restaurants & Cafés (GET /restaurant/me), each to whoever may open it.
+ * [path, catalogue key (`restaurant.nav.*`), icon, who sees it].
+ */
+const RESTAURANT_NAV = [
+  [
+    'restaurant',
+    'home',
+    'M3 11h18M5 11V7a7 7 0 0 1 14 0v4M4 15h16l-1 6H5Z',
+    (me: RestaurantMe) => me.owner || me.role !== null,
+  ],
+  [
+    'pos',
+    'pos',
+    'M3 4h18v12H3ZM8 20h8M12 16v4M7 8h4M7 12h10',
+    (me: RestaurantMe) => me.actions.includes('orders.create'),
+  ],
+  [
+    'kitchen',
+    'kitchen',
+    'M6 13a6 6 0 1 1 12 0v7H6ZM9 20v-4M15 20v-4M4 13h16',
+    (me: RestaurantMe) => me.actions.includes('kitchen.view'),
+  ],
+  [
+    'waiter',
+    'waiter',
+    'M4 17h16M6 17a6 6 0 0 1 12 0M12 7V5M3 20h18',
+    (me: RestaurantMe) => !me.owner && me.actions.includes('waiter.view'),
+  ],
+  [
+    'pickup',
+    'pickup',
+    'M5 8h14l-1 13H6ZM9 8V6a3 3 0 0 1 6 0v2',
+    (me: RestaurantMe) => !me.owner && me.actions.includes('pickup'),
+  ],
+  [
+    'orders',
+    'orders',
+    'M7 3h10v18l-2-1.5L12 21l-3-1.5L7 21ZM10 8h4M10 12h4M10 16h2',
+    (me: RestaurantMe) => me.actions.includes('orders.view'),
+  ],
+  [
+    'restaurant/menu',
+    'menu',
+    'M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3ZM8 8h6M8 12h6',
+    (me: RestaurantMe) => me.owner,
+  ],
+  [
+    'restaurant/team',
+    'team',
+    'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M2 21v-1a6 6 0 0 1 12 0v1M17 11a3 3 0 1 0 0-6M22 21v-1a5 5 0 0 0-4-4.9',
+    (me: RestaurantMe) => me.owner,
+  ],
 ] as const;
 
 /** The catalogue key (`shell.nav.*`) of each section's label. */
@@ -194,12 +255,16 @@ export function ProductShell({
   const ready = session.state.status === 'ready' ? session.state.value : null;
   const router = useRouter();
   const [medical, setMedical] = useState<MedicalMe | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantMe | null>(null);
   const companyUser = ready !== null && ready.roleKey !== 'personal';
   useEffect(() => {
     if (!companyUser) return;
     const controller = new AbortController();
     loadMedicalMe(locale, controller.signal).then(setMedical, () => {
       // No medical section is a safe answer to any failure.
+    });
+    loadRestaurantMe(locale, controller.signal).then(setRestaurant, () => {
+      // No restaurant section is a safe answer to any failure.
     });
     return () => {
       controller.abort();
@@ -282,6 +347,21 @@ export function ProductShell({
       </Link>
     );
   });
+  const restaurantLinks = restaurant?.enabled
+    ? RESTAURANT_NAV.filter(([, , , show]) => show(restaurant)).map(([path, key, icon]) => {
+        const href = `${base}/${path}`;
+        const current =
+          path === 'restaurant'
+            ? pathname === href
+            : pathname === href || pathname.startsWith(`${href}/`);
+        return (
+          <Link key={path} href={href} onClick={close} aria-current={current ? 'page' : undefined}>
+            <NavIcon path={icon} />
+            <span>{t(`restaurant.nav.${key}`)}</span>
+          </Link>
+        );
+      })
+    : [];
   const salary =
     surface === 'app' &&
     ready?.employeeId &&
@@ -315,6 +395,7 @@ export function ProductShell({
         {branding}
         <nav className="product-nav" aria-label={t('shell.main_nav')}>
           {links.slice(0, 1)}
+          {restaurantLinks}
           {medicalLinks}
           {links.slice(1)}
           {salary}
@@ -327,7 +408,9 @@ export function ProductShell({
               <FreehandIcon name="building" size={20} />
             )}
           </span>
-          <span>{identity ? displayName(identity, locale) : (ready?.companyName ?? t('shell.tagline'))}</span>
+          <span>
+            {identity ? displayName(identity, locale) : (ready?.companyName ?? t('shell.tagline'))}
+          </span>
         </p>
       </aside>
       <div className="product-workspace">
@@ -364,6 +447,7 @@ export function ProductShell({
           </div>
           <nav className="product-nav" aria-label={t('shell.all_sections')}>
             {links.slice(0, 1)}
+            {restaurantLinks}
             {medicalLinks}
             {links.slice(1)}
             {salary}

@@ -15,6 +15,9 @@
  *   - only allowed status moves happen, and every move is kept in the order history.
  */
 
+import http from 'node:http';
+import type { IncomingMessage } from 'node:http';
+
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import type { INestApplication } from '@nestjs/common';
@@ -588,13 +591,11 @@ describe('restaurant — orders through the kitchen', () => {
     expect(line.notes).toBe('well done');
     expect(
       (
-        await kitchen
-          .post('/restaurant/orders')
-          .send({
-            client_key: 'kitchen-key-01',
-            type: 'takeaway',
-            items: [{ menu_item_id: latte, quantity: 1 }],
-          })
+        await kitchen.post('/restaurant/orders').send({
+          client_key: 'kitchen-key-01',
+          type: 'takeaway',
+          items: [{ menu_item_id: latte, quantity: 1 }],
+        })
       ).status,
     ).toBe(403);
     expect(
@@ -723,13 +724,11 @@ describe('restaurant — orders through the kitchen', () => {
       (await b.post(`/restaurant/orders/${dineInOrder}/status`).send({ status: 'served' })).status,
     ).toBe(404);
     // Branch B numbers its own orders from 1.
-    const own = await b
-      .post('/restaurant/orders')
-      .send({
-        client_key: 'order-key-b001',
-        type: 'takeaway',
-        items: [{ menu_item_id: latte, quantity: 1 }],
-      });
+    const own = await b.post('/restaurant/orders').send({
+      client_key: 'order-key-b001',
+      type: 'takeaway',
+      items: [{ menu_item_id: latte, quantity: 1 }],
+    });
     expect(own.status).toBe(201);
     expect(own.body.data.number).toBe(1);
     expect(own.body.data.branch.id).toBe(branchB);
@@ -761,12 +760,11 @@ describe('restaurant — orders through the kitchen', () => {
   });
 
   it('the live stream delivers a new order to the kitchen screen', async () => {
-    const http = await import('node:http');
     await api(KITCHEN);
     const token = tokens.get(KITCHEN.email) as string;
     const address = (app.getHttpServer() as { address(): { port: number } }).address();
     const received: string[] = [];
-    const stream = await new Promise<import('node:http').IncomingMessage>((resolve, reject) => {
+    const stream = await new Promise<IncomingMessage>((resolve, reject) => {
       const req = http.get(
         {
           host: '127.0.0.1',
