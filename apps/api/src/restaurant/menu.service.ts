@@ -127,7 +127,7 @@ function itemPayload(row: ItemRow, owner: boolean): MenuItemPayload {
 }
 
 function sha256(buffer: Buffer): string {
-  return createHash('sha256').update(buffer).digest('base64');
+  return createHash('sha256').update(buffer).digest('hex');
 }
 
 @Injectable()
