@@ -333,6 +333,20 @@ enum AuditAction {
   MEDICAL_VISIT_CHECKED_IN             @map("medical_visit.checked_in")
   PASSWORD_SET_BY_ADMIN                @map("password.set_by_admin")
   SETTINGS_SCHEDULE_CHANGED            @map("settings.schedule_changed")
+  RESTAURANT_BRANCH_CREATED            @map("restaurant_branch.created")
+  RESTAURANT_BRANCH_UPDATED            @map("restaurant_branch.updated")
+  RESTAURANT_STAFF_CHANGED             @map("restaurant_staff.changed")
+  RESTAURANT_STAFF_REMOVED             @map("restaurant_staff.removed")
+  MENU_CATEGORY_CHANGED                @map("menu_category.changed")
+  MENU_ITEM_CREATED                    @map("menu_item.created")
+  MENU_ITEM_UPDATED                    @map("menu_item.updated")
+  MENU_ITEM_ARCHIVED                   @map("menu_item.archived")
+  MENU_ITEM_IMAGE_CHANGED              @map("menu_item.image_changed")
+  RESTAURANT_TABLE_CHANGED             @map("restaurant_table.changed")
+  RESTAURANT_ORDER_CREATED             @map("restaurant_order.created")
+  RESTAURANT_ORDER_STATUS_CHANGED      @map("restaurant_order.status_changed")
+  RESTAURANT_ORDER_CANCELLED           @map("restaurant_order.cancelled")
+  RESTAURANT_ORDER_WAITER_CHANGED      @map("restaurant_order.waiter_changed")
   EMPLOYEE_CREATED                     @map("employee.created")
   EMPLOYEE_UPDATED                     @map("employee.updated")
   EMPLOYEE_DEACTIVATED                 @map("employee.deactivated")
@@ -517,6 +531,17 @@ model Company {
 
   medicalDocCategories MedicalDocumentCategory[]
   medicalDocuments     MedicalDocument[]
+
+  restaurantBranches    RestaurantBranch[]
+  restaurantStaff       RestaurantStaff[]
+  menuCategories        MenuCategory[]
+  menuItems             MenuItem[]
+  menuItemSizes         MenuItemSize[]
+  menuItemOptions       MenuItemOption[]
+  restaurantTables      RestaurantTable[]
+  restaurantOrders      RestaurantOrder[]
+  restaurantOrderItems  RestaurantOrderItem[]
+  restaurantOrderEvents RestaurantOrderEvent[]
 
   @@index([status])
   @@map("companies")
@@ -735,6 +760,10 @@ model Employee {
   primaryPatients    Patient[]           @relation("patient_primary_doctor")
   careTeams          PatientCareTeam[]
   medicalVisits      MedicalVisit[]      @relation("visit_doctor")
+
+  restaurantStaff RestaurantStaff?
+  waiterTables    RestaurantTable[] @relation("table_default_waiter")
+  waiterOrders    RestaurantOrder[] @relation("order_waiter")
 
   @@unique([companyId, employeeCode])
   @@unique([companyId, email])
@@ -2596,4 +2625,274 @@ model MedicalDocument {
   @@index([companyId])
   @@index([visitId])
   @@map("medical_documents")
+}
+
+// ---------------------------------------------------------------------------
+// 1to1OS Business — Restaurants & Cafés, phase R1 (migration 20261201000000_restaurant_core)
+// created_by / actor_id reference users in SQL; they are plain columns here.
+// ---------------------------------------------------------------------------
+
+enum RestaurantRole {
+  cashier
+  waiter
+  kitchen
+  delivery
+
+  @@map("restaurant_role")
+}
+
+enum RestaurantOrderType {
+  dine_in
+  takeaway
+  delivery
+
+  @@map("restaurant_order_type")
+}
+
+enum RestaurantOrderStatus {
+  new
+  preparing
+  ready
+  served
+  picked_up
+  delivered
+  cancelled
+
+  @@map("restaurant_order_status")
+}
+
+enum MenuOptionKind {
+  extra
+  customization
+
+  @@map("menu_option_kind")
+}
+
+model RestaurantBranch {
+  id              String    @id @db.Uuid
+  companyId       String    @map("company_id") @db.Uuid
+  name            String    @db.VarChar(120)
+  address         String?   @db.VarChar(300)
+  phone           String?   @db.VarChar(40)
+  taxRate         Decimal   @default(14.00) @map("tax_rate") @db.Decimal(5, 2)
+  serviceRate     Decimal   @default(0.00) @map("service_rate") @db.Decimal(5, 2)
+  nextOrderNumber Int       @default(1) @map("next_order_number")
+  archivedAt      DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdBy       String    @map("created_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  staff   RestaurantStaff[]
+  tables  RestaurantTable[]
+  orders  RestaurantOrder[]
+
+  @@unique([companyId, name])
+  @@map("restaurant_branches")
+}
+
+model RestaurantStaff {
+  employeeId   String         @id @map("employee_id") @db.Uuid
+  companyId    String         @map("company_id") @db.Uuid
+  branchId     String         @map("branch_id") @db.Uuid
+  role         RestaurantRole
+  jobTitle     String?        @map("job_title") @db.VarChar(80)
+  workingDays  Int[]          @default([]) @map("working_days") @db.SmallInt
+  shiftStart   String?        @map("shift_start") @db.VarChar(5)
+  shiftEnd     String?        @map("shift_end") @db.VarChar(5)
+  breakMinutes Int            @default(0) @map("break_minutes") @db.SmallInt
+  active       Boolean        @default(true)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employee Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch   RestaurantBranch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, branchId])
+  @@map("restaurant_staff")
+}
+
+model MenuCategory {
+  id         String    @id @db.Uuid
+  companyId  String    @map("company_id") @db.Uuid
+  name       String    @db.VarChar(80)
+  sortOrder  Int       @default(0) @map("sort_order")
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   MenuItem[]
+
+  @@unique([companyId, name])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id               String    @id @db.Uuid
+  companyId        String    @map("company_id") @db.Uuid
+  categoryId       String    @map("category_id") @db.Uuid
+  name             String    @db.VarChar(120)
+  description      String?   @db.VarChar(600)
+  price            Decimal   @db.Decimal(15, 2)
+  ingredients      String?   @db.VarChar(1000)
+  recipe           String?   @db.VarChar(4000)
+  prepInstructions String?   @map("prep_instructions") @db.VarChar(2000)
+  available        Boolean   @default(true)
+  sortOrder        Int       @default(0) @map("sort_order")
+  imageKey         String?   @map("image_key") @db.VarChar(300)
+  imageType        String?   @map("image_type") @db.VarChar(10)
+  imageVersion     Int       @default(0) @map("image_version")
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdBy        String    @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company    Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category   MenuCategory          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  sizes      MenuItemSize[]
+  options    MenuItemOption[]
+  orderLines RestaurantOrderItem[]
+
+  @@index([companyId, categoryId])
+  @@map("menu_items")
+}
+
+model MenuItemSize {
+  id        String  @id @db.Uuid
+  companyId String  @map("company_id") @db.Uuid
+  itemId    String  @map("item_id") @db.Uuid
+  name      String  @db.VarChar(60)
+  price     Decimal @db.Decimal(15, 2)
+  sortOrder Int     @default(0) @map("sort_order")
+
+  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  item    MenuItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("menu_item_sizes")
+}
+
+model MenuItemOption {
+  id        String         @id @db.Uuid
+  companyId String         @map("company_id") @db.Uuid
+  itemId    String         @map("item_id") @db.Uuid
+  kind      MenuOptionKind
+  name      String         @db.VarChar(80)
+  price     Decimal        @default(0) @db.Decimal(15, 2)
+  sortOrder Int            @default(0) @map("sort_order")
+
+  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  item    MenuItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("menu_item_options")
+}
+
+model RestaurantTable {
+  id              String    @id @db.Uuid
+  companyId       String    @map("company_id") @db.Uuid
+  branchId        String    @map("branch_id") @db.Uuid
+  label           String    @db.VarChar(30)
+  seats           Int       @default(4) @db.SmallInt
+  defaultWaiterId String?   @map("default_waiter_id") @db.Uuid
+  archivedAt      DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch        RestaurantBranch  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  defaultWaiter Employee?         @relation("table_default_waiter", fields: [defaultWaiterId], references: [id], onDelete: SetNull)
+  orders        RestaurantOrder[]
+
+  @@unique([branchId, label])
+  @@index([companyId])
+  @@map("restaurant_tables")
+}
+
+model RestaurantOrder {
+  id              String                @id @db.Uuid
+  companyId       String                @map("company_id") @db.Uuid
+  branchId        String                @map("branch_id") @db.Uuid
+  number          Int
+  type            RestaurantOrderType
+  status          RestaurantOrderStatus @default(new)
+  tableId         String?               @map("table_id") @db.Uuid
+  waiterId        String?               @map("waiter_id") @db.Uuid
+  customerName    String?               @map("customer_name") @db.VarChar(120)
+  customerPhone   String?               @map("customer_phone") @db.VarChar(40)
+  deliveryAddress String?               @map("delivery_address") @db.VarChar(400)
+  notes           String?               @db.VarChar(500)
+  subtotal        Decimal               @db.Decimal(15, 2)
+  discount        Decimal               @default(0) @db.Decimal(15, 2)
+  tax             Decimal               @default(0) @db.Decimal(15, 2)
+  service         Decimal               @default(0) @db.Decimal(15, 2)
+  total           Decimal               @db.Decimal(15, 2)
+  taxRate         Decimal               @map("tax_rate") @db.Decimal(5, 2)
+  serviceRate     Decimal               @map("service_rate") @db.Decimal(5, 2)
+  clientKey       String                @map("client_key") @db.VarChar(64)
+  createdBy       String                @map("created_by") @db.Uuid
+  preparingAt     DateTime?             @map("preparing_at") @db.Timestamptz(3)
+  readyAt         DateTime?             @map("ready_at") @db.Timestamptz(3)
+  fulfilledAt     DateTime?             @map("fulfilled_at") @db.Timestamptz(3)
+  cancelledAt     DateTime?             @map("cancelled_at") @db.Timestamptz(3)
+  cancelReason    String?               @map("cancel_reason") @db.VarChar(300)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch  RestaurantBranch       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  table   RestaurantTable?       @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  waiter  Employee?              @relation("order_waiter", fields: [waiterId], references: [id], onDelete: SetNull)
+  items   RestaurantOrderItem[]
+  events  RestaurantOrderEvent[]
+
+  @@unique([branchId, number])
+  @@unique([companyId, clientKey])
+  @@index([branchId, status])
+  @@index([branchId, createdAt])
+  @@index([tableId])
+  @@index([waiterId])
+  @@map("restaurant_orders")
+}
+
+model RestaurantOrderItem {
+  id         String  @id @db.Uuid
+  companyId  String  @map("company_id") @db.Uuid
+  orderId    String  @map("order_id") @db.Uuid
+  menuItemId String? @map("menu_item_id") @db.Uuid
+  name       String  @db.VarChar(120)
+  sizeName   String? @map("size_name") @db.VarChar(60)
+  unitPrice  Decimal @map("unit_price") @db.Decimal(15, 2)
+  quantity   Int     @db.SmallInt
+  lineTotal  Decimal @map("line_total") @db.Decimal(15, 2)
+  options    Json    @default("[]")
+  notes      String? @db.VarChar(300)
+  sortOrder  Int     @default(0) @map("sort_order") @db.SmallInt
+
+  company  Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order    RestaurantOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem?       @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("restaurant_order_items")
+}
+
+model RestaurantOrderEvent {
+  id         String                 @id @db.Uuid
+  companyId  String                 @map("company_id") @db.Uuid
+  orderId    String                 @map("order_id") @db.Uuid
+  fromStatus RestaurantOrderStatus? @map("from_status")
+  toStatus   RestaurantOrderStatus  @map("to_status")
+  actorId    String                 @map("actor_id") @db.Uuid
+  note       String?                @db.VarChar(300)
+  createdAt  DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  order   RestaurantOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("restaurant_order_events")
 }

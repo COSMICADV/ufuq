@@ -33,6 +33,7 @@ import { QrModule } from './qr/qr.module.js';
 import { PersonalFinanceModule } from './personal-finance/finance.module.js';
 import { PersonalCarModule } from './personal-car/car.module.js';
 import { MedicalModule } from './medical/medical.module.js';
+import { RestaurantModule } from './restaurant/restaurant.module.js';
 import { IdentityModule } from './business-identity/identity.module.js';
 import { PersonalHealthModule } from './personal-health/health.module.js';
 import { RequestsModule } from './requests/requests.module.js';
@@ -117,6 +118,7 @@ export class AppModule {
         PersonalCarModule,
         MedicalModule,
         IdentityModule,
+        RestaurantModule,
       ],
       providers: [
         { provide: APP_ENV, useValue: env },
